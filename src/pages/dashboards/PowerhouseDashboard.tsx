@@ -22,6 +22,7 @@ import {
   GameProviders,
   Games,
   KYCManagement,
+  PaymentModes,
   SupportTickets,
   SuperSettings,
   SiteContentManagement,
@@ -29,6 +30,7 @@ import {
   AccountStatement,
   BonusStatement,
 } from './powerhouse';
+import Chat from '../Chat';
 
 // Dashboard Overview Component
 const DashboardOverview = () => {
@@ -180,7 +182,7 @@ const navItems = [
   { path: 'kyc', label: 'KYC Management', icon: ShieldCheck },
   { path: 'tickets', label: 'Support Ticket', icon: MessageSquare },
   { path: 'payment-modes', label: 'Payment Mode', icon: CreditCard },
-  { path: '/chat', label: 'Live Chat', icon: MessageCircle },
+  { path: 'chat', label: 'Live Chat', icon: MessageCircle },
   { path: 'settings', label: 'Super Setting', icon: Settings },
   { path: 'content', label: 'Website Content', icon: Globe },
   { path: 'bonus-rules', label: 'Bonus Rules', icon: Gift },
@@ -326,6 +328,7 @@ const PowerhouseDashboard: React.FC = () => {
             <Route path="kyc" element={<KYCManagement />} />
             <Route path="payment-modes" element={<PaymentModes />} />
             <Route path="tickets" element={<SupportTickets />} />
+            <Route path="chat" element={<Chat />} />
             <Route path="settings" element={<SuperSettings />} />
             <Route path="content" element={<SiteContentManagement />} />
             <Route path="bonus-rules" element={<BonusRulesManagement />} />

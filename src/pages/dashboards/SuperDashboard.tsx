@@ -23,6 +23,7 @@ import {
   AccountStatement,
   BonusStatement,
 } from './super';
+import Chat from '../Chat';
 
 // Dashboard Overview Component
 const DashboardOverview = () => {
@@ -144,7 +145,7 @@ const navItems = [
   { path: 'kyc', label: 'KYC Management', icon: ShieldCheck },
   { path: 'payment-modes', label: 'Payment Mode', icon: CreditCard },
   { path: 'tickets', label: 'Support Ticket', icon: MessageSquare },
-  { path: '/chat', label: 'Live Chat', icon: MessageCircle },
+  { path: 'chat', label: 'Live Chat', icon: MessageCircle },
 ];
 
 const SuperDashboard: React.FC = () => {
@@ -263,6 +264,7 @@ const SuperDashboard: React.FC = () => {
             <Route path="kyc" element={<KYCManagement />} />
             <Route path="payment-modes" element={<PaymentModes />} />
             <Route path="tickets" element={<SupportTickets />} />
+            <Route path="chat" element={<Chat />} />
           </Routes>
         </div>
       </main>

@@ -24,6 +24,7 @@ import {
   AccountStatement,
   BonusStatement,
 } from './master';
+import Chat from '../Chat';
 
 const DashboardOverview = () => {
   const [stats, setStats] = useState<any>(null);
@@ -88,7 +89,7 @@ const navItems = [
   { path: 'activity', label: 'Client Activity Log', icon: Activity },
   { path: 'profile', label: 'Profile', icon: User },
   { path: 'payment-modes', label: 'Payment Mode', icon: CreditCard },
-  { path: '/chat', label: 'Live Chat', icon: MessageSquare, external: true },
+  { path: 'chat', label: 'Live Chat', icon: MessageSquare },
 ];
 
 const MasterDashboard: React.FC = () => {
@@ -137,15 +138,9 @@ const MasterDashboard: React.FC = () => {
                   )}
                 </div>
               ) : (
-                (item as { external?: boolean }).external ? (
-                  <Link to={item.path} className="flex items-center px-4 py-3 text-emerald-200 hover:bg-emerald-900">
-                    <item.icon className="h-5 w-5 mr-3" />{sidebarOpen && <span>{item.label}</span>}
-                  </Link>
-                ) : (
-                  <Link to={item.path} className={`flex items-center px-4 py-3 text-emerald-200 hover:bg-emerald-900 ${isActive(item.path) ? 'bg-emerald-600 text-white' : ''}`}>
-                    <item.icon className="h-5 w-5 mr-3" />{sidebarOpen && <span>{item.label}</span>}
-                  </Link>
-                )
+                <Link to={item.path} className={`flex items-center px-4 py-3 text-emerald-200 hover:bg-emerald-900 ${isActive(item.path) ? 'bg-emerald-600 text-white' : ''}`}>
+                  <item.icon className="h-5 w-5 mr-3" />{sidebarOpen && <span>{item.label}</span>}
+                </Link>
               )}
             </div>
           ))}
@@ -176,6 +171,7 @@ const MasterDashboard: React.FC = () => {
             <Route path="activity" element={<ClientActivityLog />} />
             <Route path="profile" element={<Profile />} />
             <Route path="payment-modes" element={<PaymentModes />} />
+            <Route path="chat" element={<Chat />} />
           </Routes>
         </div>
       </main>
