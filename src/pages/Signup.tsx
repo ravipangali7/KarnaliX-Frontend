@@ -1,21 +1,22 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Gamepad2, Mail, Lock, Eye, EyeOff, ArrowRight, User, Phone, Gift, Shield, CheckCircle, Loader2 } from "lucide-react";
+import { Gamepad2, Lock, Eye, EyeOff, ArrowRight, User, Phone, Gift, Shield, CheckCircle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/lib/api";
 import { toast } from "sonner";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { register: registerAuth, getDashboardRoute } = useAuth();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
     phone: "",
     username: "",
     password: "",
@@ -25,47 +26,104 @@ export default function Signup() {
     termsAccepted: false,
   });
 
+  // When returning from OTP verification, jump to account step with phone set
+  useEffect(() => {
+    const state = location.state as { phoneVerified?: boolean; phone?: string; referralCode?: string } | null;
+    if (state?.phoneVerified && state?.phone) {
+      setFormData((prev) => ({ ...prev, phone: state.phone ?? prev.phone, referralCode: state.referralCode ?? prev.referralCode }));
+      setStep(2);
+    }
+  }, [location.state]);
+
+  // Pick up referral code from URL
+  useEffect(() => {
+    const refFromState = (location.state as { referralCode?: string } | null)?.referralCode;
+    const refFromQuery = new URLSearchParams(location.search).get("ref");
+    const code = refFromState ?? refFromQuery ?? "";
+    if (code && !formData.referralCode) {
+      setFormData((prev) => ({ ...prev, referralCode: code }));
+    }
+  }, [location.state, location.search]);
+
   const handleChange = (field: string, value: string | boolean) => {
     setFormData({ ...formData, [field]: value });
   };
 
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const phone = formData.phone?.trim();
+    if (!phone) {
+      toast.error("Enter your phone number");
+      return;
+    }
+    setLoading(true);
+    try {
+      await apiClient.sendOtp(phone);
+      toast.success("OTP sent to your phone");
+      navigate("/signup/verify-otp", { state: { phone, referralCode: formData.referralCode } });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to send OTP";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (step < 3) {
-      setStep(step + 1);
-    } else {
-      // Validate password match
-      if (formData.password !== formData.confirmPassword) {
-        toast.error("Passwords do not match");
-        return;
-      }
-
-      setLoading(true);
-      try {
-        await apiClient.register({
-          email: formData.email,
-          username: formData.username,
-          password: formData.password,
-          full_name: formData.fullName,
-          phone: formData.phone,
-          referral_code: formData.referralCode || undefined,
-        });
-        toast.success("Account created successfully! Please login.");
-        navigate("/login");
-      } catch (error: any) {
-        toast.error(error.message || "Registration failed. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+    if (step === 1) {
+      handleSendOtp(e);
+      return;
+    }
+    if (step === 2) {
+      setStep(3);
+      return;
+    }
+    // Step 3: create account
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    const username = formData.username?.trim();
+    if (!username) {
+      toast.error("Username is required");
+      return;
+    }
+    if (!formData.phone?.trim()) {
+      toast.error("Phone verification is required. Please complete the phone step.");
+      return;
+    }
+    if (!formData.ageVerified || !formData.termsAccepted) {
+      toast.error("Please confirm age and accept terms");
+      return;
+    }
+    setLoading(true);
+    try {
+      await registerAuth({
+        phone: formData.phone.trim(),
+        username,
+        password: formData.password,
+        referral_code: formData.referralCode?.trim() || "",
+      });
+      toast.success("Account created successfully!");
+      const route = getDashboardRoute();
+      navigate(route === "/login" ? "/dashboard" : route);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Registration failed";
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 mb-8">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
               <Gamepad2 className="w-6 h-6 text-primary-foreground" />
@@ -78,13 +136,12 @@ export default function Signup() {
             Join the winning community today
           </p>
 
-          {/* Progress Steps */}
           <div className="flex items-center gap-2 mb-8">
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex-1 flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
-                  step >= s 
-                    ? "bg-primary text-primary-foreground" 
+                  step >= s
+                    ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground"
                 }`}>
                   {step > s ? <CheckCircle className="w-5 h-5" /> : s}
@@ -97,39 +154,9 @@ export default function Signup() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Step 1: Personal Info */}
+            {/* Step 1: Phone only */}
             {step === 1 && (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder="Enter your full name"
-                      className="pl-10 h-12 bg-input border-border"
-                      value={formData.fullName}
-                      onChange={(e) => handleChange("fullName", e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      className="pl-10 h-12 bg-input border-border"
-                      value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
                   <div className="relative">
@@ -144,10 +171,13 @@ export default function Signup() {
                     />
                   </div>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  We&apos;ll send you a verification code by SMS.
+                </p>
               </>
             )}
 
-            {/* Step 2: Account Info */}
+            {/* Step 2: Username & password (after OTP verified) */}
             {step === 2 && (
               <>
                 <div className="space-y-2">
@@ -219,7 +249,7 @@ export default function Signup() {
               </>
             )}
 
-            {/* Step 3: Verification */}
+            {/* Step 3: Age & terms */}
             {step === 3 && (
               <>
                 <div className="glass rounded-xl p-6 space-y-4">
@@ -230,10 +260,9 @@ export default function Signup() {
                       <p className="text-sm text-muted-foreground">You must be 18+ to play</p>
                     </div>
                   </div>
-                  
                   <div className="flex items-start gap-3">
-                    <Checkbox 
-                      id="ageVerified" 
+                    <Checkbox
+                      id="ageVerified"
                       checked={formData.ageVerified}
                       onCheckedChange={(checked) => handleChange("ageVerified", checked as boolean)}
                     />
@@ -245,8 +274,8 @@ export default function Signup() {
 
                 <div className="glass rounded-xl p-6 space-y-4">
                   <div className="flex items-start gap-3">
-                    <Checkbox 
-                      id="termsAccepted" 
+                    <Checkbox
+                      id="termsAccepted"
                       checked={formData.termsAccepted}
                       onCheckedChange={(checked) => handleChange("termsAccepted", checked as boolean)}
                     />
@@ -272,42 +301,37 @@ export default function Signup() {
               </>
             )}
 
-            {/* Navigation Buttons */}
             <div className="flex gap-4">
               {step > 1 && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="lg" 
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
                   className="flex-1"
                   onClick={() => setStep(step - 1)}
                 >
                   Back
                 </Button>
               )}
-              <Button 
-                type="submit" 
-                variant="neon" 
-                size="lg" 
+              <Button
+                type="submit"
+                variant="neon"
+                size="lg"
                 className="flex-1 gap-2"
-                disabled={loading || (step === 3 && (!formData.ageVerified || !formData.termsAccepted))}
+                disabled={(step === 3 && (!formData.ageVerified || !formData.termsAccepted)) || loading}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    {step === 3 ? "Create Account" : "Continue"}
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
+                {loading
+                  ? (step === 1 ? "Sending..." : "Creating...")
+                  : step === 1
+                    ? "Send OTP"
+                    : step === 2
+                      ? "Continue"
+                      : "Create Account"}
+                <ArrowRight className="w-5 h-5" />
               </Button>
             </div>
           </form>
 
-          {/* Login Link */}
           <p className="text-center mt-8 text-muted-foreground">
             Already have an account?{" "}
             <Link to="/login" className="text-primary hover:underline font-medium">
@@ -317,7 +341,6 @@ export default function Signup() {
         </div>
       </div>
 
-      {/* Right Side - Promo */}
       <div className="hidden lg:flex flex-1 bg-card items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-radial from-secondary/20 via-transparent to-transparent" />
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-float" />
@@ -325,7 +348,6 @@ export default function Signup() {
 
         <div className="relative z-10 max-w-md">
           <h2 className="text-3xl font-bold mb-6">Why Join KarnaliX?</h2>
-          
           <div className="space-y-4">
             {[
               { icon: "🎮", title: "500+ Games", desc: "Card games, slots, live casino & more" },

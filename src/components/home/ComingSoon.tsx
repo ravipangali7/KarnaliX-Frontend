@@ -1,60 +1,24 @@
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Clock, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
-const comingSoonGames = [
-  {
-    id: "poker-tournament",
-    name: "World Poker Championship",
-    image: "https://images.unsplash.com/photo-1609743522653-52354461eb27?w=400&h=300&fit=crop",
-    launchDate: "Coming Feb 2024",
-    description: "The biggest online poker tournament with ₹1 Crore prize pool",
-  },
-  {
-    id: "cricket-fantasy",
-    name: "Fantasy Cricket Pro",
-    image: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=400&h=300&fit=crop",
-    launchDate: "Coming March 2024",
-    description: "Build your dream team and win real cash prizes",
-  },
-  {
-    id: "slot-megaways",
-    name: "Megaways Jackpot",
-    image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=400&h=300&fit=crop",
-    launchDate: "Coming Soon",
-    description: "117,649 ways to win massive jackpots",
-  },
-  {
-    id: "live-teenpatti-vip",
-    name: "VIP Teen Patti Lounge",
-    image: "https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=400&h=300&fit=crop",
-    launchDate: "Coming March 2024",
-    description: "Exclusive high-stakes tables with professional dealers",
-  },
-  {
-    id: "horse-racing",
-    name: "Virtual Horse Racing",
-    image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop",
-    launchDate: "Coming April 2024",
-    description: "Realistic horse racing simulations with live betting",
-  },
+const defaultComingSoon = [
+  { id: "poker-tournament", name: "World Poker Championship", image: "https://images.unsplash.com/photo-1609743522653-52354461eb27?w=400&h=300&fit=crop", launchDate: "Coming Feb 2024", description: "The biggest online poker tournament with ₹1 Crore prize pool" },
+  { id: "cricket-fantasy", name: "Fantasy Cricket Pro", image: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=400&h=300&fit=crop", launchDate: "Coming March 2024", description: "Build your dream team and win real cash prizes" },
+  { id: "slot-megaways", name: "Megaways Jackpot", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=400&h=300&fit=crop", launchDate: "Coming Soon", description: "117,649 ways to win massive jackpots" },
+  { id: "live-teenpatti-vip", name: "VIP Teen Patti Lounge", image: "https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=400&h=300&fit=crop", launchDate: "Coming March 2024", description: "Exclusive high-stakes tables with professional dealers" },
+  { id: "horse-racing", name: "Virtual Horse Racing", image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop", launchDate: "Coming April 2024", description: "Realistic horse racing simulations with live betting" },
 ];
 
-export function ComingSoon() {
+interface ComingSoonProps {
+  comingSoon?: { id?: string; name?: string; image?: string; launchDate?: string; description?: string }[];
+}
+
+export function ComingSoon({ comingSoon }: ComingSoonProps) {
+  const games = comingSoon && comingSoon.length > 0 ? comingSoon : defaultComingSoon;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-  const [notifiedGames, setNotifiedGames] = useState<string[]>([]);
-
-  const handleNotify = (gameId: string, gameName: string) => {
-    if (notifiedGames.includes(gameId)) {
-      toast.info(`You'll be notified when ${gameName} launches!`);
-      return;
-    }
-    setNotifiedGames([...notifiedGames, gameId]);
-    toast.success(`We'll notify you when ${gameName} launches!`);
-  };
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -114,8 +78,8 @@ export function ComingSoon() {
           className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {comingSoonGames.map((game) => (
-            <div key={game.id} className="w-[300px] flex-shrink-0 snap-start">
+          {games.map((game: any) => (
+            <div key={game.id ?? game.name} className="w-[300px] flex-shrink-0 snap-start">
               <div className="group rounded-2xl overflow-hidden glass border border-border/50 hover:border-secondary/50 transition-all duration-300">
                 {/* Image */}
                 <div className="relative aspect-[4/3] overflow-hidden">
@@ -130,7 +94,7 @@ export function ComingSoon() {
                   <div className="absolute top-3 left-3">
                     <span className="px-3 py-1 bg-secondary/90 text-secondary-foreground text-xs font-bold rounded-full flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {game.launchDate}
+                      {game.launchDate ?? "Coming Soon"}
                     </span>
                   </div>
                 </div>
@@ -139,14 +103,9 @@ export function ComingSoon() {
                 <div className="p-4">
                   <h3 className="font-bold text-lg mb-2 text-foreground">{game.name}</h3>
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{game.description}</p>
-                  <Button 
-                    variant={notifiedGames.includes(game.id) ? "default" : "outline"} 
-                    size="sm" 
-                    className="w-full gap-2"
-                    onClick={() => handleNotify(game.id, game.name)}
-                  >
+                  <Button variant="outline" size="sm" className="w-full gap-2">
                     <Bell className="w-4 h-4" />
-                    {notifiedGames.includes(game.id) ? "Notification Set" : "Notify Me"}
+                    Notify Me
                   </Button>
                 </div>
               </div>

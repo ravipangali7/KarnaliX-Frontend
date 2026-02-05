@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -9,6 +10,11 @@ import {
 } from "@/components/ui/dialog";
 import { Wallet, MessageCircle, Gift, ArrowRight, Zap } from "lucide-react";
 import { whatsAppLinks } from "@/components/layout/WhatsAppButton";
+import { useContact } from "@/hooks/useContact";
+import apiClient from "@/lib/api";
+
+const DEFAULT_BONUS_TITLE = "Get 10% Deposit Bonus!";
+const DEFAULT_BONUS_SUBTITLE = "Min deposit ₹500 to avail bonus";
 
 interface AddFundsModalProps {
   open: boolean;
@@ -16,6 +22,41 @@ interface AddFundsModalProps {
 }
 
 export function AddFundsModal({ open, onOpenChange }: AddFundsModalProps) {
+  const contact = useContact();
+  const [bonusTitle, setBonusTitle] = useState(DEFAULT_BONUS_TITLE);
+  const [bonusSubtitle, setBonusSubtitle] = useState(DEFAULT_BONUS_SUBTITLE);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const minDepositSubtitle = `Min deposit ₹${contact.min_deposit} to avail bonus`;
+    (async () => {
+      try {
+        const content = await apiClient.getPublicContent();
+        if (cancelled) return;
+        const hero = content?.hero;
+        const promos = content?.promos;
+        if (hero?.highlight) {
+          setBonusTitle(String(hero.highlight));
+          setBonusSubtitle(hero.subtitle ? String(hero.subtitle) : minDepositSubtitle);
+        } else if (Array.isArray(promos) && promos.length > 0) {
+          const p = promos[0];
+          setBonusTitle(p?.title ?? p?.highlight ?? DEFAULT_BONUS_TITLE);
+          setBonusSubtitle(p?.subtitle ?? minDepositSubtitle);
+        } else {
+          setBonusTitle(DEFAULT_BONUS_TITLE);
+          setBonusSubtitle(minDepositSubtitle);
+        }
+      } catch {
+        if (!cancelled) {
+          setBonusTitle(DEFAULT_BONUS_TITLE);
+          setBonusSubtitle(minDepositSubtitle);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, contact.min_deposit]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md glass-strong border-border">
@@ -64,8 +105,8 @@ export function AddFundsModal({ open, onOpenChange }: AddFundsModalProps) {
           <div className="flex items-center gap-3">
             <Gift className="w-6 h-6 text-neon-green flex-shrink-0" />
             <div>
-              <p className="font-semibold text-sm">Get 10% Deposit Bonus!</p>
-              <p className="text-xs text-muted-foreground">Min deposit ₹500 to avail bonus</p>
+              <p className="font-semibold text-sm">{bonusTitle}</p>
+              <p className="text-xs text-muted-foreground">{bonusSubtitle}</p>
             </div>
           </div>
         </div>

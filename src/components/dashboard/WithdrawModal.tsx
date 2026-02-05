@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -17,105 +16,90 @@ import {
   Clock,
   Shield,
   MessageCircle,
-  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { whatsAppLinks } from "@/components/layout/WhatsAppButton";
+import { useContact } from "@/hooks/useContact";
 import apiClient from "@/lib/api";
 
 interface WithdrawModalProps {
   isOpen: boolean;
   onClose: () => void;
   walletBalance: number;
+  onSuccess?: () => void;
 }
 
-interface PaymentMethod {
-  id: number;
+interface PaymentMode {
+  id: number | string;
   name: string;
-  icon: string;
-  minLimit: number;
-  maxLimit: number;
+  type?: string;
 }
 
-// Fallback methods
-const fallbackMethods: PaymentMethod[] = [
-  { id: 1, name: "eSewa", icon: "💳", minLimit: 500, maxLimit: 25000 },
-  { id: 2, name: "Khalti", icon: "📱", minLimit: 500, maxLimit: 50000 },
-  { id: 3, name: "Bank Transfer", icon: "🏦", minLimit: 1000, maxLimit: 100000 },
+const defaultMethods = [
+  { id: "esewa", name: "eSewa", minLimit: 500, maxLimit: 25000 },
+  { id: "khalti", name: "Khalti", minLimit: 500, maxLimit: 50000 },
+  { id: "bank", name: "Bank Transfer", minLimit: 1000, maxLimit: 100000 },
 ];
 
-export function WithdrawModal({ isOpen, onClose, walletBalance }: WithdrawModalProps) {
-  const [withdrawMethods, setWithdrawMethods] = useState<PaymentMethod[]>([]);
-  const [loadingMethods, setLoadingMethods] = useState(true);
-  const [selectedMethodId, setSelectedMethodId] = useState<number | null>(null);
+export function WithdrawModal({ isOpen, onClose, walletBalance, onSuccess }: WithdrawModalProps) {
+  const contact = useContact();
+  const [paymentModes, setPaymentModes] = useState<PaymentMode[]>([]);
+  const [loadingModes, setLoadingModes] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<string>("");
   const [amount, setAmount] = useState(500);
-  const [accountNumber, setAccountNumber] = useState("");
-  const [accountName, setAccountName] = useState("");
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
-  const currentMethod = withdrawMethods.find((m) => m.id === selectedMethodId);
-
   useEffect(() => {
-    if (isOpen) {
-      fetchPaymentMethods();
-    }
+    if (!isOpen) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingModes(true);
+      try {
+        const res = await apiClient.getUserPaymentModes();
+        if (cancelled) return;
+        const list = res?.results ?? res ?? [];
+        const modes = Array.isArray(list) ? list.map((p: any) => ({ id: p.id, name: p.wallet_holder_name || p.name || "Payment", type: p.type })) : [];
+        setPaymentModes(modes);
+        if (modes.length > 0 && !selectedMethod) setSelectedMethod(String(modes[0].id));
+      } catch {
+        if (!cancelled) setPaymentModes([]);
+      } finally {
+        if (!cancelled) setLoadingModes(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [isOpen]);
 
-  const fetchPaymentMethods = async () => {
-    try {
-      setLoadingMethods(true);
-      const data = await apiClient.getPaymentMethods();
-      const mapped = data.map((m: any) => ({
-        id: m.id,
-        name: m.name,
-        icon: m.icon || "💳",
-        minLimit: Number(m.min_limit) || 500,
-        maxLimit: Number(m.max_limit) || 100000,
-      })).filter((m: any) => m.isActive !== false);
-      setWithdrawMethods(mapped.length > 0 ? mapped : fallbackMethods);
-      if (mapped.length > 0) {
-        setSelectedMethodId(mapped[0].id);
-      }
-    } catch (error) {
-      console.error("Failed to fetch payment methods:", error);
-      setWithdrawMethods(fallbackMethods);
-      setSelectedMethodId(fallbackMethods[0].id);
-    } finally {
-      setLoadingMethods(false);
-    }
-  };
+  const withdrawMethods = paymentModes.length > 0
+    ? paymentModes.map((p) => ({ id: String(p.id), name: p.name, minLimit: 500, maxLimit: 100000 }))
+    : defaultMethods;
+  const currentMethod = withdrawMethods.find((m) => m.id === selectedMethod) ?? withdrawMethods[0];
 
   const handleWithdraw = async () => {
-    if (!accountNumber || !accountName) {
-      toast.error("Please fill in all account details");
-      return;
-    }
     if (amount > walletBalance) {
       toast.error("Insufficient balance");
       return;
     }
-    if (!selectedMethodId || !currentMethod) {
-      toast.error("Please select a withdrawal method");
+    if (amount < contact.min_withdraw) {
+      toast.error(`Minimum withdrawal is ₹${contact.min_withdraw}`);
       return;
     }
-    if (amount < currentMethod.minLimit) {
-      toast.error(`Minimum withdrawal is ₹${currentMethod.minLimit}`);
+    const paymentModeId = paymentModes.length > 0 ? selectedMethod : null;
+    if (paymentModes.length > 0 && !paymentModeId) {
+      toast.error("Please select a payment method. Add one from Withdraw page if needed.");
       return;
     }
-
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      await apiClient.createWithdrawal({
-        payment_method: selectedMethodId,
-        amount: amount,
-        account_number: accountNumber,
-        account_name: accountName,
-      });
+      const body: { amount: string; payment_mode_id?: string } = { amount: String(amount) };
+      if (paymentModeId) body.payment_mode_id = String(paymentModeId);
+      await apiClient.createUserWithdrawal(body);
       setStep(2);
       toast.success("Withdrawal request submitted! Processing within 24-48 hours.");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to submit withdrawal request");
+      onSuccess?.();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Withdrawal request failed");
     } finally {
       setSubmitting(false);
     }
@@ -124,8 +108,7 @@ export function WithdrawModal({ isOpen, onClose, walletBalance }: WithdrawModalP
   const resetAndClose = () => {
     setStep(1);
     setAmount(500);
-    setAccountNumber("");
-    setAccountName("");
+    setSelectedMethod(paymentModes.length > 0 ? String(paymentModes[0]?.id) : "esewa");
     onClose();
   };
 
@@ -164,63 +147,35 @@ export function WithdrawModal({ isOpen, onClose, walletBalance }: WithdrawModalP
                   max={Math.min(currentMethod?.maxLimit || 100000, walletBalance)}
                 />
               </div>
-              {currentMethod && (
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Min: ₹{currentMethod.minLimit.toLocaleString()}</span>
-                  <span>Max: ₹{Math.min(currentMethod.maxLimit, walletBalance).toLocaleString()}</span>
-                </div>
-              )}
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Min: ₹{currentMethod?.minLimit.toLocaleString()}</span>
+                <span>Max: ₹{Math.min(currentMethod?.maxLimit || 100000, walletBalance).toLocaleString()}</span>
+              </div>
             </div>
 
             {/* Method Selection */}
             <div className="space-y-2">
               <Label>Withdrawal Method</Label>
-              {loadingMethods ? (
-                <div className="grid grid-cols-3 gap-2">
-                  <Skeleton className="h-20 rounded-lg" />
-                  <Skeleton className="h-20 rounded-lg" />
-                  <Skeleton className="h-20 rounded-lg" />
-                </div>
+              {loadingModes ? (
+                <p className="text-sm text-muted-foreground">Loading payment methods...</p>
               ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {withdrawMethods.map((method) => (
-                    <button
-                      key={method.id}
-                      onClick={() => setSelectedMethodId(method.id)}
-                      className={`p-3 rounded-lg border text-center transition-all ${
-                        selectedMethodId === method.id
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <span className="text-xl block mb-1">{method.icon}</span>
-                      <span className="text-xs">{method.name}</span>
-                    </button>
-                  ))}
-                </div>
+              <div className={`grid gap-2 ${withdrawMethods.length >= 3 ? "grid-cols-3" : "grid-cols-1"}`}>
+                {withdrawMethods.map((method) => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => setSelectedMethod(method.id)}
+                    className={`p-3 rounded-lg border text-center transition-all ${
+                      selectedMethod === method.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <span className="text-xs font-medium">{method.name}</span>
+                  </button>
+                ))}
+              </div>
               )}
-            </div>
-
-            {/* Account Details */}
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>
-                  {currentMethod?.name.includes("Bank") ? "Account Number" : `${currentMethod?.name || "Payment"} ID/Number`}
-                </Label>
-                <Input
-                  placeholder={currentMethod?.name.includes("Bank") ? "Enter bank account number" : `Enter ${currentMethod?.name || "payment"} number`}
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Account Holder Name</Label>
-                <Input
-                  placeholder="Enter name as per account"
-                  value={accountName}
-                  onChange={(e) => setAccountName(e.target.value)}
-                />
-              </div>
             </div>
 
             {/* Notice */}
@@ -236,23 +191,12 @@ export function WithdrawModal({ isOpen, onClose, walletBalance }: WithdrawModalP
 
             {/* Actions */}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={resetAndClose} className="flex-1">
+              <Button variant="outline" onClick={resetAndClose} className="flex-1" disabled={submitting}>
                 Cancel
               </Button>
-              <Button 
-                variant="neon" 
-                onClick={handleWithdraw} 
-                className="flex-1 gap-2"
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <ArrowUpRight className="w-4 h-4" />
-                    Withdraw ₹{amount.toLocaleString()}
-                  </>
-                )}
+              <Button variant="neon" onClick={handleWithdraw} className="flex-1 gap-2" disabled={submitting}>
+                <ArrowUpRight className="w-4 h-4" />
+                {submitting ? "Submitting..." : `Withdraw ₹${amount.toLocaleString()}`}
               </Button>
             </div>
 
@@ -286,10 +230,6 @@ export function WithdrawModal({ isOpen, onClose, walletBalance }: WithdrawModalP
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Method:</span>
                 <span>{currentMethod?.name}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Account:</span>
-                <span className="font-mono">{accountNumber}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Status:</span>

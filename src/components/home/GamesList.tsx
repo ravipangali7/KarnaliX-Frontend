@@ -1,79 +1,80 @@
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/games/GameCard";
-import { ChevronRight, Spade, Dices, Rocket, Video, Gamepad2, Target, Grid3X3 } from "lucide-react";
+import { ChevronRight, Dices, Rocket, Video, Gamepad2, Trophy } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import apiClient, { mapGame, mapCategory } from "@/lib/api";
+import apiClient from "@/lib/api";
+import {
+  apiGameToCard,
+  GAME_TYPE_TO_SLUG,
+  SLUG_TO_LABEL,
+  CATEGORY_SLUGS_ORDER,
+  type GameCardShape,
+} from "@/lib/gameUtils";
 
-const slugToIcon: Record<string, LucideIcon> = {
-  cards: Spade,
-  casino: Dices,
-  sports: Target,
-  "live-casino": Video,
-  live: Video,
-  casual: Gamepad2,
+const SLUG_ICON: Record<string, LucideIcon> = {
   crash: Rocket,
-};
-const slugToColor: Record<string, string> = {
-  cards: "primary",
-  casino: "secondary",
-  sports: "neon-green",
-  "live-casino": "neon-red",
-  live: "neon-red",
-  casual: "accent",
-  crash: "neon-cyan",
+  casino: Dices,
+  liveCasino: Video,
+  sports: Trophy,
+  casual: Gamepad2,
 };
 
-interface CategoryInfo {
+const SLUG_COLOR_CLASS: Record<string, string> = {
+  crash: "bg-primary/20 text-primary",
+  casino: "bg-secondary/20 text-secondary",
+  liveCasino: "bg-neon-red/20 text-neon-red",
+  sports: "bg-neon-green/20 text-neon-green",
+  casual: "bg-accent/20 text-accent",
+};
+
+interface GamesListProps {
   slug: string;
   title: string;
-  icon: LucideIcon;
-  color: string;
-}
-
-interface GamesListSectionProps {
-  category: CategoryInfo;
-  games: ReturnType<typeof mapGame>[];
+  games: GameCardShape[];
   showAll?: boolean;
 }
 
-export function GamesList({ category, games, showAll = false }: GamesListSectionProps) {
-  const Icon = category.icon;
-  const displayGames = showAll ? games : games.slice(0, 8);
+const PREVIEW_LIMIT = 8;
 
-  if (games.length === 0) return null;
+export function GamesList({ slug, title, games, showAll = false }: GamesListProps) {
+  const Icon = SLUG_ICON[slug] ?? Gamepad2;
+  const colorClass = SLUG_COLOR_CLASS[slug] ?? "bg-muted text-muted-foreground";
+  const displayGames = showAll ? games : games.slice(0, PREVIEW_LIMIT);
+  const hasMore = games.length > PREVIEW_LIMIT;
+  const linkHref = slug === "sports" ? "/sports" : `/games/${slug}`;
 
   return (
     <section className="py-8">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl bg-${category.color}/20 flex items-center justify-center`}>
-              <Icon className={`w-5 h-5 text-${category.color}`} />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorClass}`}>
+              <Icon className="w-5 h-5" />
             </div>
-            <h2 className="text-xl md:text-2xl font-bold">{category.title}</h2>
+            <h2 className="text-xl md:text-2xl font-bold">{title}</h2>
           </div>
-          {!showAll && games.length > 8 && (
-            <Link to={`/games/${category.slug}`}>
+          {!showAll && games.length > 0 && (
+            <Link to={linkHref}>
               <Button variant="ghost" className="gap-1">
                 View All <ChevronRight className="w-4 h-4" />
               </Button>
             </Link>
           )}
         </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
           {displayGames.map((game) => (
             <GameCard key={game.id} {...game} />
           ))}
         </div>
-        {!showAll && games.length > 8 && (
+
+        {!showAll && hasMore && (
           <div className="mt-6 text-center">
-            <Link to={`/games/${category.slug}`}>
+            <Link to={linkHref}>
               <Button variant="outline" size="lg" className="gap-2">
-                More {category.title} <ChevronRight className="w-4 h-4" />
+                More {title} <ChevronRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
@@ -83,71 +84,61 @@ export function GamesList({ category, games, showAll = false }: GamesListSection
   );
 }
 
+export type { GameCardShape } from "@/lib/gameUtils";
+
 export function AllGameCategories() {
-  const { data: categoriesRaw = [], isLoading: categoriesLoading } = useQuery({
-    queryKey: ["gameCategories"],
-    queryFn: () => apiClient.getGameCategories(),
-  });
+  const [gamesBySlug, setGamesBySlug] = useState<Record<string, GameCardShape[]>>({});
+  const [loading, setLoading] = useState(true);
 
-  const { data: gamesRaw = [], isLoading: gamesLoading } = useQuery({
-    queryKey: ["games", "all"],
-    queryFn: () => apiClient.getGames({}),
-  });
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiClient.getPublicGames();
+        if (cancelled) return;
+        const raw = res?.results ?? res ?? [];
+        const list = Array.isArray(raw) ? raw : [];
+        const bySlug: Record<string, GameCardShape[]> = {};
+        for (const g of list) {
+          const slug = GAME_TYPE_TO_SLUG[g.game_type] ?? "casual";
+          if (!bySlug[slug]) bySlug[slug] = [];
+          bySlug[slug].push(apiGameToCard(g));
+        }
+        setGamesBySlug(bySlug);
+      } catch {
+        if (!cancelled) setGamesBySlug({});
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  const categories = useMemo(() => (categoriesRaw as any[]).map((c) => mapCategory(c)), [categoriesRaw]);
-  const games = useMemo(() => (gamesRaw as any[]).map((g) => mapGame(g)), [gamesRaw]);
-
-  const gamesByCategorySlug = useMemo(() => {
-    const map: Record<string, ReturnType<typeof mapGame>[]> = {};
-    for (const game of games) {
-      const slug = (game as any).categorySlug || "";
-      if (!map[slug]) map[slug] = [];
-      map[slug].push(game);
-    }
-    return map;
-  }, [games]);
-
-  const categoryInfos: CategoryInfo[] = useMemo(
-    () =>
-      categories.map((c) => ({
-        slug: c.slug,
-        title: c.name,
-        icon: slugToIcon[c.slug] ?? Grid3X3,
-        color: slugToColor[c.slug] ?? "primary",
-      })),
-    [categories]
+  const slugsToShow = useMemo(
+    () => CATEGORY_SLUGS_ORDER.filter((slug) => (gamesBySlug[slug]?.length ?? 0) > 0),
+    [gamesBySlug]
   );
 
-  if (categoriesLoading || gamesLoading) {
+  if (loading) {
     return (
-      <>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <section key={i} className="py-8">
-            <div className="container mx-auto px-4">
-              <div className="flex items-center gap-3 mb-6">
-                <Skeleton className="w-10 h-10 rounded-xl" />
-                <Skeleton className="h-8 w-40" />
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {Array.from({ length: 8 }).map((_, j) => (
-                  <Skeleton key={j} className="aspect-[4/3] rounded-xl" />
-                ))}
-              </div>
-            </div>
-          </section>
-        ))}
-      </>
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="rounded-xl h-48 bg-muted/50 animate-pulse" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      {categoryInfos.map((cat) => (
+      {slugsToShow.map((slug) => (
         <GamesList
-          key={cat.slug}
-          category={cat}
-          games={gamesByCategorySlug[cat.slug] || []}
-          showAll={false}
+          key={slug}
+          slug={slug}
+          title={SLUG_TO_LABEL[slug] ?? slug}
+          games={gamesBySlug[slug] ?? []}
         />
       ))}
     </>

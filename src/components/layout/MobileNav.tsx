@@ -1,7 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
 import { Home, Gamepad2, Layers, Search, User } from "lucide-react";
-import { useAuth, UserRole } from "@/contexts/AuthContext";
-import { getDefaultPanelForRole } from "@/components/guards/RoleGuard";
 
 const navItems = [
   { name: "Home", href: "/", icon: Home },
@@ -13,10 +11,6 @@ const navItems = [
 
 export function MobileNav() {
   const location = useLocation();
-  const { user } = useAuth();
-  const dashboardPath = user?.role 
-    ? getDefaultPanelForRole(user.role as UserRole) 
-    : '/dashboard';
 
   const isActive = (href: string) => {
     if (href === "/") return location.pathname === "/";
@@ -28,13 +22,12 @@ export function MobileNav() {
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const href = item.name === "Account" ? dashboardPath : item.href;
-          const active = isActive(href);
+          const active = isActive(item.href);
           
           return (
             <Link
               key={item.name}
-              to={href}
+              to={item.href}
               className={`flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-colors ${
                 active
                   ? "text-primary"

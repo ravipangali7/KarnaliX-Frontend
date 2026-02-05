@@ -4,13 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Settings,
   Bell,
   Shield,
@@ -22,161 +15,97 @@ import {
   Clock,
   Ban,
   Save,
-  Loader2,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import apiClient from "@/lib/api";
 
-interface UserSettings {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  smsNotifications: boolean;
-  promotionalEmails: boolean;
-  twoFactorAuth: boolean;
-  biometricLogin: boolean;
-  darkMode: boolean;
-  language: string;
-  currency: string;
-  timezone: string;
-  depositLimit: string;
-  sessionLimit: string;
-  selfExclusion: boolean;
+const defaultSettings = {
+  emailNotifications: true,
+  pushNotifications: true,
+  smsNotifications: false,
+  promotionalEmails: true,
+  twoFactorAuth: false,
+  biometricLogin: false,
+  darkMode: true,
+  language: "en",
+  currency: "NPR",
+  timezone: "Asia/Kathmandu",
+  depositLimit: "",
+  sessionLimit: "",
+  selfExclusion: false,
+};
+
+interface SettingsSectionProps {
+  onRequestChangePassword?: () => void;
 }
 
-export function SettingsSection() {
+export function SettingsSection({ onRequestChangePassword }: SettingsSectionProps) {
+  const [settings, setSettings] = useState(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false,
-  });
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [settings, setSettings] = useState<UserSettings>({
-    emailNotifications: true,
-    pushNotifications: true,
-    smsNotifications: false,
-    promotionalEmails: true,
-    twoFactorAuth: false,
-    biometricLogin: false,
-    darkMode: true,
-    language: "en",
-    currency: "NPR",
-    timezone: "Asia/Kathmandu",
-    depositLimit: "",
-    sessionLimit: "",
-    selfExclusion: false,
-  });
+  const [selfExclusionSubmitting, setSelfExclusionSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchSettings();
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiClient.getUserSettings();
+        if (cancelled) return;
+        if (data && typeof data === "object" && Object.keys(data).length > 0) {
+          setSettings({ ...defaultSettings, ...data });
+        }
+      } catch {
+        if (!cancelled) {
+          // Keep default state on 404 or error
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      const data = await apiClient.getUserSettings();
-      setSettings({
-        emailNotifications: data.email_notifications ?? true,
-        pushNotifications: data.push_notifications ?? true,
-        smsNotifications: data.sms_notifications ?? false,
-        promotionalEmails: data.promotional_emails ?? true,
-        twoFactorAuth: data.two_factor_auth ?? false,
-        biometricLogin: data.biometric_login ?? false,
-        darkMode: data.dark_mode ?? true,
-        language: data.language ?? "en",
-        currency: data.currency ?? "NPR",
-        timezone: data.timezone ?? "Asia/Kathmandu",
-        depositLimit: data.deposit_limit ?? "",
-        sessionLimit: data.session_limit?.toString() ?? "",
-        selfExclusion: data.self_exclusion ?? false,
-      });
-    } catch (error) {
-      console.error("Failed to fetch settings:", error);
-      // Keep default settings on error
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSave = async () => {
+    setSaving(true);
     try {
-      setSaving(true);
-      await apiClient.updateUserSettings({
-        email_notifications: settings.emailNotifications,
-        push_notifications: settings.pushNotifications,
-        sms_notifications: settings.smsNotifications,
-        promotional_emails: settings.promotionalEmails,
-        two_factor_auth: settings.twoFactorAuth,
-        biometric_login: settings.biometricLogin,
-        dark_mode: settings.darkMode,
-        language: settings.language,
-        currency: settings.currency,
-        timezone: settings.timezone,
-        deposit_limit: settings.depositLimit || null,
-        session_limit: settings.sessionLimit ? parseInt(settings.sessionLimit) : null,
-        self_exclusion: settings.selfExclusion,
-      });
+      await apiClient.updateUserSettings(settings);
       toast.success("Settings saved successfully!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save settings");
+    } catch {
+      toast.error("Failed to save settings");
     } finally {
       setSaving(false);
     }
   };
 
-  const handlePasswordChange = async () => {
-    // Validate passwords
-    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      toast.error("Please fill in all password fields");
-      return;
+  const handlePasswordChange = () => {
+    if (onRequestChangePassword) {
+      onRequestChangePassword();
+    } else {
+      toast.info("Password change feature - Please enter current and new password");
     }
-    if (passwordForm.newPassword.length < 6) {
-      toast.error("New password must be at least 6 characters");
-      return;
-    }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-
-    try {
-      setChangingPassword(true);
-      await apiClient.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
-      toast.success("Password changed successfully!");
-      setPasswordDialogOpen(false);
-      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error: any) {
-      toast.error(error.message || "Failed to change password");
-    } finally {
-      setChangingPassword(false);
-    }
-  };
-
-  const handleEnable2FA = () => {
-    setSettings({ ...settings, twoFactorAuth: !settings.twoFactorAuth });
-    toast.success(settings.twoFactorAuth ? "2FA will be disabled on save" : "2FA will be enabled on save");
-  };
-
-  const handleSelfExclusion = () => {
-    toast.info("Please contact support to request self-exclusion.");
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="space-y-4 sm:space-y-6 animate-pulse">
+        <div className="glass rounded-xl p-6 h-48" />
+        <div className="glass rounded-xl p-6 h-64" />
+        <div className="glass rounded-xl p-6 h-32" />
       </div>
     );
   }
+
+  const handleEnable2FA = async () => {
+    const next = !settings.twoFactorAuth;
+    setSettings({ ...settings, twoFactorAuth: next });
+    try {
+      await apiClient.updateUserSettings({ ...settings, twoFactorAuth: next });
+      toast.success(next ? "2FA enabled" : "2FA disabled");
+    } catch {
+      setSettings({ ...settings, twoFactorAuth: settings.twoFactorAuth });
+      toast.error("Failed to save 2FA setting");
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -265,7 +194,7 @@ export function SettingsSection() {
                 </p>
                 <p className="text-xs text-muted-foreground">Update your account password</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setPasswordDialogOpen(true)}>
+              <Button variant="outline" size="sm" onClick={handlePasswordChange}>
                 Change Password
               </Button>
             </div>
@@ -386,8 +315,27 @@ export function SettingsSection() {
               <p className="text-sm text-muted-foreground mb-3">
                 Temporarily or permanently exclude yourself from the platform.
               </p>
-              <Button variant="destructive" size="sm" onClick={handleSelfExclusion}>
-                Request Self-Exclusion
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={selfExclusionSubmitting}
+                onClick={async () => {
+                  setSelfExclusionSubmitting(true);
+                  try {
+                    await apiClient.createUserTicket({
+                      subject: "Self-Exclusion Request",
+                      category: "OTHER",
+                      message: "I would like to request self-exclusion.",
+                    });
+                    toast.success("Self-exclusion request submitted. We will respond within 24 hours.");
+                  } catch {
+                    toast.error("Failed to submit request. Please try again or contact support.");
+                  } finally {
+                    setSelfExclusionSubmitting(false);
+                  }
+                }}
+              >
+                {selfExclusionSubmitting ? "Submitting…" : "Request Self-Exclusion"}
               </Button>
             </div>
           </div>
@@ -395,108 +343,15 @@ export function SettingsSection() {
       </div>
 
       {/* Save Button */}
-      <Button 
-        variant="neon" 
-        size="lg" 
-        className="w-full gap-2" 
+      <Button
+        variant="neon"
+        size="lg"
+        className="w-full gap-2"
         onClick={handleSave}
         disabled={saving}
       >
-        {saving ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
-        ) : (
-          <Save className="w-5 h-5" />
-        )}
-        {saving ? "Saving..." : "Save All Settings"}
+        <Save className="w-5 h-5" /> {saving ? "Saving…" : "Save All Settings"}
       </Button>
-
-      {/* Password Change Dialog */}
-      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5" /> Change Password
-            </DialogTitle>
-            <DialogDescription>
-              Enter your current password and choose a new password.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
-              <div className="relative">
-                <Input
-                  id="current-password"
-                  type={showPasswords.current ? "text" : "password"}
-                  placeholder="Enter current password"
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showPasswords.new ? "text" : "password"}
-                  placeholder="Enter new password (min 6 characters)"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm New Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirm-password"
-                  type={showPasswords.confirm ? "text" : "password"}
-                  placeholder="Confirm new password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handlePasswordChange} disabled={changingPassword}>
-              {changingPassword ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Changing...
-                </>
-              ) : (
-                "Change Password"
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import apiClient from "@/lib/api";
@@ -15,7 +14,6 @@ import {
   ChevronRight,
   Gamepad2,
   DollarSign,
-  Loader2,
 } from "lucide-react";
 
 interface Bet {
@@ -25,80 +23,64 @@ interface Bet {
   betAmount: number;
   winAmount: number;
   odds: string;
-  status: "won" | "lost" | "pending" | "cancelled" | "refunded";
+  status: "won" | "lost" | "pending" | "cashout";
   date: string;
   category: string;
 }
 
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
+function mapApiBet(item: any): Bet {
+  const statusMap: Record<string, Bet["status"]> = {
+    won: "won",
+    win: "won",
+    lost: "lost",
+    loss: "lost",
+    pending: "pending",
+    cashout: "cashout",
+    settled: "won",
+  };
+  const status = statusMap[String(item.status || "pending").toLowerCase()] ?? "pending";
+  const betAmount = typeof item.bet_amount === "string" ? parseFloat(item.bet_amount) : Number(item.bet_amount) ?? 0;
+  const winAmount = typeof item.win_amount === "string" ? parseFloat(item.win_amount) : Number(item.win_amount) ?? 0;
+  const date = item.created_at || item.date || "";
+  return {
+    id: String(item.id),
+    game: item.game_name || item.game || "—",
+    gameType: item.game_type || item.category || "—",
+    betAmount,
+    winAmount,
+    odds: item.odds ? String(item.odds) : "—",
+    status,
+    date: date ? new Date(date).toLocaleString() : "",
+    category: (item.game_type || item.category || "other").toLowerCase(),
+  };
 }
 
 export function BetHistory() {
   const [bets, setBets] = useState<Bet[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [exporting, setExporting] = useState(false);
   const itemsPerPage = 5;
 
-  const handleExport = async () => {
-    try {
-      setExporting(true);
-      const blob = await apiClient.exportBets();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'bet_history.csv';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Export failed:', error);
-    } finally {
-      setExporting(false);
-    }
-  };
-
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchBets = async () => {
       try {
-        // Fetch bets and categories in parallel
-        const [betsData, categoriesData] = await Promise.all([
-          apiClient.getBets(),
-          apiClient.getGameCategories().catch(() => []),
-        ]);
-        
-        setCategories(categoriesData || []);
-        
-        // Map API response to Bet format
-        const mappedBets: Bet[] = (betsData || []).map((b: any) => ({
-          id: String(b.id),
-          game: b.game_name || 'Unknown Game',
-          gameType: b.game_type || 'Game',
-          betAmount: parseFloat(b.bet_amount),
-          winAmount: parseFloat(b.win_amount) || 0,
-          odds: b.odds ? `${b.odds}x` : '-',
-          status: b.status,
-          date: new Date(b.bet_at || b.created_at).toLocaleString(),
-          category: b.category || 'other',
-        }));
-        
-        setBets(mappedBets);
-      } catch (error) {
-        console.error('Failed to fetch bets:', error);
+        setLoading(true);
+        setError(null);
+        const res = await apiClient.getUserBets();
+        const list = Array.isArray(res) ? res : (res?.results ?? []);
+        setBets(list.map(mapApiBet));
+      } catch (err: any) {
+        setError(err?.message ?? "Failed to load bets");
+        setBets([]);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchData();
+    fetchBets();
   }, []);
 
   const filteredBets = bets.filter((b) => {
@@ -121,8 +103,7 @@ export function BetHistory() {
     totalWagered: bets.reduce((sum, b) => sum + b.betAmount, 0),
     totalWon: bets.reduce((sum, b) => sum + b.winAmount, 0),
   };
-
-  const winRate = stats.totalBets > 0 ? ((stats.wins / stats.totalBets) * 100).toFixed(0) : 0;
+  const winRatePct = stats.totalBets > 0 ? ((stats.wins / stats.totalBets) * 100).toFixed(0) : "0";
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -144,30 +125,16 @@ export function BetHistory() {
             <Clock className="w-3 h-3" /> Live
           </span>
         );
-      case "cancelled":
-        return (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-            <X className="w-3 h-3" /> Cancelled
-          </span>
-        );
-      case "refunded":
+      case "cashout":
         return (
           <span className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
-            <DollarSign className="w-3 h-3" /> Refunded
+            <DollarSign className="w-3 h-3" /> Cashout
           </span>
         );
       default:
         return null;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -186,7 +153,7 @@ export function BetHistory() {
             <span className="text-xs text-muted-foreground">Win Rate</span>
           </div>
           <p className="text-xl sm:text-2xl font-bold text-neon-green">
-            {winRate}%
+            {winRatePct}%
           </p>
         </div>
         <div className="glass rounded-xl p-3 sm:p-4">
@@ -215,157 +182,125 @@ export function BetHistory() {
               <Input
                 placeholder="Search game..."
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 w-full sm:w-40"
               />
             </div>
             <select
               value={filter}
-              onChange={(e) => {
-                setFilter(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setFilter(e.target.value)}
               className="h-9 px-3 rounded-lg bg-muted border border-border text-sm"
             >
               <option value="all">All Status</option>
               <option value="won">Won</option>
               <option value="lost">Lost</option>
               <option value="pending">Live</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="refunded">Refunded</option>
+              <option value="cashout">Cashout</option>
             </select>
             <select
               value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setCategoryFilter(e.target.value)}
               className="h-9 px-3 rounded-lg bg-muted border border-border text-sm"
             >
               <option value="all">All Games</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.slug}>{cat.name}</option>
-              ))}
+              <option value="sports">Sports</option>
+              <option value="casino">Casino</option>
+              <option value="card">Card Games</option>
+              <option value="crash">Crash</option>
+              <option value="casual">Casual</option>
             </select>
-            <Button variant="outline" size="sm" className="gap-1" onClick={handleExport} disabled={exporting}>
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              <span className="hidden sm:inline">{exporting ? "Exporting..." : "Export"}</span>
+            <Button variant="outline" size="sm" className="gap-1">
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
             </Button>
           </div>
         </div>
 
-        {/* Table */}
-        {bets.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Gamepad2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-sm">No bets yet</p>
-            <Link to="/games" className="text-primary text-sm hover:underline">Start playing now</Link>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
           </div>
+        ) : error ? (
+          <p className="text-center py-8 text-muted-foreground">{error}</p>
         ) : filteredBets.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-sm">No bets match your filters</p>
-            <button 
-              onClick={() => {
-                setFilter("all");
-                setCategoryFilter("all");
-                setSearchQuery("");
-              }}
-              className="text-primary text-sm hover:underline"
-            >
-              Clear filters
-            </button>
-          </div>
+          <p className="text-center py-8 text-muted-foreground">No bets found.</p>
         ) : (
-          <>
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full min-w-[700px]">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Game</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Type</th>
-                    <th className="text-center py-3 px-4 text-xs font-medium text-muted-foreground">Odds</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground">Bet</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground">Win</th>
-                    <th className="text-center py-3 px-4 text-xs font-medium text-muted-foreground">Status</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedBets.map((bet) => (
-                    <tr key={bet.id} className="border-b border-border/50 hover:bg-muted/30">
-                      <td className="py-3 px-4">
-                        <p className="font-medium text-sm">{bet.game}</p>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">{bet.gameType}</td>
-                      <td className="py-3 px-4 text-center font-mono text-sm">{bet.odds}</td>
-                      <td className="py-3 px-4 text-right font-mono text-sm">₹{bet.betAmount.toLocaleString()}</td>
-                      <td className={`py-3 px-4 text-right font-mono text-sm ${
-                        bet.winAmount > 0 ? "text-neon-green" : "text-muted-foreground"
-                      }`}>
-                        {bet.winAmount > 0 ? `₹${bet.winAmount.toLocaleString()}` : "-"}
-                      </td>
-                      <td className="py-3 px-4 text-center">{getStatusBadge(bet.status)}</td>
-                      <td className="py-3 px-4 text-right text-sm text-muted-foreground">{bet.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <>
+        {/* Table */}
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full min-w-[700px]">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Game</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Type</th>
+                <th className="text-center py-3 px-4 text-xs font-medium text-muted-foreground">Odds</th>
+                <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground">Bet</th>
+                <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground">Win</th>
+                <th className="text-center py-3 px-4 text-xs font-medium text-muted-foreground">Status</th>
+                <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedBets.map((bet) => (
+                <tr key={bet.id} className="border-b border-border/50 hover:bg-muted/30">
+                  <td className="py-3 px-4">
+                    <p className="font-medium text-sm">{bet.game}</p>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{bet.gameType}</td>
+                  <td className="py-3 px-4 text-center font-mono text-sm">{bet.odds}</td>
+                  <td className="py-3 px-4 text-right font-mono text-sm">₹{bet.betAmount.toLocaleString()}</td>
+                  <td className={`py-3 px-4 text-right font-mono text-sm ${
+                    bet.winAmount > 0 ? "text-neon-green" : "text-muted-foreground"
+                  }`}>
+                    {bet.winAmount > 0 ? `₹${bet.winAmount.toLocaleString()}` : "-"}
+                  </td>
+                  <td className="py-3 px-4 text-center">{getStatusBadge(bet.status)}</td>
+                  <td className="py-3 px-4 text-right text-sm text-muted-foreground">{bet.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t border-border">
-                <p className="text-sm text-muted-foreground">
-                  Showing {(currentPage - 1) * itemsPerPage + 1}-
-                  {Math.min(currentPage * itemsPerPage, filteredBets.length)} of {filteredBets.length}
-                </p>
-                <div className="flex gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let page;
-                    if (totalPages <= 5) {
-                      page = i + 1;
-                    } else if (currentPage <= 3) {
-                      page = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      page = totalPages - 4 + i;
-                    } else {
-                      page = currentPage - 2 + i;
-                    }
-                    return (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page)}
-                        className="w-8"
-                      >
-                        {page}
-                      </Button>
-                    );
-                  })}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground">
+              Showing {(currentPage - 1) * itemsPerPage + 1}-
+              {Math.min(currentPage * itemsPerPage, filteredBets.length)} of {filteredBets.length}
+            </p>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className="w-8"
+                >
+                  {page}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+        </>
         )}
       </div>
     </div>

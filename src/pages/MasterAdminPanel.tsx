@@ -84,6 +84,53 @@ interface DashboardStats {
   games: { total: number; active: number; providers: number; active_providers: number };
 }
 
+/** Map Powerhouse dashboard API response to panel DashboardStats shape */
+function mapPowerhouseDashboardToStats(data: any): DashboardStats | null {
+  if (!data) return null;
+  const u = data.users || {};
+  const fin = data.financial || {};
+  const b = data.bets || {};
+  const pend = data.pending || {};
+  const gamesData = data.games || {};
+  const kycData = data.kyc || {};
+  const supportData = data.support || {};
+  const parseNum = (v: unknown) => (v === undefined || v === null ? 0 : Number(v));
+  const totalUsers = (parseNum(u.total_supers) || 0) + (parseNum(u.total_masters) || 0) + (parseNum(u.total_users) || 0);
+  return {
+    users: {
+      total: totalUsers,
+      admins: parseNum(u.total_supers),
+      agents: parseNum(u.total_masters),
+      users: parseNum(u.total_users),
+      active: parseNum(u.active_users),
+      new_today: parseNum(u.new_today),
+      new_this_week: parseNum(u.new_this_week),
+    },
+    coins: { total_supply: 0, bonus_pool: 0, locked: 0, total_minted: 0 },
+    bets: {
+      total: parseNum(b.total_bets),
+      pending: parseNum(b.pending_count),
+      won: parseNum(b.won_count),
+      lost: parseNum(b.lost_count),
+      total_volume: parseNum(b.total_bet_amount),
+      today_volume: parseNum(b.today_bet_amount),
+    },
+    deposits: {
+      total: 0,
+      pending: parseNum(fin.pending_deposits),
+      total_amount: parseNum(fin.total_deposits),
+    },
+    withdrawals: {
+      total: 0,
+      pending: parseNum(fin.pending_withdrawals),
+      total_amount: parseNum(fin.total_withdrawals),
+    },
+    kyc: { total: 0, pending: parseNum(pend.kyc), approved: parseNum(kycData.approved), rejected: parseNum(kycData.rejected) },
+    support: { total: 0, open: parseNum(supportData.open ?? pend.support_tickets), in_progress: parseNum(supportData.in_progress) },
+    games: { total: parseNum(gamesData.total), active: parseNum(gamesData.active), providers: parseNum(gamesData.providers), active_providers: parseNum(gamesData.active) },
+  };
+}
+
 // Sidebar Navigation
 const sidebarItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -137,9 +184,9 @@ export default function MasterAdminPanel() {
         apiClient.getGames().catch(() => []),
       ]);
       
-      if (statsData) setStats(statsData);
-      setUsers(usersData);
-      setGames(gamesData);
+      setStats(mapPowerhouseDashboardToStats(statsData));
+      setUsers(Array.isArray(usersData) ? usersData : (usersData?.results ?? []));
+      setGames(Array.isArray(gamesData) ? gamesData : (gamesData?.results ?? []));
       
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -155,15 +202,15 @@ export default function MasterAdminPanel() {
       switch (section) {
         case 'users':
           const usersData = await apiClient.getUsers();
-          setUsers(usersData);
+          setUsers(Array.isArray(usersData) ? usersData : (usersData?.results ?? []));
           break;
         case 'games':
           const [gamesData, providersData] = await Promise.all([
             apiClient.getAllGames().catch(() => apiClient.getGames()),
             apiClient.getGameProviders().catch(() => []),
           ]);
-          setGames(gamesData);
-          setProviders(providersData);
+          setGames(Array.isArray(gamesData) ? gamesData : (gamesData?.results ?? []));
+          setProviders(Array.isArray(providersData) ? providersData : (providersData?.results ?? []));
           break;
         case 'financials':
           const [depositsData, withdrawalsData, txnData] = await Promise.all([
@@ -171,25 +218,32 @@ export default function MasterAdminPanel() {
             apiClient.getWithdrawals(),
             apiClient.getTransactions(),
           ]);
-          setDeposits(depositsData);
-          setWithdrawals(withdrawalsData);
-          setTransactions(txnData);
+          setDeposits(Array.isArray(depositsData) ? depositsData : (depositsData?.results ?? []));
+          setWithdrawals(Array.isArray(withdrawalsData) ? withdrawalsData : (withdrawalsData?.results ?? []));
+          const txnList = txnData?.transactions?.results ?? txnData?.results ?? (Array.isArray(txnData) ? txnData : []);
+          setTransactions(txnList);
           break;
         case 'kyc':
           const kycData = await apiClient.getAllKYC().catch(() => []);
-          setKycDocs(kycData);
+          setKycDocs(Array.isArray(kycData) ? kycData : (kycData?.results ?? []));
           break;
         case 'bets':
           const betsData = await apiClient.getAllBets();
-          setBets(betsData);
+          const rawBets = Array.isArray(betsData) ? betsData : (betsData?.results ?? []);
+          setBets(rawBets.map((bet: any) => ({
+            ...bet,
+            user_id: bet.user_id ?? bet.user,
+            game_id: bet.game_id ?? bet.game,
+            status: (bet.status ?? bet.result ?? '').toString().toLowerCase(),
+          })));
           break;
         case 'support':
           const ticketsData = await apiClient.getTickets();
-          setTickets(ticketsData);
+          setTickets(Array.isArray(ticketsData) ? ticketsData : (ticketsData?.results ?? []));
           break;
         case 'bonuses':
           const bonusData = await apiClient.getBonusRules().catch(() => []);
-          setBonusRules(bonusData);
+          setBonusRules(Array.isArray(bonusData) ? bonusData : (bonusData?.results ?? []));
           break;
       }
     } catch (error) {
@@ -1311,12 +1365,12 @@ function FinancialsSection({ users, deposits, withdrawals, transactions, onRefre
                   {transactions.slice(0, 50).map((t: any) => (
                     <TableRow key={t.id}>
                       <TableCell>
-                        <Badge variant="outline">{t.transaction_type}</Badge>
+                        <Badge variant="outline">{t.type ?? t.transaction_type}</Badge>
                       </TableCell>
                       <TableCell className="font-mono">{formatCurrency(t.amount)}</TableCell>
-                      <TableCell className="text-xs">{t.from_user_id?.slice(0, 8) || 'System'}...</TableCell>
-                      <TableCell className="text-xs">{t.to_user_id?.slice(0, 8)}...</TableCell>
-                      <TableCell className="max-w-xs truncate">{t.description}</TableCell>
+                      <TableCell className="text-xs">{String(t.from_user ?? t.from_user_id ?? '').slice(0, 8) || 'System'}...</TableCell>
+                      <TableCell className="text-xs">{String(t.to_user ?? t.to_user_id ?? '').slice(0, 8)}...</TableCell>
+                      <TableCell className="max-w-xs truncate">{t.remarks ?? t.description ?? '-'}</TableCell>
                       <TableCell className="text-sm">{formatDate(t.created_at)}</TableCell>
                     </TableRow>
                   ))}

@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth, UserRole } from "@/contexts/AuthContext";
-import { getDefaultPanelForRole } from "@/components/guards/RoleGuard";
-import {
-  Menu,
-  X,
-  Wallet,
-  Bell,
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  Menu, 
+  X, 
+  Wallet, 
+  Bell, 
+  LayoutDashboard,
+  LogOut,
   ChevronDown,
   Gamepad2,
-  LogOut,
-  LayoutDashboard,
+  Trophy,
+  Gift,
+  Headphones
 } from "lucide-react";
 
 const navLinks = [
@@ -27,13 +29,10 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuth();
-  const dashboardPath = user?.role 
-    ? getDefaultPanelForRole(user.role as UserRole) 
-    : '/dashboard';
+  const { isAuthenticated, getDashboardRoute, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setMobileMenuOpen(false);
     navigate("/");
   };
@@ -69,36 +68,34 @@ export function Header() {
 
           {/* Right Side Actions */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="glass" size="sm" className="gap-2">
-              <Wallet className="w-4 h-4" />
-              <span className="font-mono">
-                ₹{isAuthenticated && user?.wallet_balance != null
-                  ? Number(user.wallet_balance).toLocaleString()
-                  : "0.00"}
-              </span>
-              <ChevronDown className="w-3 h-3" />
-            </Button>
-
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-neon-red rounded-full" />
-            </Button>
-
             {isAuthenticated ? (
               <>
-                <Link to={dashboardPath}>
-                  <Button variant="outline" size="sm" className="gap-2">
+                <Link to={getDashboardRoute()}>
+                  <Button variant="glass" size="sm" className="gap-2">
                     <LayoutDashboard className="w-4 h-4" />
                     Dashboard
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm" className="gap-2" onClick={handleLogout}>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-neon-red rounded-full" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
                   <LogOut className="w-4 h-4" />
                   Logout
                 </Button>
               </>
             ) : (
               <>
+                <Button variant="glass" size="sm" className="gap-2">
+                  <Wallet className="w-4 h-4" />
+                  <span className="font-mono">₹0.00</span>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-neon-red rounded-full" />
+                </Button>
                 <Link to="/login">
                   <Button variant="outline" size="sm">
                     Login
@@ -164,13 +161,13 @@ export function Header() {
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
               {isAuthenticated ? (
                 <>
-                  <Link to={dashboardPath} onClick={() => setMobileMenuOpen(false)}>
+                  <Link to={getDashboardRoute()} onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full gap-2">
                       <LayoutDashboard className="w-4 h-4" />
                       Dashboard
                     </Button>
                   </Link>
-                  <Button variant="ghost" className="w-full gap-2" onClick={handleLogout}>
+                  <Button variant="outline" className="w-full gap-2" onClick={handleLogout}>
                     <LogOut className="w-4 h-4" />
                     Logout
                   </Button>

@@ -1,71 +1,66 @@
-import { useQuery } from "@tanstack/react-query";
-import { Spade, Dices, Trophy, Video, Gamepad2, Target, Rocket, Ticket, Grid3X3 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Dices,
+  Trophy,
+  Video,
+  Gamepad2,
+  Rocket,
+} from "lucide-react";
 import { CategoryCard } from "@/components/games/CategoryCard";
-import { Skeleton } from "@/components/ui/skeleton";
-import apiClient, { mapCategory } from "@/lib/api";
+import apiClient from "@/lib/api";
+import { SLUG_TO_LABEL } from "@/lib/gameUtils";
+import type { LucideIcon } from "lucide-react";
 
-const slugToIcon: Record<string, LucideIcon> = {
-  cards: Spade,
-  casino: Dices,
-  sports: Trophy,
-  "live-casino": Video,
-  live: Video,
-  casual: Gamepad2,
-  fantasy: Target,
+const SLUG_ICON: Record<string, LucideIcon> = {
   crash: Rocket,
-  lottery: Ticket,
+  casino: Dices,
+  liveCasino: Video,
+  sports: Trophy,
+  casual: Gamepad2,
 };
 
-const slugToColor = (slug: string): "cyan" | "purple" | "gold" | "green" | "red" | "pink" => {
-  const map: Record<string, "cyan" | "purple" | "gold" | "green" | "red" | "pink"> = {
-    cards: "cyan",
-    casino: "purple",
-    sports: "green",
-    "live-casino": "red",
-    live: "red",
-    casual: "gold",
-    fantasy: "pink",
-    crash: "cyan",
-    lottery: "gold",
-  };
-  return map[slug] ?? "cyan";
+const SLUG_COLOR: Record<string, "cyan" | "purple" | "gold" | "green" | "red" | "pink"> = {
+  crash: "cyan",
+  casino: "purple",
+  liveCasino: "red",
+  sports: "green",
+  casual: "gold",
 };
+
+function slugToHref(slug: string): string {
+  if (slug === "sports") return "/sports";
+  return `/games/${slug}`;
+}
 
 export function GameCategories() {
-  const { data: categoriesRaw = [], isLoading } = useQuery({
-    queryKey: ["gameCategories"],
-    queryFn: () => apiClient.getGameCategories(),
-  });
+  const [categories, setCategories] = useState<{ name: string; icon: LucideIcon; href: string; gameCount: number; color: "cyan" | "purple" | "gold" | "green" | "red" | "pink" }[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const categories = (categoriesRaw as any[]).map((c) => {
-    const mapped = mapCategory(c);
-    return {
-      ...mapped,
-      icon: slugToIcon[mapped.slug] ?? Grid3X3,
-      color: slugToColor(mapped.slug),
-    };
-  });
-
-  if (isLoading) {
-    return (
-      <section className="py-16 relative">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <Skeleton className="h-9 w-64 mx-auto mb-3" />
-            <Skeleton className="h-4 w-96 mx-auto" />
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 rounded-2xl" />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (categories.length === 0) return null;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiClient.getPublicCategories();
+        if (cancelled) return;
+        const results = data?.results ?? [];
+        const mapped = results
+          .filter((r: { slug?: string }) => r.slug && SLUG_ICON[r.slug])
+          .map((r: { slug: string; label?: string; count?: number }) => ({
+            name: r.label ?? SLUG_TO_LABEL[r.slug] ?? r.slug,
+            icon: SLUG_ICON[r.slug],
+            href: slugToHref(r.slug),
+            gameCount: Number(r.count) || 0,
+            color: SLUG_COLOR[r.slug] ?? "purple",
+          }));
+        setCategories(mapped);
+      } catch {
+        if (!cancelled) setCategories([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <section className="py-16 relative">
@@ -78,11 +73,20 @@ export function GameCategories() {
             From classic card games to thrilling live casino experiences. Find your perfect game.
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {categories.map((category) => (
-            <CategoryCard key={category.id} {...category} />
-          ))}
-        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-2xl h-40 bg-muted/50 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {categories.map((category) => (
+              <CategoryCard key={category.name} {...category} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

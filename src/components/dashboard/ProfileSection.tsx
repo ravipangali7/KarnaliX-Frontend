@@ -1,16 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useAuth } from "@/contexts/AuthContext";
-import apiClient from "@/lib/api";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   User,
   Mail,
@@ -24,9 +22,10 @@ import {
   AlertCircle,
   FileText,
   Upload,
-  Loader2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
+import apiClient from "@/lib/api";
 
 interface UserProfile {
   firstName: string;
@@ -41,100 +40,79 @@ interface UserProfile {
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isKycVerified: boolean;
-  kycRejectReason: string;
+  isKycPending?: boolean;
 }
 
-interface KYCStatus {
-  is_verified: boolean;
-  kyc_document: any;
-  reject_reason: string;
-  status: string;
-}
+const defaultProfile: UserProfile = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  dob: "",
+  address: "",
+  city: "Kathmandu",
+  country: "Nepal",
+  avatar: "",
+  isEmailVerified: false,
+  isPhoneVerified: false,
+  isKycVerified: false,
+  isKycPending: false,
+};
+
+const KYC_DOCUMENT_TYPES = [
+  { value: "ID", label: "National ID" },
+  { value: "PASSPORT", label: "Passport" },
+  { value: "LICENSE", label: "Driving License" },
+] as const;
 
 export function ProfileSection() {
-  const { user, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [kycStatus, setKycStatus] = useState<KYCStatus | null>(null);
-  const [kycDialogOpen, setKycDialogOpen] = useState(false);
-  const [kycUploading, setKycUploading] = useState(false);
-  const [kycForm, setKycForm] = useState({
-    document_type: "passport",
-    document_number: "",
-    document_url: "",
-  });
-  const [profile, setProfile] = useState<UserProfile>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    dob: "",
-    address: "",
-    city: "",
-    country: "",
-    avatar: "",
-    isEmailVerified: false,
-    isPhoneVerified: false,
-    isKycVerified: false,
-    kycRejectReason: "",
-  });
+  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+  const [showKycForm, setShowKycForm] = useState(false);
+  const [kycSubmitting, setKycSubmitting] = useState(false);
+  const [kycDocumentType, setKycDocumentType] = useState<string>("ID");
+  const [kycDocumentNumber, setKycDocumentNumber] = useState("");
+  const [kycFrontFile, setKycFrontFile] = useState<File | null>(null);
+  const [kycBackFile, setKycBackFile] = useState<File | null>(null);
+  const kycFrontInputRef = useRef<HTMLInputElement>(null);
+  const kycBackInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    let cancelled = false;
+    (async () => {
       try {
-        // Fetch KYC status
-        const kycData = await apiClient.getKYCStatus();
-        setKycStatus(kycData);
-
-        // Parse user data from context
-        if (user) {
-          const nameParts = (user.full_name || user.username || '').split(' ');
-          setProfile({
-            firstName: nameParts[0] || '',
-            lastName: nameParts.slice(1).join(' ') || '',
-            email: user.email || '',
-            phone: '',  // Will need to be fetched from user details
-            dob: '',
-            address: '',
-            city: '',
-            country: '',
-            avatar: '',
-            isEmailVerified: true, // Assume verified if logged in
-            isPhoneVerified: false,
-            isKycVerified: kycData.is_verified,
-            kycRejectReason: kycData.reject_reason || '',
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch profile data:', error);
+        const data = await apiClient.getUserProfile();
+        if (cancelled) return;
+        const name = (data.username || "").trim();
+        const parts = name.split(/\s+/);
+        setProfile((prev) => ({
+          ...prev,
+          firstName: parts[0] || "",
+          lastName: parts.slice(1).join(" ") || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          isKycVerified: Boolean(data.is_kyc_verified),
+          isKycPending: Boolean(data.is_kyc_pending),
+        }));
+      } catch {
+        if (!cancelled) setProfile(defaultProfile);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    };
-
-    fetchData();
-  }, [user]);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSave = async () => {
-    if (!user) return;
-    
     setSaving(true);
     try {
-      await apiClient.updateUser(user.id, {
-        name: `${profile.firstName} ${profile.lastName}`.trim(),
-        phone: profile.phone,
-        address: profile.address,
-        city: profile.city,
-        country: profile.country,
-      });
-      
-      await refreshUser();
+      await apiClient.updateUserProfile({ email: profile.email, phone: profile.phone });
       setIsEditing(false);
       toast.success("Profile updated successfully!");
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-      toast.error("Failed to update profile. Please try again.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -144,51 +122,65 @@ export function ProfileSection() {
     toast.info("Avatar upload feature coming soon!");
   };
 
-  const handleKYCUpload = () => {
-    setKycDialogOpen(true);
+  const refetchProfile = async () => {
+    try {
+      const data = await apiClient.getUserProfile();
+      const name = (data.username || "").trim();
+      const parts = name.split(/\s+/);
+      setProfile((prev) => ({
+        ...prev,
+        firstName: parts[0] || "",
+        lastName: parts.slice(1).join(" ") || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        isKycVerified: Boolean(data.is_kyc_verified),
+        isKycPending: Boolean(data.is_kyc_pending),
+      }));
+    } catch {
+      // keep current state
+    }
   };
 
-  const submitKYCUpload = async () => {
-    if (!kycForm.document_type || !kycForm.document_number) {
-      toast.error("Please fill in all required fields");
+  const handleKycSubmit = async () => {
+    if (!kycDocumentNumber.trim()) {
+      toast.error("Please enter your document number.");
       return;
     }
-
+    if (!kycFrontFile) {
+      toast.error("Please upload the front of your document.");
+      return;
+    }
+    setKycSubmitting(true);
     try {
-      setKycUploading(true);
-      await apiClient.uploadKYC({
-        document_type: kycForm.document_type,
-        document_number: kycForm.document_number,
-        document_url: kycForm.document_url || `${kycForm.document_type}_${Date.now()}`,
-      });
-      toast.success("KYC documents submitted successfully! Verification pending.");
-      setKycDialogOpen(false);
-      setKycForm({ document_type: "passport", document_number: "", document_url: "" });
-      
-      // Refresh KYC status
-      const kycData = await apiClient.getKYCStatus();
-      setKycStatus(kycData);
-      setProfile(prev => ({ ...prev, isKycVerified: kycData.is_verified }));
-    } catch (error: any) {
-      toast.error(error.message || "Failed to submit KYC documents");
+      const formData = new FormData();
+      formData.append("document_type", kycDocumentType);
+      formData.append("document_number", kycDocumentNumber.trim());
+      formData.append("document_front", kycFrontFile);
+      if (kycBackFile) formData.append("document_back", kycBackFile);
+      await apiClient.submitUserKyc(formData);
+      toast.success("KYC documents submitted. We will review them shortly.");
+      setShowKycForm(false);
+      setKycDocumentNumber("");
+      setKycFrontFile(null);
+      setKycBackFile(null);
+      if (kycFrontInputRef.current) kycFrontInputRef.current.value = "";
+      if (kycBackInputRef.current) kycBackInputRef.current.value = "";
+      await refetchProfile();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to submit KYC");
     } finally {
-      setKycUploading(false);
+      setKycSubmitting(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="text-muted-foreground p-4">Loading profile...</div>;
   }
 
-  const initials = `${profile.firstName[0] || ''}${profile.lastName[0] || ''}`.toUpperCase() || 'U';
+  const initials = (profile.firstName[0] || "") + (profile.lastName[0] || "") || (profile.email[0] || "?").toUpperCase();
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Profile Header */}
       <div className="glass rounded-xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           <div className="relative">
@@ -229,21 +221,13 @@ export function ProfileSection() {
           <Button
             variant={isEditing ? "neon" : "outline"}
             onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            className="gap-2"
             disabled={saving}
+            className="gap-2"
           >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Saving...
-              </>
-            ) : isEditing ? (
-              <>
-                <Save className="w-4 h-4" /> Save Changes
-              </>
+            {isEditing ? (
+              <><Save className="w-4 h-4" /> {saving ? "Saving..." : "Save Changes"}</>
             ) : (
-              <>
-                <User className="w-4 h-4" /> Edit Profile
-              </>
+              <><User className="w-4 h-4" /> Edit Profile</>
             )}
           </Button>
         </div>
@@ -284,19 +268,14 @@ export function ProfileSection() {
               type="email"
               value={profile.email}
               onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              disabled={true} // Email should not be editable
+              disabled={!isEditing}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone" className="flex items-center gap-2">
               <Phone className="w-4 h-4" /> Phone
-              {!profile.isPhoneVerified && isEditing && (
-                <button 
-                  onClick={() => toast.info("Phone verification will be sent via SMS after saving.")}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Verify
-                </button>
+              {!profile.isPhoneVerified && (
+                <button className="text-xs text-primary hover:underline">Verify</button>
               )}
             </Label>
             <Input
@@ -304,7 +283,6 @@ export function ProfileSection() {
               value={profile.phone}
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
               disabled={!isEditing}
-              placeholder="+91 98765 43210"
             />
           </div>
           <div className="space-y-2">
@@ -336,7 +314,6 @@ export function ProfileSection() {
               value={profile.address}
               onChange={(e) => setProfile({ ...profile, address: e.target.value })}
               disabled={!isEditing}
-              placeholder="Enter your street address"
             />
           </div>
           <div className="space-y-2">
@@ -346,7 +323,6 @@ export function ProfileSection() {
               value={profile.city}
               onChange={(e) => setProfile({ ...profile, city: e.target.value })}
               disabled={!isEditing}
-              placeholder="Enter your city"
             />
           </div>
           <div className="space-y-2">
@@ -356,7 +332,6 @@ export function ProfileSection() {
               value={profile.country}
               onChange={(e) => setProfile({ ...profile, country: e.target.value })}
               disabled={!isEditing}
-              placeholder="Enter your country"
             />
           </div>
         </div>
@@ -376,29 +351,49 @@ export function ProfileSection() {
               <p className="text-sm text-muted-foreground">Your identity has been verified</p>
             </div>
           </div>
-        ) : profile.kycRejectReason ? (
+        ) : profile.isKycPending ? (
+          <div className="flex items-center gap-3 p-4 bg-accent/10 rounded-lg border border-accent/30">
+            <AlertCircle className="w-6 h-6 text-accent flex-shrink-0" />
+            <div>
+              <p className="font-medium">Pending Review</p>
+              <p className="text-sm text-muted-foreground">Your KYC documents are under review. We will notify you once verified.</p>
+            </div>
+          </div>
+        ) : showKycForm ? (
           <div className="space-y-4">
-            <div className="p-4 bg-neon-red/10 rounded-lg border border-neon-red/30">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-neon-red flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-neon-red">Verification Rejected</p>
-                  <p className="text-sm text-muted-foreground">
-                    {profile.kycRejectReason}
-                  </p>
+            <div className="p-4 bg-muted/30 rounded-lg border border-border space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="font-medium">Submit KYC Documents</p>
+                <Button variant="ghost" size="sm" onClick={() => { setShowKycForm(false); setKycFrontFile(null); setKycBackFile(null); }}><X className="w-4 h-4" /></Button>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Document Type</Label>
+                  <Select value={kycDocumentType} onValueChange={setKycDocumentType}>
+                    <SelectTrigger className="bg-background"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      {KYC_DOCUMENT_TYPES.map((t) => (<SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Document Number</Label>
+                  <Input value={kycDocumentNumber} onChange={(e) => setKycDocumentNumber(e.target.value)} placeholder="e.g. passport number" className="bg-background" />
                 </div>
               </div>
-            </div>
-            <Button onClick={handleKYCUpload} className="gap-2">
-              <Upload className="w-4 h-4" /> Re-submit Documents
-            </Button>
-          </div>
-        ) : kycStatus?.kyc_document && Object.keys(kycStatus.kyc_document).length > 0 ? (
-          <div className="flex items-center gap-3 p-4 bg-accent/10 rounded-lg border border-accent/30">
-            <AlertCircle className="w-6 h-6 text-accent" />
-            <div>
-              <p className="font-medium">Verification Pending</p>
-              <p className="text-sm text-muted-foreground">Your documents are being reviewed. This usually takes 1-2 business days.</p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Front of Document (required)</Label>
+                  <input ref={kycFrontInputRef} type="file" accept="image/*" className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-primary-foreground" onChange={(e) => setKycFrontFile(e.target.files?.[0] ?? null)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Back of Document (optional)</Label>
+                  <input ref={kycBackInputRef} type="file" accept="image/*" className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-primary-foreground" onChange={(e) => setKycBackFile(e.target.files?.[0] ?? null)} />
+                </div>
+              </div>
+              <Button onClick={handleKycSubmit} disabled={kycSubmitting} className="gap-2">
+                {kycSubmitting ? "Submitting…" : "Submit KYC"}
+              </Button>
             </div>
           </div>
         ) : (
@@ -423,7 +418,7 @@ export function ProfileSection() {
                     <p className="text-xs text-muted-foreground">Passport, License, or National ID</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="w-full gap-2" onClick={handleKYCUpload}>
+                <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => setShowKycForm(true)}>
                   <Upload className="w-4 h-4" /> Upload Document
                 </Button>
               </div>
@@ -432,82 +427,17 @@ export function ProfileSection() {
                   <Camera className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="font-medium text-sm">Selfie with ID</p>
-                    <p className="text-xs text-muted-foreground">Hold your ID next to your face</p>
+                    <p className="text-xs text-muted-foreground">Upload front/back; selfie can be added later if required.</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="w-full gap-2" onClick={handleKYCUpload}>
-                  <Camera className="w-4 h-4" /> Take Photo
+                <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => setShowKycForm(true)}>
+                  <Camera className="w-4 h-4" /> Take Photo / Upload
                 </Button>
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* KYC Upload Dialog */}
-      <Dialog open={kycDialogOpen} onOpenChange={setKycDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5" /> KYC Verification
-            </DialogTitle>
-            <DialogDescription>
-              Submit your identity documents for verification.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="document_type">Document Type</Label>
-              <select
-                id="document_type"
-                value={kycForm.document_type}
-                onChange={(e) => setKycForm({ ...kycForm, document_type: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border border-border"
-              >
-                <option value="passport">Passport</option>
-                <option value="drivers_license">Driver's License</option>
-                <option value="national_id">National ID Card</option>
-                <option value="voter_id">Voter ID</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="document_number">Document Number</Label>
-              <Input
-                id="document_number"
-                placeholder="Enter your document number"
-                value={kycForm.document_number}
-                onChange={(e) => setKycForm({ ...kycForm, document_number: e.target.value })}
-              />
-            </div>
-            <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-              <p className="font-medium mb-2">Requirements:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>Document must be valid and not expired</li>
-                <li>All information must be clearly visible</li>
-                <li>Document must show your full name and photo</li>
-              </ul>
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={() => setKycDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={submitKYCUpload} disabled={kycUploading}>
-              {kycUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Submit for Verification
-                </>
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

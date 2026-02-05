@@ -1,6 +1,20 @@
 import { MessageCircle } from "lucide-react";
+import { useContact } from "@/hooks/useContact";
 
-const WHATSAPP_NUMBER = "918000825980";
+const DEFAULT_NUMBER = "918000825980";
+
+export function buildWhatsAppLinks(whatsappNumber: string) {
+  const num = whatsappNumber || DEFAULT_NUMBER;
+  return {
+    login: `https://wa.me/${num}?text=${encodeURIComponent("Hi! I need help logging into my KarnaliX account.")}`,
+    deposit: `https://wa.me/${num}?text=${encodeURIComponent("Hi! I want to deposit funds to my KarnaliX account.")}`,
+    withdraw: `https://wa.me/${num}?text=${encodeURIComponent("Hi! I want to withdraw funds from my KarnaliX account.")}`,
+    play: `https://wa.me/${num}?text=${encodeURIComponent("Hi! I want to play games on KarnaliX.")}`,
+    support: `https://wa.me/${num}?text=${encodeURIComponent("Hi! I need support with my KarnaliX account.")}`,
+  };
+}
+
+export const whatsAppLinks = buildWhatsAppLinks(DEFAULT_NUMBER);
 
 interface WhatsAppButtonProps {
   message?: string;
@@ -11,8 +25,10 @@ export function WhatsAppButton({
   message = "Hi KarnaliX! I need help with...", 
   className = "" 
 }: WhatsAppButtonProps) {
+  const contact = useContact();
+  const links = buildWhatsAppLinks(contact.whatsapp_number);
   const handleClick = () => {
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    const url = message ? `https://wa.me/${contact.whatsapp_number}?text=${encodeURIComponent(message)}` : links.support;
     window.open(url, "_blank");
   };
 
@@ -27,12 +43,3 @@ export function WhatsAppButton({
     </button>
   );
 }
-
-// Quick action links for WhatsApp
-export const whatsAppLinks = {
-  login: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I need help logging into my KarnaliX account.")}`,
-  deposit: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I want to deposit funds to my KarnaliX account.")}`,
-  withdraw: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I want to withdraw funds from my KarnaliX account.")}`,
-  play: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I want to play games on KarnaliX.")}`,
-  support: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I need support with my KarnaliX account.")}`,
-};

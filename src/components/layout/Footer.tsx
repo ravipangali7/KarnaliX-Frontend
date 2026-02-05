@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { Gamepad2, Mail, Phone, MessageCircle, Shield, Award, Clock } from "lucide-react";
+import { useContact } from "@/hooks/useContact";
+import { buildWhatsAppLinks } from "@/components/layout/WhatsAppButton";
 
 const footerLinks = {
   games: [
@@ -32,9 +34,12 @@ const footerLinks = {
   ],
 };
 
-const paymentMethods = ["eSewa", "Khalti", "Bank Transfer", "UPI", "Cards"];
+const defaultPaymentMethods = ["eSewa", "Khalti", "Bank Transfer", "UPI", "Cards"];
 
 export function Footer() {
+  const contact = useContact();
+  const whatsAppHref = buildWhatsAppLinks(contact.whatsapp_number).support;
+  const paymentMethods = (contact.payment_methods?.length ? contact.payment_methods : defaultPaymentMethods) as string[];
   return (
     <footer className="bg-card border-t border-border">
       {/* Main Footer */}
@@ -52,15 +57,15 @@ export function Footer() {
               Nepal's premier online gaming and betting platform. Play responsibly, win big!
             </p>
             <div className="flex flex-col gap-2 text-sm">
-              <a href="tel:+918000825980" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+              <a href={`tel:${contact.phone?.replace(/\s/g, "") || "+918000825980"}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                 <Phone className="w-4 h-4" />
-                +91 80008 25980
+                {contact.phone || "+91 80008 25980"}
               </a>
-              <a href="mailto:support@karnalix.com" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+              <a href={`mailto:${contact.email || "support@karnalix.com"}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="w-4 h-4" />
-                support@karnalix.com
+                {contact.email || "support@karnalix.com"}
               </a>
-              <a href="#" className="flex items-center gap-2 text-muted-foreground hover:text-neon-green transition-colors">
+              <a href={whatsAppHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-muted-foreground hover:text-neon-green transition-colors">
                 <MessageCircle className="w-4 h-4" />
                 WhatsApp Support
               </a>

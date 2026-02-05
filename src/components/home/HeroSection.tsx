@@ -1,49 +1,21 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Play, Trophy, Gift, ArrowRight } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import apiClient from "@/lib/api";
 
-interface PlatformStats {
-  activePlayers: string;
-  totalGames: string;
-  totalWinnings: string;
-  instantPayouts: string;
-}
-
-const defaultStats: PlatformStats = {
-  activePlayers: "50K+",
-  totalGames: "500+",
-  totalWinnings: "₹10Cr+",
-  instantPayouts: "24/7",
+const DEFAULT_HERO = {
+  badge: "Nepal's #1 Gaming Platform",
+  title: "Play. Win. Repeat.",
+  subtitle: "Experience the thrill of 500+ games with live dealers, instant payouts, and unbeatable odds. Join thousands of winners today!",
+  ctaText: "Start Playing",
+  ctaHref: "/signup",
 };
 
-export function HeroSection() {
-  const [stats, setStats] = useState<PlatformStats>(defaultStats);
-  const [loading, setLoading] = useState(true);
+interface HeroSectionProps {
+  hero?: { title?: string; subtitle?: string; ctaText?: string; ctaHref?: string; badge?: string } | null;
+}
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      const data = await apiClient.getPlatformStats();
-      setStats({
-        activePlayers: data.active_players || defaultStats.activePlayers,
-        totalGames: data.total_games || defaultStats.totalGames,
-        totalWinnings: data.total_winnings || defaultStats.totalWinnings,
-        instantPayouts: data.instant_payouts || defaultStats.instantPayouts,
-      });
-    } catch (error) {
-      console.error("Failed to fetch platform stats:", error);
-      // Keep default stats on error
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export function HeroSection({ hero }: HeroSectionProps) {
+  const h = hero && (hero.title || hero.subtitle) ? { ...DEFAULT_HERO, ...hero } : DEFAULT_HERO;
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-32 pb-16">
       {/* Background Effects */}
@@ -60,24 +32,28 @@ export function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-primary/30 mb-8 animate-fade-in">
             <span className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
-            <span className="text-sm font-medium">Nepal's #1 Gaming Platform</span>
+            <span className="text-sm font-medium">🎮 {h.badge}</span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-fade-in-up">
-            Play. Win. <span className="gradient-text">Repeat.</span>
+            {h.title?.includes("Repeat") ? (
+              <>{(h.title || "").replace("Repeat.", "").trim()} <span className="gradient-text">Repeat.</span></>
+            ) : (
+              h.title ?? <>Play. Win. <span className="gradient-text">Repeat.</span></>
+            )}
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            Experience the thrill of {stats.totalGames} games with live dealers, instant payouts, and unbeatable odds. Join thousands of winners today!
+            {h.subtitle}
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <Link to="/signup">
+            <Link to={h.ctaHref ?? "/signup"}>
               <Button variant="neon" size="xl" className="gap-2 w-full sm:w-auto">
                 <Play className="w-5 h-5" />
-                Start Playing
+                {h.ctaText}
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
@@ -90,21 +66,10 @@ export function HeroSection() {
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-            {loading ? (
-              <>
-                <Skeleton className="h-24 rounded-xl" />
-                <Skeleton className="h-24 rounded-xl" />
-                <Skeleton className="h-24 rounded-xl" />
-                <Skeleton className="h-24 rounded-xl" />
-              </>
-            ) : (
-              <>
-                <StatCard label="Active Players" value={stats.activePlayers} icon="👥" />
-                <StatCard label="Games Available" value={stats.totalGames} icon="🎮" />
-                <StatCard label="Total Winnings" value={stats.totalWinnings} icon="💰" />
-                <StatCard label="Instant Payouts" value={stats.instantPayouts} icon="⚡" />
-              </>
-            )}
+            <StatCard label="Active Players" value="50K+" icon="👥" />
+            <StatCard label="Games Available" value="500+" icon="🎮" />
+            <StatCard label="Total Winnings" value="₹10Cr+" icon="💰" />
+            <StatCard label="Instant Payouts" value="24/7" icon="⚡" />
           </div>
         </div>
 

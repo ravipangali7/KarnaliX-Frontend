@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -7,159 +7,109 @@ import { WhatsAppButton, whatsAppLinks } from "@/components/layout/WhatsAppButto
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Wallet, 
+  CreditCard, 
+  Smartphone, 
+  Building2, 
+  QrCode,
   Shield,
   Clock,
   Gift,
   ChevronRight,
+  Plus,
   Check,
   AlertCircle,
   MessageCircle,
   Zap,
   Upload,
+  Image,
   FileText,
   X,
-  Loader2
+  LogIn
 } from "lucide-react";
-import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useContact } from "@/hooks/useContact";
 import apiClient from "@/lib/api";
+import { toast } from "sonner";
 
-interface PaymentMethod {
-  id: number;
-  name: string;
-  icon: string;
-  minLimit: number;
-  maxLimit: number;
-  hasQr: boolean;
-  isActive: boolean;
-}
-
-interface Transaction {
-  id: number;
-  type: string;
-  amount: number;
-  method: string;
-  date: string;
-  status: string;
-}
+const defaultPaymentMethods = [
+  { id: "esewa", name: "eSewa", icon: "💳", popular: true, minLimit: 500, maxLimit: 25000, hasQR: true },
+  { id: "khalti", name: "Khalti", icon: "📱", popular: true, minLimit: 100, maxLimit: 50000, hasQR: true },
+  { id: "bank", name: "Bank Transfer", icon: "🏦", minLimit: 1000, maxLimit: 100000, hasQR: false },
+];
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 25000];
 
-// Fallback payment methods
-const fallbackMethods: PaymentMethod[] = [
-  { id: 1, name: "eSewa", icon: "💳", minLimit: 500, maxLimit: 25000, hasQr: true, isActive: true },
-  { id: 2, name: "Khalti", icon: "📱", minLimit: 100, maxLimit: 50000, hasQr: true, isActive: true },
-  { id: 3, name: "Bank QR Code", icon: "📷", minLimit: 500, maxLimit: 100000, hasQr: true, isActive: true },
-  { id: 4, name: "Bank Transfer", icon: "🏦", minLimit: 1000, maxLimit: 100000, hasQr: false, isActive: true },
-  { id: 5, name: "UPI", icon: "📲", minLimit: 100, maxLimit: 100000, hasQr: false, isActive: true },
-];
-
-interface BankDetails {
-  bankName: string;
-  accountName: string;
-  accountNumber: string;
-}
-
 export default function Deposit() {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
-  const [loadingMethods, setLoadingMethods] = useState(true);
-  const [loadingTransactions, setLoadingTransactions] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [bankDetails, setBankDetails] = useState<BankDetails>({
-    bankName: 'Nepal Investment Bank',
-    accountName: 'KarnaliX Gaming Pvt. Ltd.',
-    accountNumber: '01234567890123',
-  });
-
-  const [selectedMethodId, setSelectedMethodId] = useState<number | null>(null);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const contact = useContact();
+  const navigate = useNavigate();
+  const [paymentModes, setPaymentModes] = useState<{ id: string; name: string; icon: string; minLimit: number; maxLimit: number; hasQR: boolean }[]>(defaultPaymentMethods);
+  const [recentDeposits, setRecentDeposits] = useState<{ type: string; amount: number; method: string; date: string; status: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedMethod, setSelectedMethod] = useState("");
   const [amount, setAmount] = useState(1000);
+  const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null);
   const [transactionCode, setTransactionCode] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const currentMethod = paymentMethods.find(m => m.id === selectedMethodId);
-
   useEffect(() => {
-    fetchPaymentMethods();
-    fetchRecentTransactions();
-    fetchBankDetails();
-  }, []);
-
-  const fetchBankDetails = async () => {
-    try {
-      const config = await apiClient.getSystemConfig('payment');
-      if (config && Array.isArray(config)) {
-        const bankName = config.find((c: any) => c.key === 'bank_name')?.value;
-        const accountName = config.find((c: any) => c.key === 'bank_account_name')?.value;
-        const accountNumber = config.find((c: any) => c.key === 'bank_account_number')?.value;
-        
-        setBankDetails({
-          bankName: bankName || 'Nepal Investment Bank',
-          accountName: accountName || 'KarnaliX Gaming Pvt. Ltd.',
-          accountNumber: accountNumber || '01234567890123',
-        });
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const [dRes, mRes] = await Promise.all([
+          apiClient.getUserDeposits(),
+          apiClient.getUserDepositPaymentModes(),
+        ]);
+        if (cancelled) return;
+        const modes = mRes?.results ?? mRes ?? [];
+        const list = Array.isArray(modes) ? modes : [];
+        setPaymentModes(
+          list.length > 0
+            ? list.map((m: any) => ({
+                id: String(m.id),
+                name: m.wallet_holder_name || m.name || String(m.id),
+                icon: "💳",
+                minLimit: 100,
+                maxLimit: 100000,
+                hasQR: false,
+              }))
+            : defaultPaymentMethods
+        );
+        const deposits = dRes?.results ?? dRes ?? [];
+        const depList = Array.isArray(deposits) ? deposits : [];
+        setRecentDeposits(
+          depList.slice(0, 6).map((d: any) => ({
+            type: "deposit",
+            amount: Number(d.amount) || 0,
+            method: d.payment_mode?.name || "—",
+            date: d.created_at ? new Date(d.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—",
+            status: (d.status || "").toLowerCase() === "approved" ? "success" : "pending",
+          }))
+        );
+      } catch {
+        if (!cancelled) setRecentDeposits([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (error) {
-      // Use default bank details
-      console.error("Failed to fetch bank details:", error);
-    }
-  };
+    })();
+    return () => { cancelled = true; };
+  }, [isAuthenticated]);
 
-  const fetchPaymentMethods = async () => {
-    try {
-      const data = await apiClient.getPaymentMethods();
-      const mapped = data.map((m: any) => ({
-        id: m.id,
-        name: m.name,
-        icon: m.icon || "💳",
-        minLimit: Number(m.min_limit) || 100,
-        maxLimit: Number(m.max_limit) || 100000,
-        hasQr: m.has_qr ?? true,
-        isActive: m.is_active ?? true,
-      }));
-      setPaymentMethods(mapped.length > 0 ? mapped.filter((m: PaymentMethod) => m.isActive) : fallbackMethods);
-    } catch (error) {
-      console.error("Failed to fetch payment methods:", error);
-      setPaymentMethods(fallbackMethods);
-    } finally {
-      setLoadingMethods(false);
-    }
-  };
-
-  const fetchRecentTransactions = async () => {
-    try {
-      const data = await apiClient.getTransactions({ limit: 5 });
-      const mapped = (data || []).slice(0, 5).map((t: any) => {
-        const createdAt = new Date(t.created_at);
-        const now = new Date();
-        const diffDays = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-        let dateStr = "";
-        if (diffDays === 0) dateStr = "Today";
-        else if (diffDays === 1) dateStr = "Yesterday";
-        else if (diffDays < 7) dateStr = `${diffDays} days ago`;
-        else dateStr = createdAt.toLocaleDateString();
-
-        return {
-          id: t.id,
-          type: t.type || "deposit",
-          amount: Number(t.amount) || 0,
-          method: t.method || "Unknown",
-          date: dateStr,
-          status: t.status || "completed",
-        };
-      });
-      setRecentTransactions(mapped);
-    } catch (error) {
-      console.error("Failed to fetch transactions:", error);
-      setRecentTransactions([]);
-    } finally {
-      setLoadingTransactions(false);
-    }
-  };
+  const paymentMethods = paymentModes;
+  const recentTransactions = recentDeposits.length > 0 ? recentDeposits : [
+    { type: "deposit", amount: 5000, method: "eSewa", date: "Today, 2:30 PM", status: "success" },
+    { type: "deposit", amount: 10000, method: "Bank", date: "3 days ago", status: "success" },
+  ];
+  const currentMethod = paymentMethods.find(m => m.id === selectedMethod);
 
   const handleAmountChange = (value: number) => {
     const min = currentMethod?.minLimit || 100;
@@ -170,17 +120,20 @@ export default function Deposit() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
       const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
       if (!validTypes.includes(file.type)) {
-        toast.error('Please upload PNG, JPG, or PDF file only');
+        alert('Please upload PNG, JPG, or PDF file only');
         return;
       }
+      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB');
+        alert('File size must be less than 5MB');
         return;
       }
       setUploadedFile(file);
       
+      // Create preview for images
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -201,37 +154,85 @@ export default function Deposit() {
     }
   };
 
-  const handleDeposit = async () => {
-    if (!selectedMethodId) {
+  const bonus = amount >= 500 ? Math.floor(amount * 0.1) : 0;
+
+  const handleSubmitDeposit = async () => {
+    if (!selectedMethod) {
       toast.error("Please select a payment method");
       return;
     }
-    if (!transactionCode) {
-      toast.error("Please enter the transaction code");
-      return;
-    }
-
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      await apiClient.createDeposit({
-        payment_method: selectedMethodId,
-        amount: amount,
-        transaction_code: transactionCode,
+      await apiClient.createUserDeposit({
+        amount: Number(amount),
+        payment_mode_id: selectedMethod || undefined,
+        remarks: transactionCode || undefined,
       });
-      toast.success("Deposit request submitted! We'll verify and credit your account shortly.");
-      // Reset form
+      toast.success("Deposit request submitted. We'll process it shortly.");
+      setAmount(1000);
+      setSelectedMethod("");
       setTransactionCode("");
       setUploadedFile(null);
       setUploadedPreview(null);
-      fetchRecentTransactions();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to submit deposit request");
+      const [dRes, mRes] = await Promise.all([
+        apiClient.getUserDeposits(),
+        apiClient.getUserDepositPaymentModes(),
+      ]);
+      const modes = mRes?.results ?? mRes ?? [];
+      const list = Array.isArray(modes) ? modes : [];
+      setPaymentModes(
+        list.length > 0
+          ? list.map((m: any) => ({
+              id: String(m.id),
+              name: m.wallet_holder_name || m.name || String(m.id),
+              icon: "💳",
+              minLimit: 100,
+              maxLimit: 100000,
+              hasQR: false,
+            }))
+          : defaultPaymentMethods
+      );
+      const deposits = dRes?.results ?? dRes ?? [];
+      const depList = Array.isArray(deposits) ? deposits : [];
+      setRecentDeposits(
+        depList.slice(0, 6).map((d: any) => ({
+          type: "deposit",
+          amount: Number(d.amount) || 0,
+          method: d.payment_mode?.name || "—",
+          date: d.created_at ? new Date(d.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—",
+          status: (d.status || "").toLowerCase() === "approved" ? "success" : "pending",
+        }))
+      );
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to submit deposit");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const bonus = amount >= 500 ? Math.floor(amount * 0.1) : 0;
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background pb-16 md:pb-0">
+        <Header />
+        <main className="pt-28 pb-20 md:pb-16">
+          <div className="container mx-auto px-4 max-w-4xl text-center">
+            <div className="glass rounded-xl p-8 max-w-md mx-auto">
+              <Wallet className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h1 className="text-2xl font-bold mb-2">Login to deposit</h1>
+              <p className="text-muted-foreground mb-6">Sign in to add funds to your account.</p>
+              <Button variant="neon" size="lg" className="gap-2" asChild>
+                <Link to="/login">
+                  <LogIn className="w-5 h-5" /> Sign in
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
@@ -252,7 +253,7 @@ export default function Deposit() {
                 <Gift className="w-8 h-8 text-neon-green" />
                 <div>
                   <p className="font-semibold">10% Deposit Bonus!</p>
-                  <p className="text-sm text-muted-foreground">Minimum deposit ₹500</p>
+                  <p className="text-sm text-muted-foreground">Minimum deposit ₹{contact.min_deposit}</p>
                 </div>
               </div>
               {bonus > 0 && (
@@ -300,12 +301,10 @@ export default function Deposit() {
                     ))}
                   </div>
 
-                  {currentMethod && (
-                    <div className="flex items-center justify-between text-sm pt-4 border-t border-border">
-                      <span className="text-muted-foreground">Min: ₹{currentMethod.minLimit.toLocaleString()}</span>
-                      <span className="text-muted-foreground">Max: ₹{currentMethod.maxLimit.toLocaleString()}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between text-sm pt-4 border-t border-border">
+                    <span className="text-muted-foreground">Min: ₹{currentMethod?.minLimit.toLocaleString()}</span>
+                    <span className="text-muted-foreground">Max: ₹{currentMethod?.maxLimit.toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
 
@@ -318,24 +317,20 @@ export default function Deposit() {
                   <h2 className="text-lg font-semibold">Select Payment Method</h2>
                 </div>
 
-                {loadingMethods ? (
-                  <Skeleton className="h-12 w-full rounded-xl" />
-                ) : (
-                  <select
-                    value={selectedMethodId || ""}
-                    onChange={(e) => setSelectedMethodId(e.target.value ? Number(e.target.value) : null)}
-                    className="w-full h-12 px-4 rounded-xl bg-muted border border-border text-base font-medium focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  >
-                    <option value="">-- Choose Payment Method --</option>
-                    {paymentMethods.map((method) => (
-                      <option key={method.id} value={method.id}>
-                        {method.icon} {method.name} (₹{method.minLimit.toLocaleString()}-₹{method.maxLimit.toLocaleString()})
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <select
+                  value={selectedMethod}
+                  onChange={(e) => setSelectedMethod(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl bg-muted border border-border text-base font-medium focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                >
+                  <option value="">-- Choose Payment Method --</option>
+                  {paymentMethods.map((method) => (
+                    <option key={method.id} value={method.id}>
+                      {method.icon} {method.name} (₹{method.minLimit.toLocaleString()}-₹{method.maxLimit.toLocaleString()})
+                    </option>
+                  ))}
+                </select>
 
-                {selectedMethodId && currentMethod && (
+                {selectedMethod && currentMethod && (
                   <div className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/30">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{currentMethod.icon}</span>
@@ -352,7 +347,7 @@ export default function Deposit() {
               </div>
 
               {/* Step 3: QR Code & Payment Details */}
-              {selectedMethodId && currentMethod?.hasQr && (
+              {selectedMethod && currentMethod?.hasQR && (
                 <div className="glass rounded-xl p-4 sm:p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-primary-foreground">
@@ -362,12 +357,14 @@ export default function Deposit() {
                   </div>
 
                   <div className="text-center">
+                    {/* Payment Limit Notice */}
                     <div className="mb-4 p-3 bg-accent/10 rounded-lg border border-accent/30">
                       <p className="text-sm font-medium text-accent">
                         {currentMethod.name} Limit: ₹{currentMethod.minLimit.toLocaleString()} - ₹{currentMethod.maxLimit.toLocaleString()}
                       </p>
                     </div>
                     
+                    {/* QR Code */}
                     <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto bg-white rounded-xl p-4 mb-4">
                       <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMSAyMSI+PHBhdGggZD0iTTEgMWg3djdIMXptMiAyaDN2M0gzem0xMi0yaDd2N2gtN3ptMiAyaDN2M2gtM3pNMSAxM2g3djdIMXptMiAyaDN2M0gzem0xMC0yaDJ2MmgtMnptMiAwaDJ2MmgtMnptMi0yaDJ2MmgtMnptMCAyaDJ2MmgtMnptMCAyaDJ2MmgtMnptLTQgMGgydjJoLTJ6bTIgMGgydjJoLTJ6bS00IDJoMnYyaC0yem0yIDBoMnYyaC0yem0yIDBoMnYyaC0yem0tMiAyaDJ2MmgtMnptMiAwaDJ2MmgtMnoiIGZpbGw9IiMwMDAiLz48L3N2Zz4=')] bg-contain bg-center bg-no-repeat" />
                     </div>
@@ -380,6 +377,7 @@ export default function Deposit() {
                     </div>
                   </div>
 
+                  {/* Transaction Code Input */}
                   <div className="border-t border-border pt-6 mb-6">
                     <div className="space-y-2">
                       <Label htmlFor="transactionCode" className="text-sm font-medium">
@@ -398,6 +396,7 @@ export default function Deposit() {
                     </div>
                   </div>
 
+                  {/* Payment Screenshot Upload */}
                   <div className="border-t border-border pt-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-8 h-8 rounded-full bg-neon-green/20 flex items-center justify-center text-sm font-bold text-neon-green">
@@ -469,7 +468,7 @@ export default function Deposit() {
                 </div>
               )}
 
-              {selectedMethodId && currentMethod && !currentMethod.hasQr && (
+              {selectedMethod === "bank" && (
                 <div className="glass rounded-xl p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-primary-foreground">
@@ -481,15 +480,15 @@ export default function Deposit() {
                   <div className="space-y-4">
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <p className="text-sm text-muted-foreground mb-1">Bank Name</p>
-                      <p className="font-medium">{bankDetails.bankName}</p>
+                      <p className="font-medium">Nepal Investment Bank</p>
                     </div>
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <p className="text-sm text-muted-foreground mb-1">Account Name</p>
-                      <p className="font-medium">{bankDetails.accountName}</p>
+                      <p className="font-medium">KarnaliX Gaming Pvt. Ltd.</p>
                     </div>
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <p className="text-sm text-muted-foreground mb-1">Account Number</p>
-                      <p className="font-medium font-mono">{bankDetails.accountNumber}</p>
+                      <p className="font-medium font-mono">01234567890123</p>
                     </div>
 
                     <div className="p-4 bg-accent/10 rounded-lg border border-accent/30">
@@ -500,40 +499,20 @@ export default function Deposit() {
                         </p>
                       </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="bankTxCode" className="text-sm font-medium">
-                        Transaction Reference
-                      </Label>
-                      <Input
-                        id="bankTxCode"
-                        placeholder="Enter bank transaction reference"
-                        value={transactionCode}
-                        onChange={(e) => setTransactionCode(e.target.value)}
-                        className="font-mono"
-                      />
-                    </div>
                   </div>
                 </div>
               )}
 
               {/* Proceed Button */}
-              <Button 
-                variant="neon" 
-                size="xl" 
+              <Button
+                variant="neon"
+                size="xl"
                 className="w-full gap-2"
-                onClick={handleDeposit}
-                disabled={submitting || !selectedMethodId}
+                disabled={submitting}
+                onClick={handleSubmitDeposit}
               >
-                {submitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    Deposit ₹{amount.toLocaleString()}
-                    {bonus > 0 && <span className="text-xs">+₹{bonus} bonus</span>}
-                    <ChevronRight className="w-5 h-5" />
-                  </>
-                )}
+                {submitting ? "Submitting…" : <>Deposit ₹{amount.toLocaleString()}{bonus > 0 && <span className="text-xs">+₹{bonus} bonus</span>}</>}
+                {!submitting && <ChevronRight className="w-5 h-5" />}
               </Button>
 
               {/* Instant Deposit via WhatsApp */}
@@ -594,37 +573,25 @@ export default function Deposit() {
               {/* Recent Transactions */}
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-4">Recent Transactions</h3>
-                {loadingTransactions ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                  </div>
-                ) : recentTransactions.length > 0 ? (
-                  <div className="space-y-3">
-                    {recentTransactions.slice(0, 3).map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between text-sm">
-                        <div>
-                          <p className="font-medium capitalize">{tx.type}</p>
-                          <p className="text-xs text-muted-foreground">{tx.method}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-mono ${tx.type === "withdrawal" ? "text-neon-red" : "text-neon-green"}`}>
-                            {tx.type === "withdrawal" ? "-" : "+"}₹{tx.amount.toLocaleString()}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{tx.date}</p>
-                        </div>
+                <div className="space-y-3">
+                  {recentTransactions.slice(0, 3).map((tx, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <div>
+                        <p className="font-medium capitalize">{tx.type}</p>
+                        <p className="text-xs text-muted-foreground">{tx.method}</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">No recent transactions</p>
-                )}
-                <Link to="/dashboard">
-                  <Button variant="ghost" size="sm" className="w-full mt-4">
-                    View All Transactions
-                  </Button>
-                </Link>
+                      <div className="text-right">
+                        <p className={`font-mono ${tx.type === "withdrawal" ? "text-neon-red" : "text-neon-green"}`}>
+                          {tx.type === "withdrawal" ? "-" : "+"}₹{tx.amount.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{tx.date}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="ghost" size="sm" className="w-full mt-4">
+                  View All Transactions
+                </Button>
               </div>
             </div>
           </div>

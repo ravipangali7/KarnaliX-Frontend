@@ -1,15 +1,28 @@
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Gift, Percent, Users, Trophy } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import apiClient, { mapBanner } from "@/lib/api";
+
+const GRADIENTS: Record<string, string> = {
+  welcome: "from-primary via-secondary to-primary",
+  referral: "from-neon-green via-emerald-500 to-neon-green",
+  tournament: "from-accent via-orange-500 to-accent",
+  cashback: "from-neon-pink via-purple-500 to-neon-pink",
+};
+
+const ICONS: Record<string, React.ReactNode> = {
+  welcome: <Gift className="w-8 h-8" />,
+  referral: <Users className="w-8 h-8" />,
+  tournament: <Trophy className="w-8 h-8" />,
+  cashback: <Percent className="w-8 h-8" />,
+};
 
 interface PromoBannerProps {
   variant?: "welcome" | "referral" | "tournament" | "cashback";
+  /** When provided (from API), overrides static content for this variant */
+  promo?: { badge?: string; title?: string; highlight?: string; subtitle?: string; description?: string; cta?: string; href?: string; variant?: string };
 }
 
-export function PromoBanner({ variant = "welcome" }: PromoBannerProps) {
+export function PromoBanner({ variant = "welcome", promo }: PromoBannerProps) {
   const banners = {
     welcome: {
       icon: <Gift className="w-8 h-8" />,
@@ -57,40 +70,41 @@ export function PromoBanner({ variant = "welcome" }: PromoBannerProps) {
     },
   };
 
-  const banner = banners[variant];
+  const base = banners[variant];
+  const gradient = GRADIENTS[promo?.variant ?? variant] ?? base.gradient;
+  const icon = ICONS[promo?.variant ?? variant] ?? base.icon;
+  const badge = promo?.badge ?? base.badge;
+  const title = promo?.title ?? base.title;
+  const highlight = promo?.highlight ?? base.highlight;
+  const subtitle = promo?.subtitle ?? base.subtitle;
+  const description = promo?.description ?? base.description;
+  const cta = promo?.cta ?? base.cta;
+  const href = promo?.href ?? base.href;
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${banner.gradient} p-[2px]`}>
+    <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${gradient} p-[2px]`}>
       <div className="relative rounded-2xl bg-card overflow-hidden">
-        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)`,
           }} />
         </div>
-
-        {/* Content */}
         <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6">
-          {/* Icon */}
-          <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${banner.gradient} flex items-center justify-center text-white flex-shrink-0 animate-float`}>
-            {banner.icon}
+          <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white flex-shrink-0 animate-float`}>
+            {icon}
           </div>
-
-          {/* Text Content */}
           <div className="flex-1 text-center md:text-left">
             <span className="inline-block px-3 py-1 rounded-full bg-muted text-xs font-semibold mb-3">
-              {banner.badge}
+              {badge}
             </span>
             <h3 className="text-xl md:text-2xl font-bold mb-2">
-              {banner.title}: <span className="gradient-text">{banner.highlight}</span> {banner.subtitle}
+              {title}: <span className="gradient-text">{highlight}</span> {subtitle}
             </h3>
-            <p className="text-muted-foreground">{banner.description}</p>
+            <p className="text-muted-foreground">{description}</p>
           </div>
-
-          {/* CTA */}
-          <Link to={banner.href}>
+          <Link to={href}>
             <Button variant="gold" size="lg" className="flex-shrink-0">
-              {banner.cta}
+              {cta}
             </Button>
           </Link>
         </div>
@@ -99,73 +113,19 @@ export function PromoBanner({ variant = "welcome" }: PromoBannerProps) {
   );
 }
 
-function PromoBannerFromApi({ banner }: { banner: ReturnType<typeof mapBanner> }) {
-  return (
-    <Link to={banner.linkUrl} className="block">
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-primary via-secondary to-primary p-[2px]">
-        <div className="relative rounded-2xl bg-card overflow-hidden">
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)" }} />
-          <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6">
-            {banner.imageUrl ? (
-              <img src={banner.imageUrl} alt={banner.title} className="w-20 h-20 rounded-2xl object-cover flex-shrink-0" />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
-                <Gift className="w-8 h-8 text-white" />
-              </div>
-            )}
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-xl md:text-2xl font-bold mb-2">{banner.title}</h3>
-              <p className="text-muted-foreground">{banner.description}</p>
-            </div>
-            <Button variant="gold" size="lg" className="flex-shrink-0">Learn More</Button>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
+interface PromoBannerGridProps {
+  promos?: { variant?: string; badge?: string; title?: string; highlight?: string; subtitle?: string; description?: string; cta?: string; href?: string }[];
 }
 
-export function PromoBannerGrid() {
-  const { data: bannersRaw = [], isLoading } = useQuery({
-    queryKey: ["banners"],
-    queryFn: () => apiClient.getBanners(),
-  });
-
-  const banners = (bannersRaw as any[]).map((b) => mapBanner(b));
-
-  if (isLoading) {
-    return (
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Skeleton className="h-40 rounded-2xl" />
-            <Skeleton className="h-40 rounded-2xl" />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (banners.length === 0) {
-    return (
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-6">
-            <PromoBanner variant="welcome" />
-            <PromoBanner variant="referral" />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
+export function PromoBannerGrid({ promos }: PromoBannerGridProps) {
+  const welcomePromo = promos?.find((p: any) => (p.variant || "").toLowerCase() === "welcome");
+  const referralPromo = promos?.find((p: any) => (p.variant || "").toLowerCase() === "referral");
   return (
     <section className="py-8">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-6">
-          {banners.map((banner) => (
-            <PromoBannerFromApi key={banner.id} banner={banner} />
-          ))}
+          <PromoBanner variant="welcome" promo={welcomePromo} />
+          <PromoBanner variant="referral" promo={referralPromo} />
         </div>
       </div>
     </section>

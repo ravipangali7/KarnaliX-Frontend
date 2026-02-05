@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import apiClient from "@/lib/api";
 import {
   Users,
   Copy,
@@ -12,79 +11,54 @@ import {
   MessageCircle,
   Facebook,
   Twitter,
-  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useContact } from "@/hooks/useContact";
+import apiClient from "@/lib/api";
 
 interface Referral {
-  id: string;
+  id: string | number;
   name: string;
   email: string;
-  joinedAt: string | null;
-  status: "active" | "pending" | "joined";
+  joinedAt: string;
+  status: string;
   earnings: number;
   totalBets: number;
 }
 
-interface ReferralStats {
-  total_referrals: number;
-  active_referrals: number;
-  total_earnings: string;
-  total_bets_from_referrals: string;
-}
-
-interface ReferralTier {
-  per_referral_amount: string;
-}
-
 export function ReferralSection() {
-  const [referrals, setReferrals] = useState<Referral[]>([]);
-  const [stats, setStats] = useState<ReferralStats | null>(null);
+  const contact = useContact();
+  const [copied, setCopied] = useState(false);
   const [referralCode, setReferralCode] = useState("");
   const [referralLink, setReferralLink] = useState("");
+  const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [perReferralAmount, setPerReferralAmount] = useState<number>(500); // Default
 
   useEffect(() => {
-    const fetchData = async () => {
+    let cancelled = false;
+    (async () => {
       try {
-        // Fetch referrals and tiers in parallel
-        const [data, tiers] = await Promise.all([
-          apiClient.getUserReferrals(),
-          apiClient.getReferralTiers().catch(() => []),
-        ]);
-        
-        // Set per-referral amount from first tier (or default)
-        if (tiers && tiers.length > 0) {
-          const firstTier = tiers[0];
-          setPerReferralAmount(parseFloat(firstTier.per_referral_amount) || 500);
-        }
-        
+        const data = await apiClient.getUserReferral();
+        if (cancelled) return;
         setReferralCode(data.referral_code || "");
-        setReferralLink(data.referral_link || `https://karnalix.com/register?ref=${data.referral_code}`);
-        setStats(data.stats);
-        
-        // Map API response to Referral format
-        const mappedReferrals: Referral[] = (data.referrals || []).map((r: any) => ({
-          id: String(r.id),
-          name: r.name || 'Anonymous',
-          email: r.email || '',
-          joinedAt: r.joined_at ? new Date(r.joined_at).toLocaleDateString() : null,
-          status: r.status,
-          earnings: parseFloat(r.earnings) || 0,
-          totalBets: parseFloat(r.total_bets) || 0,
-        }));
-        
-        setReferrals(mappedReferrals);
-      } catch (error) {
-        console.error('Failed to fetch referrals:', error);
+        setReferralLink(typeof window !== "undefined" ? `${window.location.origin}/ref/${data.referral_code || ""}` : "");
+        const list = data.referrals || [];
+        setReferrals(list.map((r: any) => ({
+          id: r.id,
+          name: r.username || "",
+          email: r.email || "",
+          joinedAt: r.joined_at ? new Date(r.joined_at).toLocaleDateString() : "",
+          status: (r.status || "active").toLowerCase(),
+          earnings: r.earnings ?? 0,
+          totalBets: r.total_bets ?? 0,
+        })));
+      } catch {
+        if (!cancelled) setReferrals([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    };
-
-    fetchData();
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const copyToClipboard = (text: string, type: string) => {
@@ -95,7 +69,7 @@ export function ReferralSection() {
   };
 
   const shareVia = (platform: string) => {
-    const message = `Join KarnaliX and get ₹500 bonus! Use my referral code: ${referralCode}`;
+    const message = `Join KarnaliX and get ${contact.referral_amount} bonus! Use my referral code: ${referralCode}`;
     let url = "";
     
     switch (platform) {
@@ -113,16 +87,16 @@ export function ReferralSection() {
     if (url) window.open(url, "_blank");
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const stats = {
+    totalReferrals: referrals.length,
+    activeReferrals: referrals.filter((r) => r.status === "active").length,
+    totalEarnings: referrals.reduce((sum, r) => sum + r.earnings, 0),
+    pendingEarnings: 0,
+  };
 
-  const totalEarnings = parseFloat(stats?.total_earnings || '0');
-  const totalBetsFromReferrals = parseFloat(stats?.total_bets_from_referrals || '0');
+  if (loading) {
+    return <div className="text-muted-foreground p-4">Loading referrals...</div>;
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -133,28 +107,28 @@ export function ReferralSection() {
             <Users className="w-4 h-4 text-primary" />
             <span className="text-xs text-muted-foreground">Total Referrals</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold">{stats?.total_referrals || 0}</p>
+          <p className="text-xl sm:text-2xl font-bold">{stats.totalReferrals}</p>
         </div>
         <div className="glass rounded-xl p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-2">
             <Check className="w-4 h-4 text-neon-green" />
             <span className="text-xs text-muted-foreground">Active</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-neon-green">{stats?.active_referrals || 0}</p>
+          <p className="text-xl sm:text-2xl font-bold text-neon-green">{stats.activeReferrals}</p>
         </div>
         <div className="glass rounded-xl p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-2">
             <Gift className="w-4 h-4 text-accent" />
             <span className="text-xs text-muted-foreground">Total Earned</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold font-mono">₹{totalEarnings.toLocaleString()}</p>
+          <p className="text-xl sm:text-2xl font-bold font-mono">₹{stats.totalEarnings.toLocaleString()}</p>
         </div>
         <div className="glass rounded-xl p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-4 h-4 text-primary" />
-            <span className="text-xs text-muted-foreground">Referral Bets</span>
+            <span className="text-xs text-muted-foreground">Pending</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold font-mono">₹{totalBetsFromReferrals.toLocaleString()}</p>
+          <p className="text-xl sm:text-2xl font-bold font-mono text-accent">₹{stats.pendingEarnings}</p>
         </div>
       </div>
 
@@ -168,7 +142,7 @@ export function ReferralSection() {
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex-1 relative">
               <Input
-                value={referralLink}
+                value={referralLink || "Loading..."}
                 readOnly
                 className="pr-12 font-mono text-sm"
               />
@@ -191,10 +165,10 @@ export function ReferralSection() {
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Your Code:</span>
             <button
-              onClick={() => copyToClipboard(referralCode, "Code")}
+              onClick={() => referralCode && copyToClipboard(referralCode, "Code")}
               className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg font-mono font-bold hover:bg-muted/80"
             >
-              {referralCode || 'N/A'}
+              {referralCode || "—"}
               <Copy className="w-3 h-3" />
             </button>
           </div>
@@ -251,7 +225,7 @@ export function ReferralSection() {
               <Gift className="w-6 h-6 text-neon-green" />
             </div>
             <h4 className="font-medium mb-1">3. Earn</h4>
-            <p className="text-sm text-muted-foreground">Get ₹{perReferralAmount.toLocaleString()} for each friend who deposits</p>
+            <p className="text-sm text-muted-foreground">Get {contact.referral_amount} for each friend who deposits</p>
           </div>
         </div>
       </div>
@@ -262,45 +236,35 @@ export function ReferralSection() {
           <h3 className="font-semibold">Your Referrals</h3>
           <span className="text-sm text-muted-foreground">{referrals.length} members</span>
         </div>
-        {referrals.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-sm">No referrals yet</p>
-            <p className="text-xs mt-1">Share your referral link to start earning!</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {referrals.map((referral) => (
-              <div key={referral.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-bold text-primary-foreground">
-                    {referral.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{referral.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {referral.joinedAt ? `Joined: ${referral.joinedAt}` : 'Pending signup'}
-                    </p>
-                  </div>
+        <div className="space-y-3">
+          {referrals.length === 0 && <p className="text-muted-foreground text-sm">No referrals yet. Share your link to get started.</p>}
+          {referrals.map((referral) => (
+            <div key={String(referral.id)} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-bold text-primary-foreground">
+                  {referral.name.split(" ").map(n => n[0]).join("")}
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className={`text-xs px-2 py-1 rounded-full capitalize ${
-                    referral.status === "active" ? "bg-neon-green/10 text-neon-green" :
-                    referral.status === "pending" ? "bg-accent/10 text-accent" :
-                    referral.status === "joined" ? "bg-primary/10 text-primary" :
-                    "bg-muted text-muted-foreground"
-                  }`}>
-                    {referral.status}
-                  </span>
-                  <div className="text-right hidden sm:block">
-                    <p className="font-mono text-sm font-medium text-neon-green">+₹{referral.earnings.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">Earned</p>
-                  </div>
+                <div>
+                  <p className="font-medium text-sm">{referral.name}</p>
+                  <p className="text-xs text-muted-foreground">Joined: {referral.joinedAt}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="flex items-center gap-4">
+                <span className={`text-xs px-2 py-1 rounded-full capitalize ${
+                  referral.status === "active" ? "bg-neon-green/10 text-neon-green" :
+                  referral.status === "pending" ? "bg-accent/10 text-accent" :
+                  "bg-muted text-muted-foreground"
+                }`}>
+                  {referral.status}
+                </span>
+                <div className="text-right hidden sm:block">
+                  <p className="font-mono text-sm font-medium text-neon-green">+₹{referral.earnings}</p>
+                  <p className="text-xs text-muted-foreground">Earned</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
