@@ -3,8 +3,8 @@
  * Handles all backend API communication with role-based endpoints
  */
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
-// const API_BASE_URL = 'https://admin.kingxclub.com';
+// const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'https://admin.kingxclub.com';
 
 class ApiClient {
   private baseURL: string;
