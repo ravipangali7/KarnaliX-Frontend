@@ -1011,6 +1011,13 @@ class ApiClient {
     return this.request('/public/content/');
   }
 
+  /**
+   * Get launch URL for a game (authenticated user). Returns { launch_url }.
+   */
+  async getLaunchUrl(gameId: string) {
+    return this.request(`/user/games/${gameId}/launch/`);
+  }
+
   // =============================================================================
   // USER PROFILE, REFERRAL, BONUSES, TICKETS, SETTINGS
   // =============================================================================

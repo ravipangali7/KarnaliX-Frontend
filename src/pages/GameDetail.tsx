@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -25,6 +25,7 @@ import {
   Zap
 } from "lucide-react";
 import { whatsAppLinks } from "@/components/layout/WhatsAppButton";
+import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/lib/api";
 
 const defaultGame = {
@@ -64,12 +65,17 @@ function apiGameToDetail(g: any) {
 
 export default function GameDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [game, setGame] = useState(defaultGame);
   const [loading, setLoading] = useState(!!id);
   const [betAmount, setBetAmount] = useState(100);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showAddFunds, setShowAddFunds] = useState(false);
-  const walletBalance = 0;
+  const [launchLoading, setLaunchLoading] = useState(false);
+  const [launchError, setLaunchError] = useState<string | null>(null);
+  const walletBalance = user ? parseFloat(user.wallet_balance || "0") : 0;
+  const balanceFormatted = walletBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 });
 
   useEffect(() => {
     if (!id) {
@@ -96,12 +102,31 @@ export default function GameDetail() {
     setBetAmount(Math.max(game.minBet, Math.min(game.maxBet, value)));
   };
 
-  const handleStartPlaying = () => {
+  const handleStartPlaying = async () => {
+    if (!id) return;
+    if (!apiClient.getToken()) {
+      navigate("/login", { state: { from: `/game/${id}` } });
+      return;
+    }
     if (walletBalance < betAmount) {
       setShowAddFunds(true);
       return;
     }
-    setIsPlaying(true);
+    setLaunchError(null);
+    setLaunchLoading(true);
+    try {
+      const data = await apiClient.getLaunchUrl(id) as { launch_url?: string };
+      if (data?.launch_url) {
+        window.location.href = data.launch_url;
+        return;
+      }
+      setLaunchError("Could not get game URL.");
+    } catch (err: any) {
+      const msg = err?.message ?? "Game unavailable. Try again later.";
+      setLaunchError(typeof msg === "string" ? msg : "Game unavailable. Try again later.");
+    } finally {
+      setLaunchLoading(false);
+    }
   };
 
   return (
@@ -137,11 +162,15 @@ export default function GameDetail() {
                           variant="neon" 
                           size="xl" 
                           className="gap-2"
-                          onClick={() => setIsPlaying(true)}
+                          onClick={handleStartPlaying}
+                          disabled={launchLoading}
                         >
                           <Play className="w-6 h-6" />
-                          Play Now
+                          {launchLoading ? "Redirecting..." : "Play Now"}
                         </Button>
+                        {launchError && (
+                          <p className="text-sm text-destructive mt-2">{launchError}</p>
+                        )}
                         <p className="text-sm text-muted-foreground mt-4">
                           Min Bet: ₹{game.minBet} | Max Bet: ₹{game.maxBet.toLocaleString()}
                         </p>
@@ -245,11 +274,14 @@ export default function GameDetail() {
                 <div className="glass rounded-lg p-4 mb-4 bg-muted/50">
                   <p className="text-sm text-muted-foreground mb-1">Your Balance</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold font-mono">₹0.00</span>
+                    <span className="text-2xl font-bold font-mono">₹{balanceFormatted}</span>
                     <Link to="/deposit">
                       <Button variant="gold" size="sm">Add Funds</Button>
                     </Link>
                   </div>
+                  {!user && (
+                    <p className="text-xs text-muted-foreground mt-1">Log in to see your balance</p>
+                  )}
                 </div>
 
                 {/* Bet Amount */}
@@ -305,10 +337,14 @@ export default function GameDetail() {
                   size="xl" 
                   className="w-full mt-6 gap-2"
                   onClick={handleStartPlaying}
+                  disabled={launchLoading}
                 >
                   <Play className="w-5 h-5" />
-                  Start Playing
+                  {launchLoading ? "Redirecting..." : "Start Playing"}
                 </Button>
+                {launchError && (
+                  <p className="text-sm text-destructive mt-2">{launchError}</p>
+                )}
               </div>
 
               {/* Quick Actions */}
