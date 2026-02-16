@@ -254,35 +254,70 @@ export async function deleteGame(id: number) {
   return apiDelete(`${prefix("powerhouse")}/games/${id}/`);
 }
 
-// --- Direct Import (external game API) ---
+// --- Direct Import (game API called from browser; backend only provides URL and persists import) ---
 export type ImportProvider = { code: string; name: string };
 export type ImportGame = { game_uid: string; game_name: string; game_type: string; game_image: string };
 export type ImportProviderGamesResponse = { categories: string[]; games: ImportGame[] };
 export type ImportGamesResult = { provider_created: boolean; categories_created: number; games_created: number; games_skipped: number };
 
-function unwrapList<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const d = (res as { data?: unknown })?.data;
-  return Array.isArray(d) ? (d as T[]) : [];
-}
 function unwrapObject<T>(res: unknown): T {
   if (res != null && typeof res === "object" && !Array.isArray(res) && !("data" in res)) return res as T;
   const d = (res as { data?: T })?.data;
   return d as T;
 }
 
-export async function getImportProviders(): Promise<ImportProvider[]> {
-  const res = await apiGet<ImportProvider[]>(`${prefix("powerhouse")}/import/providers/`);
-  return unwrapList<ImportProvider>(res as unknown);
+/** Get game API base URL from backend (no backend call to game API). */
+export async function getImportGameApiUrl(): Promise<{ game_api_url: string }> {
+  const res = await apiGet<{ game_api_url?: string }>(`${prefix("powerhouse")}/import/game-api-url/`);
+  const raw = unwrapObject<{ game_api_url?: string }>(res as unknown);
+  const url = (raw?.game_api_url ?? "").trim();
+  return { game_api_url: url };
 }
 
-export async function getImportProviderGames(providerCode: string): Promise<ImportProviderGamesResponse> {
-  const res = await apiGet<ImportProviderGamesResponse>(`${prefix("powerhouse")}/import/providers/${encodeURIComponent(providerCode)}/games/`);
-  const raw = unwrapObject<ImportProviderGamesResponse>(res as unknown);
-  return {
-    categories: Array.isArray(raw?.categories) ? raw.categories : [],
-    games: Array.isArray(raw?.games) ? raw.games : [],
-  };
+/** Fetch providers from game API from browser (GET serverurl/getProvider). */
+export async function fetchProvidersFromGameApi(baseUrl: string): Promise<ImportProvider[]> {
+  const url = baseUrl.replace(/\/$/, "") + "/getProvider";
+  const r = await fetch(url, { method: "GET" });
+  if (!r.ok) throw new Error(r.status === 404 ? "Not Found (check Game API URL in Super Settings)" : `Game API error: ${r.status}`);
+  const data = await r.json();
+  if (!Array.isArray(data)) return [];
+  const result: ImportProvider[] = [];
+  for (const item of data) {
+    if (typeof item === "string") result.push({ code: item, name: item });
+    else if (item && typeof item === "object") {
+      const code = String(item.code ?? item.provider ?? item.id ?? "").trim();
+      const name = String(item.name ?? item.displayName ?? code).trim();
+      if (code) result.push({ code, name });
+    }
+  }
+  return result;
+}
+
+/** Fetch provider games from game API from browser (GET serverurl/providerGame?provider=...&count=...). */
+export async function fetchProviderGamesFromGameApi(baseUrl: string, providerCode: string): Promise<ImportProviderGamesResponse> {
+  const base = baseUrl.replace(/\/$/, "");
+  const url = `${base}/providerGame?provider=${encodeURIComponent(providerCode)}&count=1000`;
+  const r = await fetch(url, { method: "GET" });
+  if (!r.ok) throw new Error(r.status === 404 ? "Not Found (check provider code)" : `Game API error: ${r.status}`);
+  const data = await r.json();
+  if (!Array.isArray(data)) return { categories: [], games: [] };
+  const games: ImportGame[] = [];
+  const categorySet = new Set<string>();
+  for (const item of data) {
+    if (!item || typeof item !== "object") continue;
+    const game_code = String(item.game_code ?? item.code ?? "").trim();
+    if (!game_code) continue;
+    const game_type = (String(item.game_type ?? item.type ?? "").trim() || "Other");
+    categorySet.add(game_type);
+    games.push({
+      game_uid: game_code,
+      game_name: String(item.game_name ?? item.name ?? game_code).trim(),
+      game_type,
+      game_image: String(item.game_image ?? item.image ?? "").trim(),
+    });
+  }
+  const categories = Array.from(categorySet).sort();
+  return { categories, games };
 }
 
 export async function postImportGames(payload: {

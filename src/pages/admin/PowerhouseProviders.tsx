@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { getProvidersAdmin, createProviderAdmin, getImportProviders, getImportProviderGames, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
+import { getProvidersAdmin, createProviderAdmin, getImportGameApiUrl, fetchProvidersFromGameApi, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
@@ -19,8 +19,9 @@ const PowerhouseProviders = () => {
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Direct Import modal
+  // Direct Import modal (game API called from browser; backend only gives URL and persists import)
   const [importOpen, setImportOpen] = useState(false);
+  const [gameApiUrl, setGameApiUrl] = useState("");
   const [importProviders, setImportProviders] = useState<ImportProvider[]>([]);
   const [importProvidersLoading, setImportProvidersLoading] = useState(false);
   const [importProvidersError, setImportProvidersError] = useState<string | null>(null);
@@ -38,33 +39,44 @@ const PowerhouseProviders = () => {
     setIsActive(true);
   };
 
-  // When Direct Import modal opens, fetch providers from external API
+  // When Direct Import modal opens, get game API URL from backend then fetch providers from game API (browser)
   useEffect(() => {
     if (!importOpen) return;
     setImportProvidersError(null);
+    setGameApiUrl("");
     setImportProvidersLoading(true);
-    getImportProviders()
+    getImportGameApiUrl()
+      .then(({ game_api_url }) => {
+        if (!game_api_url) {
+          setImportProvidersError("Game API URL not set. Configure in Super Settings.");
+          return;
+        }
+        setGameApiUrl(game_api_url);
+        return fetchProvidersFromGameApi(game_api_url);
+      })
       .then((list) => {
-        setImportProviders(list);
-        setSelectedProviderCode("");
-        setImportGamesData(null);
-        setSelectedCategories(new Set());
-        setSelectedGames(new Set());
+        if (list) {
+          setImportProviders(list);
+          setSelectedProviderCode("");
+          setImportGamesData(null);
+          setSelectedCategories(new Set());
+          setSelectedGames(new Set());
+        }
       })
       .catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load providers"))
       .finally(() => setImportProvidersLoading(false));
   }, [importOpen]);
 
-  // When provider is selected, fetch games
+  // When provider is selected, fetch games from game API (browser)
   useEffect(() => {
-    if (!importOpen || !selectedProviderCode) {
-      setImportGamesData(null);
+    if (!importOpen || !selectedProviderCode || !gameApiUrl) {
+      if (!selectedProviderCode || !gameApiUrl) setImportGamesData(null);
       setImportGamesError(null);
       return;
     }
     setImportGamesError(null);
     setImportGamesLoading(true);
-    getImportProviderGames(selectedProviderCode)
+    fetchProviderGamesFromGameApi(gameApiUrl, selectedProviderCode)
       .then((data) => {
         setImportGamesData(data);
         setSelectedCategories(new Set());
@@ -72,7 +84,7 @@ const PowerhouseProviders = () => {
       })
       .catch((e) => setImportGamesError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load games"))
       .finally(() => setImportGamesLoading(false));
-  }, [importOpen, selectedProviderCode]);
+  }, [importOpen, selectedProviderCode, gameApiUrl]);
 
   const selectedProviderName = importProviders.find((p) => p.code === selectedProviderCode)?.name ?? "";
   const categories = importGamesData?.categories ?? [];
@@ -193,7 +205,7 @@ const PowerhouseProviders = () => {
               ) : importProvidersError ? (
                 <div className="space-y-2">
                   <p className="text-sm text-destructive">{importProvidersError}</p>
-                  <Button variant="outline" size="sm" onClick={() => { setImportProvidersError(null); setImportProvidersLoading(true); getImportProviders().then(setImportProviders).catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load providers")).finally(() => setImportProvidersLoading(false)); }}>Retry</Button>
+                  <Button variant="outline" size="sm" onClick={() => { setImportProvidersError(null); setImportProvidersLoading(true); getImportGameApiUrl().then(({ game_api_url }) => { if (!game_api_url) { setImportProvidersError("Game API URL not set. Configure in Super Settings."); return; } setGameApiUrl(game_api_url); return fetchProvidersFromGameApi(game_api_url); }).then((list) => { if (list) setImportProviders(list); }).catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load providers")).finally(() => setImportProvidersLoading(false)); }}>Retry</Button>
                 </div>
               ) : (
                 <select
@@ -216,7 +228,7 @@ const PowerhouseProviders = () => {
                 ) : importGamesError ? (
                   <div className="space-y-2">
                     <p className="text-sm text-destructive">{importGamesError}</p>
-                    <Button variant="outline" size="sm" onClick={() => { setImportGamesError(null); setImportGamesLoading(true); getImportProviderGames(selectedProviderCode).then((data) => { setImportGamesData(data); setSelectedCategories(new Set()); setSelectedGames(new Set()); }).catch((e) => setImportGamesError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load games")).finally(() => setImportGamesLoading(false)); }}>Retry</Button>
+                    <Button variant="outline" size="sm" onClick={() => { setImportGamesError(null); setImportGamesLoading(true); fetchProviderGamesFromGameApi(gameApiUrl, selectedProviderCode).then((data) => { setImportGamesData(data); setSelectedCategories(new Set()); setSelectedGames(new Set()); }).catch((e) => setImportGamesError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load games")).finally(() => setImportGamesLoading(false)); }}>Retry</Button>
                   </div>
                 ) : importGamesData ? (
                   <>
