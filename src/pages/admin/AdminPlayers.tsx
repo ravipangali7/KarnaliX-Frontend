@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getMasters, getPlayers, createPlayer, getMasterPaymentModes, getPaymentModesForDepositTarget, directDeposit, directWithdraw, resetPassword } from "@/api/admin";
+import { getMasters, getPlayers, createPlayer, updatePlayer, getMasterPaymentModes, getPaymentModesForDepositTarget, directDeposit, directWithdraw, resetPassword } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
@@ -44,6 +44,9 @@ const AdminPlayers = () => {
   const [withdrawRemarks, setWithdrawRemarks] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const { data: players = [] } = useQuery({ queryKey: ["admin-players", role], queryFn: () => getPlayers(role) });
   const { data: mastersList = [] } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role), enabled: (role === "powerhouse" || role === "super") && createOpen });
   const { data: depositPaymentModesList = [] } = useQuery({
@@ -69,7 +72,7 @@ const AdminPlayers = () => {
           <Button variant="ghost" size="icon" className="h-7 w-7 text-accent" title="Withdraw" onClick={() => { setSelectedUser(row); setWithdrawOpen(true); }}><ArrowUpCircle className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="Reset Password" onClick={() => { setSelectedUser(row); setResetPwOpen(true); }}><Key className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="View" onClick={() => { setSelectedUser(row); setViewOpen(true); }}><Eye className="h-3 w-3" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditName(String(row.name ?? "")); setEditPhone(String(row.phone ?? "")); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
         </div>
       ),
     },
@@ -174,23 +177,38 @@ const AdminPlayers = () => {
       </Dialog>
 
       {/* Edit Player */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) setEditSaving(false); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle className="font-display">Edit Player</DialogTitle></DialogHeader>
           {selectedUser && (
             <div className="space-y-3">
-              <Input defaultValue={String(selectedUser.name ?? "")} placeholder="Full Name" />
-              <Input defaultValue={String(selectedUser.phone ?? "")} placeholder="Phone" />
-              <select className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm" defaultValue={String(selectedUser.status ?? "active")}>
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
-              </select>
-              <Input type="number" placeholder="Exposure Limit" defaultValue="50000" />
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Full Name" />
+              <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Phone" />
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button className="gold-gradient text-primary-foreground" onClick={() => setEditOpen(false)}>Save</Button>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={editSaving}>Cancel</Button>
+            <Button
+              className="gold-gradient text-primary-foreground"
+              disabled={editSaving}
+              onClick={async () => {
+                if (!selectedUser?.id) return;
+                setEditSaving(true);
+                try {
+                  await updatePlayer(selectedUser.id as number, { name: editName.trim(), phone: editPhone.trim() }, role);
+                  queryClient.invalidateQueries({ queryKey: ["admin-players", role] });
+                  toast({ title: "Player updated successfully." });
+                  setEditOpen(false);
+                } catch (e) {
+                  const msg = (e as { detail?: string })?.detail ?? "Failed to update";
+                  toast({ title: msg, variant: "destructive" });
+                } finally {
+                  setEditSaving(false);
+                }
+              }}
+            >
+              {editSaving ? "Saving…" : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

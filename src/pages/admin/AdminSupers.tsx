@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   getSupers,
   createSuper,
+  updateSuper,
   getPaymentModesForDepositTarget,
   directDeposit,
   directWithdraw,
@@ -53,6 +54,9 @@ const AdminSupers = () => {
   const [createWhatsApp, setCreateWhatsApp] = useState("");
   const [createPassword, setCreatePassword] = useState("");
   const [createCommission, setCreateCommission] = useState("10");
+  const [editName, setEditName] = useState("");
+  const [editCommission, setEditCommission] = useState("10");
+  const [editSaving, setEditSaving] = useState(false);
 
   const { data: supers = [] } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers });
   const { data: depositPaymentModesList = [] } = useQuery({
@@ -85,7 +89,7 @@ const AdminSupers = () => {
           <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" title="View PIN" onClick={() => { setSelectedUser(row); setPinViewOpen(true); }}><Eye className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7 text-warning" title="Regenerate PIN" onClick={() => { setSelectedUser(row); setPendingAction("regeneratePin"); setPendingPayload({ userId: row.id }); setPinOpen(true); }}><RefreshCw className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="View" onClick={() => { setSelectedUser(row); setViewOpen(true); }}><Eye className="h-3 w-3" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditName(String(row.name ?? "")); setEditCommission(String(row.commission_percentage ?? "10")); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
         </div>
       ),
     },
@@ -167,22 +171,38 @@ const AdminSupers = () => {
       </Dialog>
 
       {/* Edit */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) setEditSaving(false); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle className="font-display">Edit Super</DialogTitle></DialogHeader>
           {selectedUser && (
             <div className="space-y-3">
-              <Input defaultValue={String(selectedUser.name ?? "")} placeholder="Full Name" />
-              <select className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm" defaultValue={selectedUser.status}>
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
-              </select>
-              <Input type="number" placeholder="Commission %" defaultValue="10" />
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Full Name" />
+              <Input type="number" placeholder="Commission %" value={editCommission} onChange={(e) => setEditCommission(e.target.value)} />
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button className="gold-gradient text-primary-foreground" onClick={() => setEditOpen(false)}>Save</Button>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={editSaving}>Cancel</Button>
+            <Button
+              className="gold-gradient text-primary-foreground"
+              disabled={editSaving}
+              onClick={async () => {
+                if (!selectedUser?.id) return;
+                setEditSaving(true);
+                try {
+                  await updateSuper(selectedUser.id as number, { name: editName.trim(), commission_percentage: editCommission || "10" });
+                  queryClient.invalidateQueries({ queryKey: ["admin-supers"] });
+                  toast({ title: "Super updated successfully." });
+                  setEditOpen(false);
+                } catch (e) {
+                  const msg = (e as { detail?: string })?.detail ?? "Failed to update";
+                  toast({ title: msg, variant: "destructive" });
+                } finally {
+                  setEditSaving(false);
+                }
+              }}
+            >
+              {editSaving ? "Saving…" : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

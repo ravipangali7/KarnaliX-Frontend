@@ -282,7 +282,7 @@ export async function getSiteSettingsAdmin() {
   return apiGet(`${prefix("powerhouse")}/site-settings/`);
 }
 export async function updateSiteSettings(body: unknown) {
-  return apiPost(`${prefix("powerhouse")}/site-settings/update/`, body);
+  return apiPatch(`${prefix("powerhouse")}/site-settings/update/`, body);
 }
 
 export async function getCmsPages() {
