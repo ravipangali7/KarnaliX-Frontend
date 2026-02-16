@@ -1,9 +1,9 @@
 /**
  * API client: base URL + auth header. Uses fetch.
+ * Set VITE_API_BASE_URL in .env for local dev (e.g. http://localhost:8000/api).
  */
-
-// const BASE_URL = 'http://localhost:8000/api';
-export const BASE_URL = 'https://admin.kingxclub.com/api';
+export const BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string)?.trim() || "https://admin.kingxclub.com/api";
 
 function getToken(): string | null {
   return localStorage.getItem('token');

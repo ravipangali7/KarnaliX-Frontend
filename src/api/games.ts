@@ -1,4 +1,4 @@
-import { apiGet } from "@/lib/api";
+import { apiGet, getMediaUrl } from "@/lib/api";
 
 export interface GameCategory {
   id: number;
@@ -19,6 +19,7 @@ export interface Game {
   name: string;
   game_uid: string;
   image?: string;
+  image_url?: string;
   min_bet: string;
   max_bet: string;
   category: number;
@@ -29,23 +30,44 @@ export interface Game {
   is_active?: boolean;
 }
 
+function unwrapList<T>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  const data = (res as { data?: unknown })?.data;
+  return Array.isArray(data) ? (data as T[]) : [];
+}
+
+function unwrapSingle<T>(res: unknown): T | null {
+  if (res != null && typeof res === "object" && !Array.isArray(res) && !("data" in res)) return res as T;
+  const data = (res as { data?: T })?.data;
+  return data ?? null;
+}
+
+/** Resolve game image URL: prefer image_url (full URL), else getMediaUrl(image) for Django media paths. */
+export function getGameImageUrl(game: Game): string {
+  if (game.image_url?.trim()) return game.image_url.trim();
+  return getMediaUrl(game.image ?? "");
+}
+
 export async function getCategories(): Promise<GameCategory[]> {
   const res = await apiGet<GameCategory[]>("/public/categories/");
-  return (res as unknown as GameCategory[]) ?? [];
+  return unwrapList<GameCategory>(res as unknown);
 }
 
 export async function getProviders(): Promise<GameProvider[]> {
   const res = await apiGet<GameProvider[]>("/public/providers/");
-  return (res as unknown as GameProvider[]) ?? [];
+  return unwrapList<GameProvider>(res as unknown);
 }
 
-export async function getGames(categoryId?: number): Promise<Game[]> {
-  const q = categoryId != null ? `?category_id=${categoryId}` : "";
+export async function getGames(categoryId?: number, providerId?: number): Promise<Game[]> {
+  const params = new URLSearchParams();
+  if (categoryId != null) params.set("category_id", String(categoryId));
+  if (providerId != null) params.set("provider_id", String(providerId));
+  const q = params.toString() ? `?${params.toString()}` : "";
   const res = await apiGet<Game[]>(`/public/games/${q}`);
-  return (res as unknown as Game[]) ?? [];
+  return unwrapList<Game>(res as unknown);
 }
 
 export async function getGame(id: string | number): Promise<Game | null> {
   const res = await apiGet<Game>(`/public/games/${id}/`);
-  return (res as unknown as Game) ?? null;
+  return unwrapSingle<Game>(res as unknown);
 }

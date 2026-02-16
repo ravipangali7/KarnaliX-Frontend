@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GameCard } from "@/components/shared/GameCard";
-import { getGame, getGames } from "@/api/games";
+import { getGame, getGames, getGameImageUrl } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
 import { launchGame, getPlayerWallet } from "@/api/player";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,7 +29,7 @@ const GameDetailPage = () => {
   const isPlayer = user?.role === "player";
   const [betAmount, setBetAmount] = useState(100);
   const [launching, setLaunching] = useState(false);
-  const { data: game, isLoading } = useQuery({ queryKey: ["game", id], queryFn: () => getGame(id!), enabled: !!id });
+  const { data: game, isLoading, isError: gameError, refetch: refetchGame } = useQuery({ queryKey: ["game", id], queryFn: () => getGame(id!), enabled: !!id });
   const { data: games = [] } = useQuery({ queryKey: ["games"], queryFn: () => getGames() });
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: wallet } = useQuery({
@@ -39,6 +39,12 @@ const GameDetailPage = () => {
   });
 
   if (isLoading || !id) return <div className="p-8 text-center">Loading...</div>;
+  if (gameError) return (
+    <div className="p-8 text-center space-y-2">
+      <p className="text-muted-foreground">Could not load game.</p>
+      <Button variant="outline" size="sm" onClick={() => refetchGame()}>Retry</Button>
+    </div>
+  );
   if (!game) return <div className="p-8 text-center">Game not found</div>;
 
   const g = game as Game;
@@ -56,7 +62,7 @@ const GameDetailPage = () => {
       {/* Game Hero */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-3 relative rounded-2xl overflow-hidden aspect-[16/9] lg:aspect-[4/3]">
-          <img src={g.image ?? ""} alt={g.name} className="w-full h-full object-cover" />
+          <img src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
           {/* Live badge */}
           <div className="absolute top-4 left-4 flex items-center gap-2">
@@ -299,7 +305,7 @@ const GameDetailPage = () => {
         <div className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide">
           {mostPlayed.map((x) => (
             <div key={x.id} className="snap-start min-w-[150px] md:min-w-[190px]">
-              <Link to={`/games/${x.id}`}><GameCard image={x.image ?? ""} name={x.name} category={x.category_name ?? ""} minBet={Number(x.min_bet)} maxBet={Number(x.max_bet)} /></Link>
+              <Link to={`/games/${x.id}`}><GameCard image={getGameImageUrl(x)} name={x.name} category={x.category_name ?? ""} minBet={Number(x.min_bet)} maxBet={Number(x.max_bet)} /></Link>
             </div>
           ))}
         </div>
@@ -315,7 +321,7 @@ const GameDetailPage = () => {
           <div className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide">
             {related.map((x) => (
               <div key={x.id} className="snap-start min-w-[150px] md:min-w-[190px]">
-                <Link to={`/games/${x.id}`}><GameCard image={x.image ?? ""} name={x.name} category={x.category_name ?? ""} minBet={Number(x.min_bet)} maxBet={Number(x.max_bet)} /></Link>
+                <Link to={`/games/${x.id}`}><GameCard image={getGameImageUrl(x)} name={x.name} category={x.category_name ?? ""} minBet={Number(x.min_bet)} maxBet={Number(x.max_bet)} /></Link>
               </div>
             ))}
           </div>

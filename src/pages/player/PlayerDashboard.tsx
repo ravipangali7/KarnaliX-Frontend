@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/shared/StatCard";
 import { Wallet, TrendingUp, Eye, Gamepad2, ArrowDownCircle, ArrowUpCircle, Shield, Send, Trophy, Clock, Flame } from "lucide-react";
 import { getPlayerDashboard, getPlayerTransactions } from "@/api/player";
-import { getGames } from "@/api/games";
+import { getGames, getGameImageUrl } from "@/api/games";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -114,7 +114,7 @@ const PlayerDashboard = () => {
           <div className="grid grid-cols-2 gap-3">
             {topGames.map((game) => (
               <Link key={game.id} to={`/games/${game.id}`}>
-                <GameCard image={game.image ?? ""} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
+                <GameCard image={getGameImageUrl(game)} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
               </Link>
             ))}
           </div>

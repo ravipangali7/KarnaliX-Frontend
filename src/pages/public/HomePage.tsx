@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GameCard } from "@/components/shared/GameCard";
 import { getSiteSetting, getTestimonials } from "@/api/site";
-import { getGames, getCategories } from "@/api/games";
+import { getGames, getCategories, getGameImageUrl } from "@/api/games";
 import { Users, Gamepad2, Trophy, Headphones, Star, ChevronRight, Zap, Shield, Flame, TrendingUp, Crown, Sparkles, Dice1, Target } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -30,8 +30,8 @@ const fadeUp = {
 
 const HomePage = () => {
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
-  const { data: games = [] } = useQuery({ queryKey: ["games"], queryFn: () => getGames() });
-  const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
+  const { data: games = [], isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({ queryKey: ["games"], queryFn: () => getGames() });
+  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError, refetch: refetchCategories } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
   const { data: testimonials = [] } = useQuery({ queryKey: ["testimonials"], queryFn: getTestimonials });
   const heroTitle = (siteSetting as Record<string, string> | undefined)?.hero_title ?? "Play. Win. Dominate.";
   const heroSubtitle = (siteSetting as Record<string, string> | undefined)?.hero_subtitle ?? "Nepal's Premier Online Gaming Platform";
@@ -113,15 +113,24 @@ const HomePage = () => {
           </h2>
           <Link to="/games" className="text-sm text-primary flex items-center gap-1 hover:underline font-medium">View All <ChevronRight className="h-4 w-4" /></Link>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-3 snap-x scrollbar-hide">
-          {topGames.map((game) => (
-            <div key={game.id} className="snap-start min-w-[170px] md:min-w-[220px]">
-              <Link to={`/games/${game.id}`}>
-                <GameCard image={game.image ?? ""} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
-              </Link>
-            </div>
-          ))}
-        </div>
+        {gamesLoading && <p className="text-sm text-muted-foreground py-4">Loading games…</p>}
+        {gamesError && (
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-muted-foreground">Could not load games.</p>
+            <Button variant="outline" size="sm" onClick={() => refetchGames()}>Retry</Button>
+          </div>
+        )}
+        {!gamesLoading && !gamesError && (
+          <div className="flex gap-4 overflow-x-auto pb-3 snap-x scrollbar-hide">
+            {topGames.map((game) => (
+              <div key={game.id} className="snap-start min-w-[170px] md:min-w-[220px]">
+                <Link to={`/games/${game.id}`}>
+                  <GameCard image={getGameImageUrl(game)} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Bonus Banners */}
@@ -169,20 +178,29 @@ const HomePage = () => {
           <span className="h-7 w-1.5 rounded-full gold-gradient inline-block" />
           <Dice1 className="h-5 w-5 text-accent" /> Game Categories
         </h2>
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-          {categories.map((cat: { id: number; name: string }) => (
-            <Link key={cat.id} to={`/games?category=${cat.id}`}>
-              <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:neon-glow-sm transition-all duration-300 group cyber-border">
-                <span className="text-3xl group-hover:scale-125 transition-transform duration-300">🎮</span>
-                <span className="text-[10px] font-semibold whitespace-nowrap">{cat.name}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {categoriesLoading && <p className="text-sm text-muted-foreground py-4">Loading categories…</p>}
+        {categoriesError && (
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-muted-foreground">Could not load categories.</p>
+            <Button variant="outline" size="sm" onClick={() => refetchCategories()}>Retry</Button>
+          </div>
+        )}
+        {!categoriesLoading && !categoriesError && (
+          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+            {categories.map((cat: { id: number; name: string }) => (
+              <Link key={cat.id} to={`/games?category=${cat.id}`}>
+                <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:neon-glow-sm transition-all duration-300 group cyber-border">
+                  <span className="text-3xl group-hover:scale-125 transition-transform duration-300">🎮</span>
+                  <span className="text-[10px] font-semibold whitespace-nowrap">{cat.name}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Category Sections */}
-      {categories.slice(0, 5).map((cat: { id: number; name: string }) => {
+      {!gamesLoading && !gamesError && !categoriesLoading && !categoriesError && categories.slice(0, 5).map((cat: { id: number; name: string }) => {
         const catGames = games.filter((g: { category: number }) => g.category === cat.id).slice(0, 12);
         if (catGames.length === 0) return null;
         return (
@@ -197,7 +215,7 @@ const HomePage = () => {
               {catGames.map((game: { id: number; image?: string; name: string; category_name?: string; min_bet: string; max_bet: string }) => (
                 <div key={game.id} className="snap-start min-w-[150px] md:min-w-[190px]">
                   <Link to={`/games/${game.id}`}>
-                    <GameCard image={game.image ?? ""} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
+                    <GameCard image={getGameImageUrl(game)} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
                   </Link>
                 </div>
               ))}
