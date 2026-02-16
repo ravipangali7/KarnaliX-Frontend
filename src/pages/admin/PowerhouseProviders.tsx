@@ -51,7 +51,7 @@ const PowerhouseProviders = () => {
         setSelectedCategories(new Set());
         setSelectedGames(new Set());
       })
-      .catch((e) => setImportProvidersError((e as { message?: string })?.message ?? "Failed to load providers"))
+      .catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load providers"))
       .finally(() => setImportProvidersLoading(false));
   }, [importOpen]);
 
@@ -70,7 +70,7 @@ const PowerhouseProviders = () => {
         setSelectedCategories(new Set());
         setSelectedGames(new Set());
       })
-      .catch((e) => setImportGamesError((e as { message?: string })?.message ?? "Failed to load games"))
+      .catch((e) => setImportGamesError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load games"))
       .finally(() => setImportGamesLoading(false));
   }, [importOpen, selectedProviderCode]);
 
@@ -193,7 +193,7 @@ const PowerhouseProviders = () => {
               ) : importProvidersError ? (
                 <div className="space-y-2">
                   <p className="text-sm text-destructive">{importProvidersError}</p>
-                  <Button variant="outline" size="sm" onClick={() => { setImportProvidersError(null); setImportProvidersLoading(true); getImportProviders().then(setImportProviders).catch((e) => setImportProvidersError((e as { message?: string })?.message ?? "Failed to load providers")).finally(() => setImportProvidersLoading(false)); }}>Retry</Button>
+                  <Button variant="outline" size="sm" onClick={() => { setImportProvidersError(null); setImportProvidersLoading(true); getImportProviders().then(setImportProviders).catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load providers")).finally(() => setImportProvidersLoading(false)); }}>Retry</Button>
                 </div>
               ) : (
                 <select
@@ -216,7 +216,7 @@ const PowerhouseProviders = () => {
                 ) : importGamesError ? (
                   <div className="space-y-2">
                     <p className="text-sm text-destructive">{importGamesError}</p>
-                    <Button variant="outline" size="sm" onClick={() => { setImportGamesError(null); setImportGamesLoading(true); getImportProviderGames(selectedProviderCode).then((data) => { setImportGamesData(data); setSelectedCategories(new Set()); setSelectedGames(new Set()); }).catch((e) => setImportGamesError((e as { message?: string })?.message ?? "Failed to load games")).finally(() => setImportGamesLoading(false)); }}>Retry</Button>
+                    <Button variant="outline" size="sm" onClick={() => { setImportGamesError(null); setImportGamesLoading(true); getImportProviderGames(selectedProviderCode).then((data) => { setImportGamesData(data); setSelectedCategories(new Set()); setSelectedGames(new Set()); }).catch((e) => setImportGamesError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load games")).finally(() => setImportGamesLoading(false)); }}>Retry</Button>
                   </div>
                 ) : importGamesData ? (
                   <>
