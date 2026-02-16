@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { getProvidersAdmin, createProviderAdmin, getImportGameApiUrl, fetchProvidersFromGameApi, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
+import { getProvidersAdmin, createProviderAdmin, getImportGameApiUrl, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
@@ -39,7 +39,7 @@ const PowerhouseProviders = () => {
     setIsActive(true);
   };
 
-  // When Direct Import modal opens, get game API URL from backend then fetch providers from game API (browser)
+  // When Direct Import modal opens, get game API URL only; use existing DB providers (no getProvider; games via providerGame)
   useEffect(() => {
     if (!importOpen) return;
     setImportProvidersError(null);
@@ -52,20 +52,20 @@ const PowerhouseProviders = () => {
           return;
         }
         setGameApiUrl(game_api_url);
-        return fetchProvidersFromGameApi(game_api_url);
+        setImportProviders(
+          (gameProviders as Record<string, unknown>[]).map((p) => ({
+            code: String(p?.code ?? ""),
+            name: String(p?.name ?? p?.code ?? ""),
+          }))
+        );
+        setSelectedProviderCode("");
+        setImportGamesData(null);
+        setSelectedCategories(new Set());
+        setSelectedGames(new Set());
       })
-      .then((list) => {
-        if (list) {
-          setImportProviders(list);
-          setSelectedProviderCode("");
-          setImportGamesData(null);
-          setSelectedCategories(new Set());
-          setSelectedGames(new Set());
-        }
-      })
-      .catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load providers"))
+      .catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load config"))
       .finally(() => setImportProvidersLoading(false));
-  }, [importOpen]);
+  }, [importOpen, gameProviders]);
 
   // When provider is selected, fetch games from game API (browser)
   useEffect(() => {
@@ -205,7 +205,7 @@ const PowerhouseProviders = () => {
               ) : importProvidersError ? (
                 <div className="space-y-2">
                   <p className="text-sm text-destructive">{importProvidersError}</p>
-                  <Button variant="outline" size="sm" onClick={() => { setImportProvidersError(null); setImportProvidersLoading(true); getImportGameApiUrl().then(({ game_api_url }) => { if (!game_api_url) { setImportProvidersError("Game API URL not set. Configure in Super Settings."); return; } setGameApiUrl(game_api_url); return fetchProvidersFromGameApi(game_api_url); }).then((list) => { if (list) setImportProviders(list); }).catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load providers")).finally(() => setImportProvidersLoading(false)); }}>Retry</Button>
+                  <Button variant="outline" size="sm" onClick={() => { setImportProvidersError(null); setImportProvidersLoading(true); getImportGameApiUrl().then(({ game_api_url }) => { if (!game_api_url) { setImportProvidersError("Game API URL not set. Configure in Super Settings."); return; } setGameApiUrl(game_api_url); setImportProviders((gameProviders as Record<string, unknown>[]).map((p) => ({ code: String(p?.code ?? ""), name: String(p?.name ?? p?.code ?? "") }))); setSelectedProviderCode(""); setImportGamesData(null); setSelectedCategories(new Set()); setSelectedGames(new Set()); }).catch((e) => setImportProvidersError((e as { detail?: string })?.detail ?? (e as { message?: string })?.message ?? "Failed to load config")).finally(() => setImportProvidersLoading(false)); }}>Retry</Button>
                 </div>
               ) : (
                 <select

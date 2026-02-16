@@ -293,10 +293,10 @@ export async function fetchProvidersFromGameApi(baseUrl: string): Promise<Import
   return result;
 }
 
-/** Fetch provider games from game API from browser (GET serverurl/providerGame?provider=...&count=...). */
+/** Fetch provider games from game API from browser (GET serverurl/providerGame?provider=...&limitCount=10000). */
 export async function fetchProviderGamesFromGameApi(baseUrl: string, providerCode: string): Promise<ImportProviderGamesResponse> {
   const base = baseUrl.replace(/\/$/, "");
-  const url = `${base}/providerGame?provider=${encodeURIComponent(providerCode)}&count=1000`;
+  const url = `${base}/providerGame?provider=${encodeURIComponent(providerCode)}&limitCount=10000`;
   const r = await fetch(url, { method: "GET" });
   if (!r.ok) throw new Error(r.status === 404 ? "Not Found (check provider code)" : `Game API error: ${r.status}`);
   const data = await r.json();
