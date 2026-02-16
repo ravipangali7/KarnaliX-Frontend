@@ -1,13 +1,13 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GameCard } from "@/components/shared/GameCard";
 import { getGame, getGames } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
 import { launchGame, getPlayerWallet } from "@/api/player";
-import { AuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Game } from "@/api/games";
 import { toast } from "sonner";
 import { Shield, Zap, Lock, Users, Trophy, Clock, Flame, TrendingUp, Crown, Dice1, Target, Eye } from "lucide-react";
@@ -25,7 +25,7 @@ const recentWinners = [
 
 const GameDetailPage = () => {
   const { id } = useParams();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const isPlayer = user?.role === "player";
   const [betAmount, setBetAmount] = useState(100);
   const [launching, setLaunching] = useState(false);
