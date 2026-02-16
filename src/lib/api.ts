@@ -3,7 +3,7 @@
  */
 
 // const BASE_URL = 'http://localhost:8000/api';
-const BASE_URL = 'https://admin.kingxclub.com/api';
+export const BASE_URL = 'https://admin.kingxclub.com/api';
 
 function getToken(): string | null {
   return localStorage.getItem('token');

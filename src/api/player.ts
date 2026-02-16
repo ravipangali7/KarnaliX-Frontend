@@ -1,6 +1,33 @@
-import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
+import { apiGet, apiPost, apiPatch, apiDelete, BASE_URL } from "@/lib/api";
 
 const P = "/player";
+
+/**
+ * Launch game: GET backend launch-game (302 to provider). Does not follow redirect;
+ * sets window.location to provider URL so user plays there.
+ */
+export async function launchGame(game_uid: string): Promise<void> {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Login to play");
+  const url = `${BASE_URL.replace(/\/$/, "")}${P}/launch-game/?game_uid=${encodeURIComponent(game_uid)}`;
+  const res = await fetch(url, {
+    method: "GET",
+    redirect: "manual",
+    headers: { Authorization: `Token ${token}` },
+  });
+  if (res.status === 302 || res.status === 301) {
+    const location = res.headers.get("Location");
+    if (location) {
+      window.location.href = location;
+      return;
+    }
+  }
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { detail?: string };
+    throw { status: res.status, detail: data.detail ?? "Launch failed", ...data };
+  }
+  throw new Error("Launch failed");
+}
 
 export async function getPlayerDashboard() {
   const res = await apiGet<Record<string, unknown>>(`${P}/dashboard/`);

@@ -1,12 +1,15 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useContext, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GameCard } from "@/components/shared/GameCard";
 import { getGame, getGames } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
+import { launchGame, getPlayerWallet } from "@/api/player";
+import { AuthContext } from "@/contexts/AuthContext";
 import type { Game } from "@/api/games";
-import { useState } from "react";
+import { toast } from "sonner";
 import { Shield, Zap, Lock, Users, Trophy, Clock, Flame, TrendingUp, Crown, Dice1, Target, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -22,10 +25,18 @@ const recentWinners = [
 
 const GameDetailPage = () => {
   const { id } = useParams();
+  const { user } = useContext(AuthContext);
+  const isPlayer = user?.role === "player";
   const [betAmount, setBetAmount] = useState(100);
+  const [launching, setLaunching] = useState(false);
   const { data: game, isLoading } = useQuery({ queryKey: ["game", id], queryFn: () => getGame(id!), enabled: !!id });
   const { data: games = [] } = useQuery({ queryKey: ["games"], queryFn: () => getGames() });
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  const { data: wallet } = useQuery({
+    queryKey: ["playerWallet"],
+    queryFn: getPlayerWallet,
+    enabled: !!isPlayer,
+  });
 
   if (isLoading || !id) return <div className="p-8 text-center">Loading...</div>;
   if (!game) return <div className="p-8 text-center">Game not found</div>;
@@ -76,15 +87,19 @@ const GameDetailPage = () => {
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3 rounded-xl bg-muted/50 cyber-border">
                   <p className="text-[10px] text-muted-foreground">Main</p>
-                  <p className="font-bold text-base">₹25,000</p>
+                  <p className="font-bold text-base">{isPlayer && wallet != null ? `₹${Number((wallet as { main_balance?: string }).main_balance || 0).toLocaleString()}` : "—"}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-muted/50 cyber-border">
                   <p className="text-[10px] text-muted-foreground">Bonus</p>
-                  <p className="font-bold text-base text-primary">₹2,500</p>
+                  <p className="font-bold text-base text-primary">{isPlayer && wallet != null ? `₹${Number((wallet as { bonus_balance?: string }).bonus_balance || 0).toLocaleString()}` : "—"}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 neon-glow-sm">
                   <p className="text-[10px] text-muted-foreground">Total</p>
-                  <p className="font-bold text-base neon-text">₹27,500</p>
+                  <p className="font-bold text-base neon-text">
+                    {isPlayer && wallet != null
+                      ? `₹${(Number((wallet as { main_balance?: string }).main_balance || 0) + Number((wallet as { bonus_balance?: string }).bonus_balance || 0)).toLocaleString()}`
+                      : "—"}
+                  </p>
                 </div>
               </div>
 
@@ -124,9 +139,35 @@ const GameDetailPage = () => {
                 </div>
               </div>
 
-              <Button className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 neon-glow tracking-widest animate-scale-pulse">
-                🎮 START PLAYING
-              </Button>
+              {!user ? (
+                <Link to="/login">
+                  <Button className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 neon-glow tracking-widest">
+                    🎮 Login to play
+                  </Button>
+                </Link>
+              ) : !isPlayer ? (
+                <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-lg h-14" disabled>
+                  Only players can launch games
+                </Button>
+              ) : (
+                <Button
+                  className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 neon-glow tracking-widest animate-scale-pulse"
+                  disabled={launching}
+                  onClick={async () => {
+                    setLaunching(true);
+                    try {
+                      await launchGame(g.game_uid);
+                    } catch (e) {
+                      const msg = (e as { detail?: string })?.detail ?? "Launch failed";
+                      toast.error(msg);
+                    } finally {
+                      setLaunching(false);
+                    }
+                  }}
+                >
+                  {launching ? "Launching…" : "🎮 START PLAYING"}
+                </Button>
+              )}
               <a href={`https://wa.me/${String(whatsapp).replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="w-full border-success text-success mt-2" size="sm">
                   💬 Instant Deposit via WhatsApp
