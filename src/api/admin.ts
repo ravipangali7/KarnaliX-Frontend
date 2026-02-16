@@ -254,6 +254,51 @@ export async function deleteGame(id: number) {
   return apiDelete(`${prefix("powerhouse")}/games/${id}/`);
 }
 
+// --- Direct Import (external game API) ---
+export type ImportProvider = { code: string; name: string };
+export type ImportGame = { game_uid: string; game_name: string; game_type: string; game_image: string };
+export type ImportProviderGamesResponse = { categories: string[]; games: ImportGame[] };
+export type ImportGamesResult = { provider_created: boolean; categories_created: number; games_created: number; games_skipped: number };
+
+function unwrapList<T>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  const d = (res as { data?: unknown })?.data;
+  return Array.isArray(d) ? (d as T[]) : [];
+}
+function unwrapObject<T>(res: unknown): T {
+  if (res != null && typeof res === "object" && !Array.isArray(res) && !("data" in res)) return res as T;
+  const d = (res as { data?: T })?.data;
+  return d as T;
+}
+
+export async function getImportProviders(): Promise<ImportProvider[]> {
+  const res = await apiGet<ImportProvider[]>(`${prefix("powerhouse")}/import/providers/`);
+  return unwrapList<ImportProvider>(res as unknown);
+}
+
+export async function getImportProviderGames(providerCode: string): Promise<ImportProviderGamesResponse> {
+  const res = await apiGet<ImportProviderGamesResponse>(`${prefix("powerhouse")}/import/providers/${encodeURIComponent(providerCode)}/games/`);
+  const raw = unwrapObject<ImportProviderGamesResponse>(res as unknown);
+  return {
+    categories: Array.isArray(raw?.categories) ? raw.categories : [],
+    games: Array.isArray(raw?.games) ? raw.games : [],
+  };
+}
+
+export async function postImportGames(payload: {
+  provider_code: string;
+  provider_name: string;
+  games: ImportGame[];
+}): Promise<ImportGamesResult> {
+  const res = await apiPost<ImportGamesResult>(`${prefix("powerhouse")}/import/games/`, payload);
+  return unwrapObject<ImportGamesResult>(res as unknown) ?? {
+    provider_created: false,
+    categories_created: 0,
+    games_created: 0,
+    games_skipped: 0,
+  };
+}
+
 export async function getBonusRulesAdmin() {
   const res = await apiGet(`${prefix("powerhouse")}/bonus-rules/`);
   return (res as unknown as Record<string, unknown>[]) ?? [];

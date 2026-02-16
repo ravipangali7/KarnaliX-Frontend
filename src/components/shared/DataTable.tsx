@@ -17,11 +17,12 @@ interface DataTableProps<T> {
   searchKey?: keyof T;
   onAdd?: () => void;
   addLabel?: string;
+  secondaryAction?: { label: string; onClick: () => void };
   pageSize?: number;
 }
 
 export function DataTable<T extends { id: string }>({
-  data, columns, searchPlaceholder = "Search...", searchKey, onAdd, addLabel = "Add New", pageSize = 10,
+  data, columns, searchPlaceholder = "Search...", searchKey, onAdd, addLabel = "Add New", secondaryAction, pageSize = 10,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -48,6 +49,11 @@ export function DataTable<T extends { id: string }>({
         {onAdd && (
           <Button onClick={onAdd} size="sm" className="gold-gradient text-primary-foreground gap-1">
             <Plus className="h-3 w-3" /> {addLabel}
+          </Button>
+        )}
+        {secondaryAction && (
+          <Button onClick={secondaryAction.onClick} variant="outline" size="sm" className="gap-1">
+            <Plus className="h-3 w-3" /> {secondaryAction.label}
           </Button>
         )}
       </div>
