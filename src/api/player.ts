@@ -18,7 +18,7 @@ export async function launchGame(game_uid: string): Promise<void> {
   if (res.status === 302 || res.status === 301) {
     const location = res.headers.get("Location");
     if (location) {
-      window.location.href = location;
+      window.open(location, "_blank", "noopener,noreferrer");
       return;
     }
   }

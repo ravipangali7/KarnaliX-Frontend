@@ -42,10 +42,11 @@ function unwrapSingle<T>(res: unknown): T | null {
   return data ?? null;
 }
 
-/** Resolve game image URL: prefer image_url (full URL), else getMediaUrl(image) for Django media paths. */
+/** Resolve game image URL: prefer uploaded media (image), else image_url, else empty. */
 export function getGameImageUrl(game: Game): string {
+  if (game.image?.trim()) return getMediaUrl(game.image.trim());
   if (game.image_url?.trim()) return game.image_url.trim();
-  return getMediaUrl(game.image ?? "");
+  return getMediaUrl("");
 }
 
 export async function getCategories(): Promise<GameCategory[]> {
