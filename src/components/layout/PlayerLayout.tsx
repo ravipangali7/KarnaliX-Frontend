@@ -36,17 +36,31 @@ export const PlayerLayout = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // When user returns from game tab, refetch wallet and auth so header/sidebar balance updates
+  // When user returns from game tab (visibility or focus), refetch wallet and auth so header/sidebar balance updates
   useEffect(() => {
-    const handler = () => {
+    let visibilityTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    const refetchBalance = () => {
+      queryClient.invalidateQueries({ queryKey: ["playerWallet"] });
+      queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
+      refreshUser?.();
+    };
+    const onVisible = () => {
       if (document.visibilityState === "visible") {
-        queryClient.invalidateQueries({ queryKey: ["playerWallet"] });
-        queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
-        refreshUser?.();
+        if (visibilityTimeoutId) clearTimeout(visibilityTimeoutId);
+        visibilityTimeoutId = setTimeout(() => {
+          refetchBalance();
+          visibilityTimeoutId = null;
+        }, 500);
       }
     };
-    document.addEventListener("visibilitychange", handler);
-    return () => document.removeEventListener("visibilitychange", handler);
+    const onFocus = () => refetchBalance();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+      if (visibilityTimeoutId) clearTimeout(visibilityTimeoutId);
+    };
   }, [queryClient, refreshUser]);
 
   return (
