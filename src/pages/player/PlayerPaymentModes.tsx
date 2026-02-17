@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getPaymentModes, createPaymentMode, deletePaymentMode } from "@/api/player";
+import { getMediaUrl } from "@/lib/api";
 import { Plus, Trash2, CreditCard, Smartphone } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
@@ -110,6 +111,9 @@ const PlayerPaymentModes = () => {
                   <p className="text-sm font-semibold">{String(pm.name ?? "")}</p>
                   <p className="text-xs text-muted-foreground">{pm.type === "ewallet" ? String(pm.wallet_phone ?? pm.account_id ?? "") : String(pm.bank_account_no ?? pm.account_number ?? "")}</p>
                 </div>
+                {pm.qr_image_url && (
+                  <img src={getMediaUrl(String(pm.qr_image_url))} alt="QR" className="w-12 h-12 object-contain rounded border border-border flex-shrink-0" />
+                )}
               </div>
               <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" disabled={submitting} onClick={() => setDeleteId(Number(pm.id))}>
                 <Trash2 className="h-4 w-4" />

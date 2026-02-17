@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { getWithdrawals, approveWithdraw, rejectWithdraw, type ListParams } from "@/api/admin";
+import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { Check, X, Eye, RefreshCw } from "lucide-react";
 
-type WithdrawRow = Record<string, unknown> & { id?: number; user_username?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; status?: string; created_at?: string; account_details?: string; accountDetails?: string };
+type PaymentModeDetail = Record<string, unknown> & { name?: string; type_display?: string; wallet_phone?: string; bank_name?: string; bank_branch?: string; bank_account_no?: string; bank_account_holder_name?: string; status_display?: string; qr_image_url?: string };
+type WithdrawRow = Record<string, unknown> & { id?: number; user_username?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; payment_mode_detail?: PaymentModeDetail | null; status?: string; created_at?: string; account_details?: string; accountDetails?: string };
 
 const AdminWithdrawals = () => {
   const { user } = useAuth();
@@ -96,7 +98,28 @@ const AdminWithdrawals = () => {
               {selectedW.payment_mode_qr_image && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground text-xs">Payment QR</span>
-                  <img src={String(selectedW.payment_mode_qr_image)} alt="Payment QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
+                  <img src={getMediaUrl(String(selectedW.payment_mode_qr_image))} alt="Payment QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
+                </div>
+              )}
+              {selectedW.payment_mode_detail && (
+                <div className="col-span-2 border-t pt-3 mt-3 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">Payment mode details</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground text-xs">Name</span><p className="font-medium">{String(selectedW.payment_mode_detail.name ?? "")}</p></div>
+                    <div><span className="text-muted-foreground text-xs">Type</span><p className="font-medium">{String(selectedW.payment_mode_detail.type_display ?? selectedW.payment_mode_detail.type ?? "")}</p></div>
+                    {selectedW.payment_mode_detail.wallet_phone && <div className="col-span-2"><span className="text-muted-foreground text-xs">Wallet / Phone</span><p className="font-mono font-medium">{String(selectedW.payment_mode_detail.wallet_phone)}</p></div>}
+                    {selectedW.payment_mode_detail.bank_name && <div><span className="text-muted-foreground text-xs">Bank</span><p className="font-medium">{String(selectedW.payment_mode_detail.bank_name)}</p></div>}
+                    {selectedW.payment_mode_detail.bank_branch && <div><span className="text-muted-foreground text-xs">Branch</span><p className="font-medium">{String(selectedW.payment_mode_detail.bank_branch)}</p></div>}
+                    {selectedW.payment_mode_detail.bank_account_no && <div><span className="text-muted-foreground text-xs">Account no</span><p className="font-mono font-medium">{String(selectedW.payment_mode_detail.bank_account_no)}</p></div>}
+                    {selectedW.payment_mode_detail.bank_account_holder_name && <div><span className="text-muted-foreground text-xs">Account holder</span><p className="font-medium">{String(selectedW.payment_mode_detail.bank_account_holder_name)}</p></div>}
+                    <div><span className="text-muted-foreground text-xs">Status</span><p className="font-medium">{String(selectedW.payment_mode_detail.status_display ?? selectedW.payment_mode_detail.status ?? "")}</p></div>
+                  </div>
+                  {selectedW.payment_mode_detail.qr_image_url && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">QR</span>
+                      <img src={getMediaUrl(String(selectedW.payment_mode_detail.qr_image_url))} alt="Payment QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

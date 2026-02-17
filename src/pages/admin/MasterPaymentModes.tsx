@@ -12,6 +12,7 @@ import {
   updateMasterPaymentModeFormData,
   deleteMasterPaymentMode,
 } from "@/api/admin";
+import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { Pencil, Trash2, Upload } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -69,7 +70,7 @@ const MasterPaymentModes = () => {
     setFormBankAccountNo(String(row.bank_account_no ?? ""));
     setFormBankAccountHolderName(String(row.bank_account_holder_name ?? ""));
     setFormQrFile(null);
-    setFormQrPreview(row.qr_image_url ? String(row.qr_image_url) : null);
+    setFormQrPreview(row.qr_image_url ? getMediaUrl(String(row.qr_image_url)) : null);
     setEditOpen(true);
   };
 
@@ -297,11 +298,11 @@ const MasterPaymentModes = () => {
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   setFormQrFile(f ?? null);
-                  setFormQrPreview(f ? URL.createObjectURL(f) : (selected?.qr_image_url ? String(selected.qr_image_url) : null));
+                  setFormQrPreview(f ? URL.createObjectURL(f) : (selected?.qr_image_url ? getMediaUrl(String(selected.qr_image_url)) : null));
                 }}
               />
               {(formQrPreview || (selected?.qr_image_url && !formQrFile)) && (
-                <img src={formQrPreview || (selected?.qr_image_url ? String(selected.qr_image_url) : "")} alt="QR preview" className="mt-2 h-24 w-24 object-contain border rounded" />
+                <img src={formQrPreview || (selected?.qr_image_url ? getMediaUrl(String(selected.qr_image_url)) : "")} alt="QR preview" className="mt-2 h-24 w-24 object-contain border rounded" />
               )}
             </div>
           </div>

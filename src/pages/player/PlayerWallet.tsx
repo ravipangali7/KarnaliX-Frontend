@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
+import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -200,6 +201,11 @@ const PlayerWallet = () => {
                           {selectedMode?.bank_branch && <p>Branch: {String(selectedMode.bank_branch)}</p>}
                           {selectedMode?.bank_account_no && <p>Account No: <span className="font-mono font-medium">{String(selectedMode.bank_account_no)}</span></p>}
                           {selectedMode?.bank_account_holder_name && <p>Account Holder: {String(selectedMode.bank_account_holder_name)}</p>}
+                        </div>
+                      )}
+                      {selectedMode?.qr_image_url && (
+                        <div className="mt-2">
+                          <img src={getMediaUrl(String(selectedMode.qr_image_url))} alt="Payment QR" className="w-28 h-28 object-contain rounded-lg border border-border" />
                         </div>
                       )}
                     </div>

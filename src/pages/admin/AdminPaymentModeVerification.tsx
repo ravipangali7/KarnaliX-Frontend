@@ -10,6 +10,7 @@ import {
   approvePaymentModeVerification,
   rejectPaymentModeVerification,
 } from "@/api/admin";
+import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { Check, X, Eye } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -132,7 +133,7 @@ const AdminPaymentModeVerification = () => {
               {selected.qr_image_url && (
                 <div>
                   <span className="text-muted-foreground text-xs">QR Image</span>
-                  <img src={String(selected.qr_image_url)} alt="QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
+                  <img src={getMediaUrl(String(selected.qr_image_url))} alt="QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
                 </div>
               )}
             </div>
