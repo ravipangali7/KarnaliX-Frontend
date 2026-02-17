@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GameCard } from "@/components/shared/GameCard";
@@ -25,7 +25,8 @@ const recentWinners = [
 
 const GameDetailPage = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const queryClient = useQueryClient();
   const isPlayer = user?.role === "player";
   const [betAmount, setBetAmount] = useState(100);
   const [launching, setLaunching] = useState(false);
@@ -37,6 +38,19 @@ const GameDetailPage = () => {
     queryFn: getPlayerWallet,
     enabled: !!isPlayer,
   });
+
+  // When user returns from game tab, refetch wallet and auth user so balance updates
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === "visible" && isPlayer) {
+        queryClient.invalidateQueries({ queryKey: ["playerWallet"] });
+        queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
+        refreshUser?.();
+      }
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, [isPlayer, queryClient, refreshUser]);
 
   if (isLoading || !id) return <div className="p-8 text-center">Loading...</div>;
   if (gameError) return (

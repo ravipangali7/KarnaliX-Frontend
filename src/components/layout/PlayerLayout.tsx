@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Home, MessageCircle, Wallet, Clock, User, Gamepad2, Shield, Key, CreditCard, BarChart3, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -26,12 +28,26 @@ const formatBal = (v: string | number | null | undefined) => (v != null ? `₹${
 export const PlayerLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
+  const { user, logout, refreshUser } = useAuth();
   const total = user?.total_balance != null ? formatBal(user.total_balance) : "₹0";
   const main = formatBal(user?.main_balance);
   const bonus = formatBal(user?.bonus_balance);
 
   const isActive = (path: string) => location.pathname === path;
+
+  // When user returns from game tab, refetch wallet and auth so header/sidebar balance updates
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === "visible") {
+        queryClient.invalidateQueries({ queryKey: ["playerWallet"] });
+        queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
+        refreshUser?.();
+      }
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, [queryClient, refreshUser]);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
