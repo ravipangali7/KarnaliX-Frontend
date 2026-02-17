@@ -1,7 +1,7 @@
 /**
  * Admin API (powerhouse, super, master). Use prefix: powerhouse/ | super/ | master/
  */
-import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from "@/lib/api";
+import { apiGet, apiPost, apiPut, apiPatch, apiDelete, apiPostForm, apiPatchForm } from "@/lib/api";
 
 const prefix = (role: "powerhouse" | "super" | "master") => `/${role}`;
 
@@ -9,6 +9,18 @@ const prefix = (role: "powerhouse" | "super" | "master") => `/${role}`;
 export async function getDashboard(role: "powerhouse" | "super" | "master") {
   const res = await apiGet<Record<string, unknown>>(`${prefix(role)}/dashboard/`);
   return res as unknown as Record<string, unknown>;
+}
+
+// --- Current user (profile / change password) ---
+export type AdminRole = "powerhouse" | "super" | "master";
+export async function getProfile(role: AdminRole) {
+  return apiGet<Record<string, unknown>>(`${prefix(role)}/profile/`);
+}
+export async function updateProfile(role: AdminRole, data: { name?: string; phone?: string; email?: string; whatsapp_number?: string }) {
+  return apiPatch(`${prefix(role)}/profile/update/`, data);
+}
+export async function changePassword(role: AdminRole, body: { old_password: string; new_password: string }) {
+  return apiPost(`${prefix(role)}/change-password/`, body);
 }
 
 // --- Users (role-specific paths) ---
@@ -46,12 +58,25 @@ export async function deleteMaster(id: number, role: "powerhouse" | "super" = "p
   return apiDelete(`${prefix(role)}/masters/${id}/delete/`);
 }
 
-export async function getPlayers(role: "powerhouse" | "super" | "master" = "powerhouse") {
-  const res = await apiGet(`${prefix(role)}/players/`);
+export async function getPlayers(role: "powerhouse" | "super" | "master" = "powerhouse", params?: ListParams) {
+  const res = await apiGet(`${prefix(role)}/players/${buildQueryString(params)}`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
 export async function getPlayer(id: number, role: "powerhouse" | "super" | "master" = "powerhouse") {
   return apiGet(`${prefix(role)}/players/${id}/`);
+}
+export type PlayerReportParams = { date_from?: string; date_to?: string };
+export async function getPlayerReport(
+  role: "powerhouse" | "super" | "master",
+  playerId: number,
+  params?: PlayerReportParams
+) {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  const path = `${prefix(role)}/players/${playerId}/report/`;
+  return apiGet<Record<string, unknown>>(qs ? `${path}?${qs}` : path);
 }
 export async function createPlayer(body: unknown, role: "powerhouse" | "super" | "master" = "powerhouse") {
   return apiPost(`${prefix(role)}/players/create/`, body);
@@ -64,8 +89,20 @@ export async function deletePlayer(id: number, role: "powerhouse" | "super" | "m
 }
 
 // --- Deposits / Withdrawals ---
-export async function getDeposits(role: "powerhouse" | "super" | "master") {
-  const res = await apiGet(`${prefix(role)}/deposits/`);
+export type ListParams = { search?: string; status?: string; date_from?: string; date_to?: string; is_active?: string };
+function buildQueryString(params?: ListParams): string {
+  if (!params) return "";
+  const q = new URLSearchParams();
+  if (params.search) q.set("search", params.search);
+  if (params.status) q.set("status", params.status);
+  if (params.date_from) q.set("date_from", params.date_from);
+  if (params.date_to) q.set("date_to", params.date_to);
+  if (params.is_active) q.set("is_active", params.is_active);
+  const s = q.toString();
+  return s ? `?${s}` : "";
+}
+export async function getDeposits(role: "powerhouse" | "super" | "master", params?: ListParams) {
+  const res = await apiGet(`${prefix(role)}/deposits/${buildQueryString(params)}`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
 export async function getDeposit(id: number, role: "powerhouse" | "super" | "master") {
@@ -101,8 +138,8 @@ export async function rejectDeposit(id: number, body?: { reject_reason?: string 
   return apiPost(`${prefix(role)}/deposits/${id}/reject/`, body ?? {});
 }
 
-export async function getWithdrawals(role: "powerhouse" | "super" | "master") {
-  const res = await apiGet(`${prefix(role)}/withdrawals/`);
+export async function getWithdrawals(role: "powerhouse" | "super" | "master", params?: ListParams) {
+  const res = await apiGet(`${prefix(role)}/withdrawals/${buildQueryString(params)}`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
 export async function getWithdraw(id: number, role: "powerhouse" | "super" | "master") {
@@ -133,23 +170,32 @@ export async function getMasterPaymentMode(id: number) {
 export async function createMasterPaymentMode(body: unknown) {
   return apiPost(`${prefix("master")}/payment-modes/`, body);
 }
+/** Create payment mode with optional QR image (FormData). */
+export async function createMasterPaymentModeFormData(formData: FormData) {
+  return apiPostForm(`${prefix("master")}/payment-modes/`, formData);
+}
 export async function updateMasterPaymentMode(id: number, body: unknown) {
   return apiPatch(`${prefix("master")}/payment-modes/${id}/edit/`, body);
+}
+/** Update payment mode with optional QR image (FormData). */
+export async function updateMasterPaymentModeFormData(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("master")}/payment-modes/${id}/edit/`, formData);
 }
 export async function deleteMasterPaymentMode(id: number) {
   return apiDelete(`${prefix("master")}/payment-modes/${id}/delete/`);
 }
 
-// --- KYC ---
-export async function getKycList(role: "powerhouse" | "super" | "master") {
-  const res = await apiGet(`${prefix(role)}/kyc/`);
+// --- Payment Mode Verification (master, super, powerhouse) ---
+export async function getPaymentModeVerificationList(role: "powerhouse" | "super" | "master", params?: { status?: string }) {
+  const qs = params?.status && params.status !== "all" ? `?status=${encodeURIComponent(params.status)}` : "";
+  const res = await apiGet(`${prefix(role)}/payment-mode-verification/${qs}`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
-export async function approveKyc(id: number, role: "powerhouse" | "super" | "master") {
-  return apiPost(`${prefix(role)}/kyc/${id}/approve/`, {});
+export async function approvePaymentModeVerification(id: number, role: "powerhouse" | "super" | "master") {
+  return apiPost(`${prefix(role)}/payment-mode-verification/${id}/approve/`, {});
 }
-export async function rejectKyc(id: number, body: { reason?: string }, role: "powerhouse" | "super" | "master") {
-  return apiPost(`${prefix(role)}/kyc/${id}/reject/`, body);
+export async function rejectPaymentModeVerification(id: number, body: { reject_reason?: string }, role: "powerhouse" | "super" | "master") {
+  return apiPost(`${prefix(role)}/payment-mode-verification/${id}/reject/`, body);
 }
 
 // --- Game log, Transactions, Activity ---

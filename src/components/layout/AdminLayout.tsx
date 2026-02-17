@@ -2,8 +2,8 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
-  Shield, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight,
-  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard
+  Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight,
+  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,13 +17,19 @@ const getNavItems = (role: string) => {
     { label: "Messages", path: "/messages", icon: MessageCircle },
   ];
 
+  const profileItems = [
+    { label: "Profile", path: "/profile", icon: User },
+    { label: "Change Password", path: "/change-password", icon: Key },
+  ];
+
   if (role === "powerhouse") {
     return [
       ...base,
+      ...profileItems,
       { label: "Super Users", path: "/supers", icon: Users },
       { label: "Master Users", path: "/masters", icon: Users },
       { label: "Player Users", path: "/players", icon: Users },
-      { label: "KYC", path: "/kyc", icon: Shield },
+      { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
       { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
       { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
       { label: "Categories", path: "/categories", icon: Tag },
@@ -43,11 +49,12 @@ const getNavItems = (role: string) => {
   if (role === "super") {
     return [
       ...base,
+      ...profileItems,
       { label: "Master Users", path: "/masters", icon: Users },
       { label: "Player Users", path: "/players", icon: Users },
+      { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
       { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
       { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
-      { label: "KYC", path: "/kyc", icon: Shield },
       { label: "Game Log", path: "/game-log", icon: Gamepad2 },
       { label: "Transactions", path: "/transactions", icon: Clock },
       { label: "Activity Log", path: "/activity", icon: Activity },
@@ -56,11 +63,12 @@ const getNavItems = (role: string) => {
 
   return [
     ...base,
+    ...profileItems,
     { label: "Player Users", path: "/players", icon: Users },
-    { label: "Payment Methods", path: "/payment-modes", icon: CreditCard },
-    { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
+      { label: "Payment Methods", path: "/payment-modes", icon: CreditCard },
+      { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
+      { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
     { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
-    { label: "KYC", path: "/kyc", icon: Shield },
     { label: "Game Log", path: "/game-log", icon: Gamepad2 },
     { label: "Transactions", path: "/transactions", icon: Clock },
     { label: "Activity Log", path: "/activity", icon: Activity },

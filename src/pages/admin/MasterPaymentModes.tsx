@@ -7,11 +7,14 @@ import { Input } from "@/components/ui/input";
 import {
   getMasterPaymentModes,
   createMasterPaymentMode,
+  createMasterPaymentModeFormData,
   updateMasterPaymentMode,
+  updateMasterPaymentModeFormData,
   deleteMasterPaymentMode,
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Upload } from "lucide-react";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 
 type PaymentModeRow = Record<string, unknown> & {
   id?: number;
@@ -19,7 +22,8 @@ type PaymentModeRow = Record<string, unknown> & {
   type?: string;
   wallet_phone?: string;
   bank_account_no?: string;
-  is_active?: boolean;
+  status?: string;
+  qr_image_url?: string;
 };
 
 const MasterPaymentModes = () => {
@@ -39,7 +43,8 @@ const MasterPaymentModes = () => {
   const [formBankBranch, setFormBankBranch] = useState("");
   const [formBankAccountNo, setFormBankAccountNo] = useState("");
   const [formBankAccountHolderName, setFormBankAccountHolderName] = useState("");
-  const [formIsActive, setFormIsActive] = useState(true);
+  const [formQrFile, setFormQrFile] = useState<File | null>(null);
+  const [formQrPreview, setFormQrPreview] = useState<string | null>(null);
 
   const resetForm = () => {
     setFormName("");
@@ -49,7 +54,8 @@ const MasterPaymentModes = () => {
     setFormBankBranch("");
     setFormBankAccountNo("");
     setFormBankAccountHolderName("");
-    setFormIsActive(true);
+    setFormQrFile(null);
+    setFormQrPreview(null);
     setSelected(null);
   };
 
@@ -62,7 +68,8 @@ const MasterPaymentModes = () => {
     setFormBankBranch(String(row.bank_branch ?? ""));
     setFormBankAccountNo(String(row.bank_account_no ?? ""));
     setFormBankAccountHolderName(String(row.bank_account_holder_name ?? ""));
-    setFormIsActive(Boolean(row.is_active ?? true));
+    setFormQrFile(null);
+    setFormQrPreview(row.qr_image_url ? String(row.qr_image_url) : null);
     setEditOpen(true);
   };
 
@@ -80,8 +87,8 @@ const MasterPaymentModes = () => {
         row.type === "bank" ? last4(row.bank_account_no) : last4(row.wallet_phone),
     },
     {
-      header: "Active",
-      accessor: (row: PaymentModeRow) => (row.is_active ? "Yes" : "No"),
+      header: "Status",
+      accessor: (row: PaymentModeRow) => <StatusBadge status={String(row.status ?? "pending")} />,
     },
     {
       header: "Actions",
@@ -115,11 +122,35 @@ const MasterPaymentModes = () => {
     },
   ];
 
+  const buildFormData = (): FormData => {
+    const formData = new FormData();
+    formData.append("name", formName.trim());
+    formData.append("type", formType);
+    formData.append("status", "pending");
+    if (formType === "ewallet") {
+      formData.append("wallet_phone", formWalletPhone.trim());
+      formData.append("bank_name", "");
+      formData.append("bank_branch", "");
+      formData.append("bank_account_no", "");
+      formData.append("bank_account_holder_name", "");
+    } else {
+      formData.append("wallet_phone", "");
+      formData.append("bank_name", formBankName.trim());
+      formData.append("bank_branch", formBankBranch.trim());
+      formData.append("bank_account_no", formBankAccountNo.trim());
+      formData.append("bank_account_holder_name", formBankAccountHolderName.trim());
+    }
+    if (formQrFile) {
+      formData.append("qr_image", formQrFile);
+    }
+    return formData;
+  };
+
   const buildBody = () => {
     const body: Record<string, unknown> = {
       name: formName.trim(),
       type: formType,
-      is_active: formIsActive,
+      status: "pending",
     };
     if (formType === "ewallet") {
       body.wallet_phone = formWalletPhone.trim();
@@ -140,7 +171,7 @@ const MasterPaymentModes = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Payment Methods</h2>
-      <p className="text-sm text-muted-foreground">Manage payment methods your players use to deposit.</p>
+      <p className="text-sm text-muted-foreground">Manage payment methods your players use to deposit. New methods start as Pending; approve them in Payment Mode Verification.</p>
       <DataTable
         data={rows}
         columns={columns}
@@ -181,10 +212,24 @@ const MasterPaymentModes = () => {
                 <Input placeholder="Account holder name" value={formBankAccountHolderName} onChange={(e) => setFormBankAccountHolderName(e.target.value)} />
               </>
             )}
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={formIsActive} onChange={(e) => setFormIsActive(e.target.checked)} />
-              Active
-            </label>
+            <div>
+              <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Upload className="h-3 w-3" /> QR Image (optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm mt-1 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-primary-foreground"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  setFormQrFile(f ?? null);
+                  setFormQrPreview(f ? URL.createObjectURL(f) : null);
+                }}
+              />
+              {formQrPreview && (
+                <img src={formQrPreview} alt="QR preview" className="mt-2 h-24 w-24 object-contain border rounded" />
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
@@ -192,7 +237,11 @@ const MasterPaymentModes = () => {
               className="gold-gradient text-primary-foreground"
               onClick={async () => {
                 try {
-                  await createMasterPaymentMode(buildBody());
+                  if (formQrFile) {
+                    await createMasterPaymentModeFormData(buildFormData());
+                  } else {
+                    await createMasterPaymentMode(buildBody());
+                  }
                   queryClient.invalidateQueries({ queryKey: ["master-payment-modes"] });
                   toast({ title: "Payment method added." });
                   setCreateOpen(false);
@@ -237,10 +286,24 @@ const MasterPaymentModes = () => {
                 <Input placeholder="Account holder name" value={formBankAccountHolderName} onChange={(e) => setFormBankAccountHolderName(e.target.value)} />
               </>
             )}
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={formIsActive} onChange={(e) => setFormIsActive(e.target.checked)} />
-              Active
-            </label>
+            <div>
+              <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Upload className="h-3 w-3" /> QR Image (optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm mt-1 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-primary-foreground"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  setFormQrFile(f ?? null);
+                  setFormQrPreview(f ? URL.createObjectURL(f) : (selected?.qr_image_url ? String(selected.qr_image_url) : null));
+                }}
+              />
+              {(formQrPreview || (selected?.qr_image_url && !formQrFile)) && (
+                <img src={formQrPreview || (selected?.qr_image_url ? String(selected.qr_image_url) : "")} alt="QR preview" className="mt-2 h-24 w-24 object-contain border rounded" />
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
@@ -249,7 +312,22 @@ const MasterPaymentModes = () => {
               onClick={async () => {
                 if (!selected?.id) return;
                 try {
-                  await updateMasterPaymentMode(selected.id, buildBody());
+                  if (formQrFile) {
+                    const fd = buildFormData();
+                    fd.append("name", formName.trim());
+                    fd.append("type", formType);
+                    if (formType === "ewallet") {
+                      fd.set("wallet_phone", formWalletPhone.trim());
+                    } else {
+                      fd.set("bank_name", formBankName.trim());
+                      fd.set("bank_branch", formBankBranch.trim());
+                      fd.set("bank_account_no", formBankAccountNo.trim());
+                      fd.set("bank_account_holder_name", formBankAccountHolderName.trim());
+                    }
+                    await updateMasterPaymentModeFormData(selected.id, fd);
+                  } else {
+                    await updateMasterPaymentMode(selected.id, buildBody());
+                  }
                   queryClient.invalidateQueries({ queryKey: ["master-payment-modes"] });
                   toast({ title: "Payment method updated." });
                   setEditOpen(false);

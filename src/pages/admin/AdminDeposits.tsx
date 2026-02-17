@@ -5,19 +5,32 @@ import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { PinDialog } from "@/components/shared/PinDialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { getDeposits, approveDeposit, rejectDeposit } from "@/api/admin";
+import { getDeposits, approveDeposit, rejectDeposit, type ListParams } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
-import { Check, X, Eye } from "lucide-react";
+import { Check, X, Eye, RefreshCw } from "lucide-react";
 
-type DepositRow = Record<string, unknown> & { id?: number; user_username?: string; amount?: string; payment_mode?: string; status?: string; created_at?: string; screenshot?: string };
+type DepositRow = Record<string, unknown> & { id?: number; user_username?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; status?: string; created_at?: string; screenshot?: string };
 
 const AdminDeposits = () => {
   const { user } = useAuth();
   const role = (user?.role === "powerhouse" || user?.role === "super" || user?.role === "master") ? user.role : "master";
   const queryClient = useQueryClient();
-  const { data: deposits = [] } = useQuery({ queryKey: ["admin-deposits", role], queryFn: () => getDeposits(role) });
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const listParams: ListParams = {};
+  if (dateFrom) listParams.date_from = dateFrom;
+  if (dateTo) listParams.date_to = dateTo;
+  if (statusFilter) listParams.status = statusFilter;
+  const { data: deposits = [] } = useQuery({
+    queryKey: ["admin-deposits", role, listParams],
+    queryFn: () => getDeposits(role, listParams),
+    refetchInterval: autoRefresh ? 10000 : false,
+  });
   const [pinOpen, setPinOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedDeposit, setSelectedDeposit] = useState<DepositRow | null>(null);
@@ -51,6 +64,20 @@ const AdminDeposits = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Deposits</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input type="date" className="w-40 h-9 text-sm" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+        <Input type="date" className="w-40 h-9 text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        <select className="h-9 rounded-md border border-border bg-background px-3 text-sm w-32" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="">All status</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+          <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
+        </label>
+      </div>
       <DataTable data={rows} columns={columns} searchKey="user_username" searchPlaceholder="Search deposits..." />
 
       {/* View Deposit */}
@@ -63,10 +90,16 @@ const AdminDeposits = () => {
                 <div><span className="text-muted-foreground text-xs">ID</span><p className="font-medium">{String(selectedDeposit.id ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">User</span><p className="font-medium">{String(selectedDeposit.user_username ?? selectedDeposit.username ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">Amount</span><p className="font-bold text-success">₹{Number(selectedDeposit.amount ?? 0).toLocaleString()}</p></div>
-                <div><span className="text-muted-foreground text-xs">Method</span><p className="font-medium">{String(selectedDeposit.payment_mode ?? "")}</p></div>
+                <div><span className="text-muted-foreground text-xs">Method</span><p className="font-medium">{String(selectedDeposit.payment_mode_name ?? selectedDeposit.payment_mode ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selectedDeposit.status ?? "pending")} /></p></div>
                 <div><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{selectedDeposit.created_at ? new Date(String(selectedDeposit.created_at)).toLocaleString() : ""}</p></div>
               </div>
+              {selectedDeposit.payment_mode_qr_image && (
+                <div>
+                  <span className="text-muted-foreground text-xs">Payment QR</span>
+                  <img src={String(selectedDeposit.payment_mode_qr_image)} alt="Payment QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
+                </div>
+              )}
               {selectedDeposit.screenshot && (
                 <div>
                   <span className="text-muted-foreground text-xs">Screenshot</span>

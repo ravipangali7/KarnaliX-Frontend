@@ -17,7 +17,6 @@ const quickAmounts = [500, 1000, 2000, 5000, 10000, 25000];
 const PlayerWallet = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const kycApproved = (user?.kyc_status ?? "").toLowerCase() === "approved";
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [selectedPM, setSelectedPM] = useState<string | null>(null);
@@ -81,13 +80,7 @@ const PlayerWallet = () => {
         </Button>
         <Button
           className="bg-accent text-accent-foreground font-gaming h-12 text-sm tracking-wider"
-          onClick={() => {
-            if (!kycApproved) {
-              toast({ title: "Complete KYC verification to withdraw.", variant: "destructive" });
-              return;
-            }
-            setWithdrawOpen(true);
-          }}
+          onClick={() => setWithdrawOpen(true)}
         >
           <ArrowUpCircle className="h-4 w-4 mr-2" /> WITHDRAW
         </Button>

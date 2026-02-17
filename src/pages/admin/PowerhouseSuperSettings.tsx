@@ -17,6 +17,7 @@ const PowerhouseSuperSettings = () => {
   const [maxWithdraw, setMaxWithdraw] = useState("");
   const [exposureLimit, setExposureLimit] = useState("");
   const [gameApiUrl, setGameApiUrl] = useState("");
+  const [gameApiLaunchUrl, setGameApiLaunchUrl] = useState("");
   const [gameApiSecret, setGameApiSecret] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -29,6 +30,7 @@ const PowerhouseSuperSettings = () => {
     setMaxWithdraw(String(s.max_withdraw ?? ""));
     setExposureLimit(String(s.exposure_limit ?? ""));
     setGameApiUrl(String(s.game_api_url ?? ""));
+    setGameApiLaunchUrl(String(s.game_api_launch_url ?? ""));
     setGameApiSecret(String(s.game_api_secret ?? ""));
   }, [superSettings]);
 
@@ -43,6 +45,7 @@ const PowerhouseSuperSettings = () => {
         max_withdraw: maxWithdraw || "0",
         exposure_limit: exposureLimit || "0",
         game_api_url: gameApiUrl.trim(),
+        game_api_launch_url: gameApiLaunchUrl.trim(),
         game_api_secret: gameApiSecret.trim(),
       });
       queryClient.invalidateQueries({ queryKey: ["admin-super-settings"] });
@@ -77,7 +80,8 @@ const PowerhouseSuperSettings = () => {
       <Card>
         <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-display">API Settings</CardTitle></CardHeader>
         <CardContent className="p-4 pt-2 space-y-3">
-          <div><label className="text-xs text-muted-foreground">API Endpoint</label><Input value={gameApiUrl} onChange={(e) => setGameApiUrl(e.target.value)} /></div>
+          <div><label className="text-xs text-muted-foreground">API Endpoint (getProvider/providerGame)</label><Input value={gameApiUrl} onChange={(e) => setGameApiUrl(e.target.value)} placeholder="https://allapi.online/launch_game_js" /></div>
+          <div><label className="text-xs text-muted-foreground">Launch URL (e.g. launch_game1_js)</label><Input value={gameApiLaunchUrl} onChange={(e) => setGameApiLaunchUrl(e.target.value)} placeholder="https://allapi.online/launch_game1_js" /></div>
           <div><label className="text-xs text-muted-foreground">API Secret</label><Input value={gameApiSecret} onChange={(e) => setGameApiSecret(e.target.value)} type="password" /></div>
         </CardContent>
       </Card>

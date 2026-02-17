@@ -2,12 +2,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
-import { User, Phone, Mail, Shield, Key, CreditCard, Gamepad2, ChevronRight, LogOut, BarChart3, Clock, Edit } from "lucide-react";
+import { User, Phone, Mail, Key, CreditCard, Gamepad2, ChevronRight, LogOut, BarChart3, Clock, Edit } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
 const profileLinks = [
-  { label: "KYC Verification", path: "/player/kyc", icon: Shield, color: "text-success" },
   { label: "Payment Modes", path: "/player/payment-modes", icon: CreditCard, color: "text-primary" },
   { label: "Game Results", path: "/player/game-results", icon: BarChart3, color: "text-neon" },
   { label: "Transactions", path: "/player/transactions", icon: Clock, color: "text-warning" },

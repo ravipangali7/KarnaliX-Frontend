@@ -20,11 +20,11 @@ import BonusPage from "@/pages/public/BonusPage";
 import WalletPage from "@/pages/public/WalletPage";
 import LoginPage from "@/pages/public/LoginPage";
 import RegisterPage from "@/pages/public/RegisterPage";
+import ForgotPasswordPage from "@/pages/public/ForgotPasswordPage";
 
 // Player Pages
 import PlayerDashboard from "@/pages/player/PlayerDashboard";
 import PlayerMessages from "@/pages/player/PlayerMessages";
-import PlayerKYC from "@/pages/player/PlayerKYC";
 import PlayerWallet from "@/pages/player/PlayerWallet";
 import PlayerTransactions from "@/pages/player/PlayerTransactions";
 import PlayerGameResults from "@/pages/player/PlayerGameResults";
@@ -40,11 +40,14 @@ import AdminMasters from "@/pages/admin/AdminMasters";
 import AdminSupers from "@/pages/admin/AdminSupers";
 import AdminDeposits from "@/pages/admin/AdminDeposits";
 import AdminWithdrawals from "@/pages/admin/AdminWithdrawals";
-import AdminKYC from "@/pages/admin/AdminKYC";
 import AdminGameLog from "@/pages/admin/AdminGameLog";
 import AdminTransactions from "@/pages/admin/AdminTransactions";
 import AdminActivityLog from "@/pages/admin/AdminActivityLog";
 import MasterPaymentModes from "@/pages/admin/MasterPaymentModes";
+import AdminPaymentModeVerification from "@/pages/admin/AdminPaymentModeVerification";
+import AdminProfile from "@/pages/admin/AdminProfile";
+import AdminChangePassword from "@/pages/admin/AdminChangePassword";
+import AdminPlayerReport from "@/pages/admin/AdminPlayerReport";
 
 // Powerhouse-only Pages
 import PowerhouseCategories from "@/pages/admin/PowerhouseCategories";
@@ -81,12 +84,12 @@ const App = () => (
             {/* Auth (no layout) */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
             {/* Player Dashboard */}
             <Route element={<ProtectedRoute allowedRole="player"><PlayerLayout /></ProtectedRoute>}>
               <Route path="/player" element={<PlayerDashboard />} />
               <Route path="/player/messages" element={<PlayerMessages />} />
-              <Route path="/player/kyc" element={<PlayerKYC />} />
               <Route path="/player/wallet" element={<PlayerWallet />} />
               <Route path="/player/transactions" element={<PlayerTransactions />} />
               <Route path="/player/game-results" element={<PlayerGameResults />} />
@@ -100,13 +103,16 @@ const App = () => (
               <Route path="/master" element={<AdminDashboard role="master" />} />
               <Route path="/master/messages" element={<AdminMessages role="master" />} />
               <Route path="/master/players" element={<AdminPlayers />} />
+              <Route path="/master/players/:id/report" element={<AdminPlayerReport />} />
               <Route path="/master/payment-modes" element={<MasterPaymentModes />} />
+              <Route path="/master/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/master/deposits" element={<AdminDeposits />} />
               <Route path="/master/withdrawals" element={<AdminWithdrawals />} />
-              <Route path="/master/kyc" element={<AdminKYC />} />
               <Route path="/master/game-log" element={<AdminGameLog />} />
               <Route path="/master/transactions" element={<AdminTransactions />} />
               <Route path="/master/activity" element={<AdminActivityLog />} />
+              <Route path="/master/profile" element={<AdminProfile />} />
+              <Route path="/master/change-password" element={<AdminChangePassword />} />
             </Route>
 
             {/* Super Dashboard */}
@@ -115,12 +121,15 @@ const App = () => (
               <Route path="/super/messages" element={<AdminMessages role="super" />} />
               <Route path="/super/masters" element={<AdminMasters />} />
               <Route path="/super/players" element={<AdminPlayers />} />
+              <Route path="/super/players/:id/report" element={<AdminPlayerReport />} />
+              <Route path="/super/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/super/deposits" element={<AdminDeposits />} />
               <Route path="/super/withdrawals" element={<AdminWithdrawals />} />
-              <Route path="/super/kyc" element={<AdminKYC />} />
               <Route path="/super/game-log" element={<AdminGameLog />} />
               <Route path="/super/transactions" element={<AdminTransactions />} />
               <Route path="/super/activity" element={<AdminActivityLog />} />
+              <Route path="/super/profile" element={<AdminProfile />} />
+              <Route path="/super/change-password" element={<AdminChangePassword />} />
             </Route>
 
             {/* Powerhouse Dashboard */}
@@ -130,7 +139,8 @@ const App = () => (
               <Route path="/powerhouse/supers" element={<AdminSupers />} />
               <Route path="/powerhouse/masters" element={<AdminMasters />} />
               <Route path="/powerhouse/players" element={<AdminPlayers />} />
-              <Route path="/powerhouse/kyc" element={<AdminKYC />} />
+              <Route path="/powerhouse/players/:id/report" element={<AdminPlayerReport />} />
+              <Route path="/powerhouse/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/powerhouse/deposits" element={<AdminDeposits />} />
               <Route path="/powerhouse/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/powerhouse/categories" element={<PowerhouseCategories />} />
@@ -144,6 +154,8 @@ const App = () => (
               <Route path="/powerhouse/site-settings" element={<PowerhouseSiteSettings />} />
               <Route path="/powerhouse/cms" element={<PowerhouseCMS />} />
               <Route path="/powerhouse/testimonials" element={<PowerhouseTestimonials />} />
+              <Route path="/powerhouse/profile" element={<AdminProfile />} />
+              <Route path="/powerhouse/change-password" element={<AdminChangePassword />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

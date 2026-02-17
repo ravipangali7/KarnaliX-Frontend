@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { DataTable } from "@/components/shared/DataTable";
@@ -7,17 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getMasters, getPlayers, createPlayer, updatePlayer, getMasterPaymentModes, getPaymentModesForDepositTarget, directDeposit, directWithdraw, resetPassword } from "@/api/admin";
+import { getMasters, getPlayers, createPlayer, updatePlayer, getMasterPaymentModes, getPaymentModesForDepositTarget, directDeposit, directWithdraw, resetPassword, type ListParams } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
-import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
 
-type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; status?: string; created_at?: string; phone?: string; kyc_status?: string };
+type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; is_active?: boolean; status?: string; created_at?: string; phone?: string; total_balance?: string | number; total_win_loss?: string | number };
 
 type PendingAction = "deposit" | "withdraw" | "resetPassword" | null;
 
 const AdminPlayers = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const role = (user?.role === "powerhouse" || user?.role === "super" || user?.role === "master") ? user.role : "master";
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
@@ -47,7 +49,17 @@ const AdminPlayers = () => {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editSaving, setEditSaving] = useState(false);
-  const { data: players = [] } = useQuery({ queryKey: ["admin-players", role], queryFn: () => getPlayers(role) });
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const listParams: ListParams = {};
+  if (dateFrom) listParams.date_from = dateFrom;
+  if (dateTo) listParams.date_to = dateTo;
+  const { data: players = [] } = useQuery({
+    queryKey: ["admin-players", role, listParams],
+    queryFn: () => getPlayers(role, listParams),
+    refetchInterval: autoRefresh ? 10000 : false,
+  });
   const { data: mastersList = [] } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role), enabled: (role === "powerhouse" || role === "super") && createOpen });
   const { data: depositPaymentModesList = [] } = useQuery({
     queryKey: ["deposit-payment-modes", role, selectedUser?.id],
@@ -61,8 +73,10 @@ const AdminPlayers = () => {
     { header: "Balance", accessor: (row: PlayerRow) => `₹${Number(row.main_balance ?? 0).toLocaleString()}` },
     { header: "Bonus", accessor: (row: PlayerRow) => `₹${Number(row.bonus_balance ?? 0).toLocaleString()}` },
     { header: "Exposure", accessor: (row: PlayerRow) => `₹${Number(row.exposure_balance ?? 0).toLocaleString()}` },
+    { header: "Total Balance", accessor: (row: PlayerRow) => `₹${Number(row.total_balance ?? 0).toLocaleString()}` },
+    { header: "Win/Loss", accessor: (row: PlayerRow) => `₹${Number(row.total_win_loss ?? 0).toLocaleString()}` },
     { header: "Exp Limit", accessor: (row: PlayerRow) => `₹${Number(row.exposure_limit ?? 0).toLocaleString()}` },
-    { header: "Status", accessor: (row: PlayerRow) => <StatusBadge status={String(row.status ?? "active")} /> },
+    { header: "Status", accessor: (row: PlayerRow) => <StatusBadge status={row.is_active === false ? "inactive" : "active"} /> },
     { header: "Joined", accessor: (row: PlayerRow) => row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "" },
     {
       header: "Actions",
@@ -71,7 +85,7 @@ const AdminPlayers = () => {
           <Button variant="ghost" size="icon" className="h-7 w-7 text-success" title="Deposit" onClick={() => { setSelectedUser(row); setDepositOpen(true); }}><ArrowDownCircle className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7 text-accent" title="Withdraw" onClick={() => { setSelectedUser(row); setWithdrawOpen(true); }}><ArrowUpCircle className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="Reset Password" onClick={() => { setSelectedUser(row); setResetPwOpen(true); }}><Key className="h-3 w-3" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="View" onClick={() => { setSelectedUser(row); setViewOpen(true); }}><Eye className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="View Report" onClick={() => navigate(`/${role}/players/${row.id}/report`)}><Eye className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditName(String(row.name ?? "")); setEditPhone(String(row.phone ?? "")); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
         </div>
       ),
@@ -81,6 +95,14 @@ const AdminPlayers = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Player Users</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input type="date" className="w-40 h-9 text-sm" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+        <Input type="date" className="w-40 h-9 text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+          <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
+        </label>
+      </div>
       <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search players..." onAdd={() => setCreateOpen(true)} addLabel="Add Player" />
 
       {/* Create Player */}
@@ -163,11 +185,10 @@ const AdminPlayers = () => {
                 <div><span className="text-muted-foreground text-xs">Username</span><p className="font-medium">{String(selectedUser.username ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">Full Name</span><p className="font-medium">{String(selectedUser.name ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">Phone</span><p className="font-medium">{String(selectedUser.phone ?? "")}</p></div>
-                <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selectedUser.status ?? "active")} /></p></div>
+                <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={selectedUser.is_active === false ? "inactive" : "active"} /></p></div>
                 <div><span className="text-muted-foreground text-xs">Balance</span><p className="font-medium">₹{Number(selectedUser.main_balance ?? 0).toLocaleString()}</p></div>
                 <div><span className="text-muted-foreground text-xs">Bonus</span><p className="font-medium">₹{Number(selectedUser.bonus_balance ?? 0).toLocaleString()}</p></div>
                 <div><span className="text-muted-foreground text-xs">Exposure</span><p className="font-medium">₹{Number(selectedUser.exposure_balance ?? 0).toLocaleString()}</p></div>
-                <div><span className="text-muted-foreground text-xs">KYC</span><p><StatusBadge status={String(selectedUser.kyc_status ?? "pending")} /></p></div>
                 <div><span className="text-muted-foreground text-xs">Joined</span><p className="font-medium">{selectedUser.created_at ? new Date(String(selectedUser.created_at)).toLocaleDateString() : ""}</p></div>
               </div>
             </div>

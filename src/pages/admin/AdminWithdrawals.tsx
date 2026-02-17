@@ -5,19 +5,32 @@ import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { PinDialog } from "@/components/shared/PinDialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { getWithdrawals, approveWithdraw, rejectWithdraw } from "@/api/admin";
+import { getWithdrawals, approveWithdraw, rejectWithdraw, type ListParams } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
-import { Check, X, Eye } from "lucide-react";
+import { Check, X, Eye, RefreshCw } from "lucide-react";
 
-type WithdrawRow = Record<string, unknown> & { id?: number; user_username?: string; amount?: string; payment_mode?: string; status?: string; created_at?: string };
+type WithdrawRow = Record<string, unknown> & { id?: number; user_username?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; status?: string; created_at?: string; account_details?: string; accountDetails?: string };
 
 const AdminWithdrawals = () => {
   const { user } = useAuth();
   const role = (user?.role === "powerhouse" || user?.role === "super" || user?.role === "master") ? user.role : "master";
   const queryClient = useQueryClient();
-  const { data: withdrawals = [] } = useQuery({ queryKey: ["admin-withdrawals", role], queryFn: () => getWithdrawals(role) });
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const listParams: ListParams = {};
+  if (dateFrom) listParams.date_from = dateFrom;
+  if (dateTo) listParams.date_to = dateTo;
+  if (statusFilter) listParams.status = statusFilter;
+  const { data: withdrawals = [] } = useQuery({
+    queryKey: ["admin-withdrawals", role, listParams],
+    queryFn: () => getWithdrawals(role, listParams),
+    refetchInterval: autoRefresh ? 10000 : false,
+  });
   const [pinOpen, setPinOpen] = useState(false);
   const [approving, setApproving] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -52,6 +65,20 @@ const AdminWithdrawals = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Withdrawals</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input type="date" className="w-40 h-9 text-sm" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+        <Input type="date" className="w-40 h-9 text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        <select className="h-9 rounded-md border border-border bg-background px-3 text-sm w-32" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="">All status</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+          <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
+        </label>
+      </div>
       <DataTable data={rows} columns={columns} searchKey="user_username" searchPlaceholder="Search withdrawals..." />
 
       {/* View */}
@@ -63,9 +90,15 @@ const AdminWithdrawals = () => {
               <div><span className="text-muted-foreground text-xs">ID</span><p className="font-medium">{String(selectedW.id ?? "")}</p></div>
               <div><span className="text-muted-foreground text-xs">User</span><p className="font-medium">{String(selectedW.user_username ?? selectedW.username ?? "")}</p></div>
               <div><span className="text-muted-foreground text-xs">Amount</span><p className="font-bold text-accent">₹{Number(selectedW.amount ?? 0).toLocaleString()}</p></div>
-              <div><span className="text-muted-foreground text-xs">Method</span><p className="font-medium">{String(selectedW.payment_mode ?? "")}</p></div>
+              <div><span className="text-muted-foreground text-xs">Method</span><p className="font-medium">{String(selectedW.payment_mode_name ?? selectedW.payment_mode ?? "")}</p></div>
               <div><span className="text-muted-foreground text-xs">Account</span><p className="font-medium">{String(selectedW.account_details ?? selectedW.accountDetails ?? "")}</p></div>
               <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selectedW.status ?? "pending")} /></p></div>
+              {selectedW.payment_mode_qr_image && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground text-xs">Payment QR</span>
+                  <img src={String(selectedW.payment_mode_qr_image)} alt="Payment QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
+                </div>
+              )}
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setViewOpen(false)}>Close</Button></DialogFooter>

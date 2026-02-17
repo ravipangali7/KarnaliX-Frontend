@@ -55,6 +55,60 @@ export async function apiPost<T = unknown>(path: string, body?: unknown): Promis
   return api<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined });
 }
 
+/** POST with FormData (e.g. file upload). Omits Content-Type so browser sets multipart boundary. */
+export async function apiPostForm<T = unknown>(path: string, formData: FormData): Promise<ApiResponse<T>> {
+  const url = path.startsWith('http') ? path : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const token = getToken();
+  const headers: HeadersInit = {};
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Token ${token}`;
+  }
+  const res = await fetch(url, { method: 'POST', body: formData, headers });
+  const text = await res.text();
+  let data: ApiResponse<T>;
+  try {
+    data = text ? (JSON.parse(text) as ApiResponse<T>) : {};
+  } catch {
+    data = { detail: text || 'Request failed' };
+  }
+  if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.dispatchEvent(new Event('auth-logout'));
+    }
+    throw { status: res.status, ...data };
+  }
+  return data;
+}
+
+/** PATCH with FormData (e.g. file upload). */
+export async function apiPatchForm<T = unknown>(path: string, formData: FormData): Promise<ApiResponse<T>> {
+  const url = path.startsWith('http') ? path : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const token = getToken();
+  const headers: HeadersInit = {};
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Token ${token}`;
+  }
+  const res = await fetch(url, { method: 'PATCH', body: formData, headers });
+  const text = await res.text();
+  let data: ApiResponse<T>;
+  try {
+    data = text ? (JSON.parse(text) as ApiResponse<T>) : {};
+  } catch {
+    data = { detail: text || 'Request failed' };
+  }
+  if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.dispatchEvent(new Event('auth-logout'));
+    }
+    throw { status: res.status, ...data };
+  }
+  return data;
+}
+
 export async function apiPut<T = unknown>(path: string, body?: unknown): Promise<ApiResponse<T>> {
   return api<T>(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined });
 }
