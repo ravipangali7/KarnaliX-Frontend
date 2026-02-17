@@ -12,13 +12,14 @@ const statusStyles: Record<string, string> = {
   rejected: "bg-crimson/10 text-crimson border-crimson/20",
   win: "bg-success/10 text-success border-success/20",
   loss: "bg-crimson/10 text-crimson border-crimson/20",
+  lose: "bg-crimson/10 text-crimson border-crimson/20",
   draw: "bg-muted text-muted-foreground border-border",
 };
 
 export const StatusBadge = ({ status }: StatusBadgeProps) => {
   return (
     <Badge variant="outline" className={`text-[10px] capitalize ${statusStyles[status] || ""}`}>
-      {status}
+      {status === "lose" ? "Loss" : status}
     </Badge>
   );
 };

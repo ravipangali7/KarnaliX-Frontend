@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/shared/StatCard";
-import { Wallet, TrendingUp, Eye, Gamepad2, ArrowDownCircle, ArrowUpCircle, Shield, Send, Trophy, Clock, Flame } from "lucide-react";
+import { Wallet, TrendingUp, Eye, Gamepad2, ArrowDownCircle, ArrowUpCircle, Shield, Send, Trophy, Clock, Flame, Radio } from "lucide-react";
 import { getPlayerDashboard, getPlayerTransactions } from "@/api/player";
 import { getGames, getGameImageUrl } from "@/api/games";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,14 @@ const PlayerDashboard = () => {
             <CardContent className="p-3 md:p-4 text-center">
               <Gamepad2 className="h-5 w-5 md:h-6 md:w-6 mx-auto mb-1 text-neon" />
               <p className="text-[10px] md:text-xs font-medium">Play</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link to="/player/game-results">
+          <Card className="cursor-pointer hover:border-primary/50 hover:neon-glow-sm transition-all gaming-card">
+            <CardContent className="p-3 md:p-4 text-center">
+              <Radio className="h-5 w-5 md:h-6 md:w-6 mx-auto mb-1 text-primary" />
+              <p className="text-[10px] md:text-xs font-medium">Live results</p>
             </CardContent>
           </Card>
         </Link>

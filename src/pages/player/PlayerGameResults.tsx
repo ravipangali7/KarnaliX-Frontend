@@ -1,21 +1,79 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { getPlayerGameLog } from "@/api/player";
+import { getPlayerGameLog, getPlayerWallet } from "@/api/player";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Gamepad2, Trophy, TrendingDown } from "lucide-react";
+import { Gamepad2, Trophy, TrendingDown, Wallet, Radio } from "lucide-react";
+
+const POLL_INTERVAL_MS = 3000;
 
 const PlayerGameResults = () => {
-  const { data: gameLogs = [] } = useQuery({ queryKey: ["player-game-log"], queryFn: getPlayerGameLog });
+  const { data: wallet, dataUpdatedAt: walletUpdatedAt } = useQuery({
+    queryKey: ["playerWallet"],
+    queryFn: getPlayerWallet,
+    refetchInterval: POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+  });
+  const { data: gameLogs = [], dataUpdatedAt: gameLogUpdatedAt } = useQuery({
+    queryKey: ["player-game-log"],
+    queryFn: getPlayerGameLog,
+    refetchInterval: POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+  });
   const [filter, setFilter] = useState<string>("all");
-  const filtered = (gameLogs as Record<string, unknown>[]).slice(0, 20).filter((l) => filter === "all" || (l.result ?? l.game_result) === filter);
+  const logs = gameLogs as Record<string, unknown>[];
+  const resultKey = (l: Record<string, unknown>) => String(l.type ?? l.result ?? l.game_result ?? "").toLowerCase();
+  const filtered = logs.slice(0, 100).filter((l) => filter === "all" || resultKey(l) === filter);
   const totalBet = filtered.reduce((s, l) => s + Number(l.bet_amount ?? l.betAmount ?? 0), 0);
   const totalWin = filtered.reduce((s, l) => s + Number(l.win_amount ?? l.winAmount ?? 0), 0);
 
+  const w = wallet as Record<string, unknown> | undefined;
+  const mainBalance = Number(w?.main_balance ?? 0);
+  const bonusBalance = Number(w?.bonus_balance ?? 0);
+  const totalBalance = mainBalance + bonusBalance;
+  const lastUpdated = Math.max(walletUpdatedAt ?? 0, gameLogUpdatedAt ?? 0);
+
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-4xl mx-auto">
-      <h2 className="font-gaming font-bold text-xl neon-text tracking-wider">GAME RESULTS</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-gaming font-bold text-xl neon-text tracking-wider">GAME RESULTS</h2>
+        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          <Radio className="h-3 w-3 animate-pulse text-primary" />
+          Live — updates every 3s
+        </span>
+      </div>
+
+      {/* Wallet (real-time) */}
+      <Card className="gaming-card border-primary/30">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold text-muted-foreground">Current balance</span>
+            </div>
+            {lastUpdated > 0 && (
+              <span className="text-[10px] text-muted-foreground">
+                Updated {new Date(lastUpdated).toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-3">
+            <div>
+              <p className="text-[10px] text-muted-foreground">Main</p>
+              <p className="font-gaming font-bold text-lg">₹{mainBalance.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">Bonus</p>
+              <p className="font-gaming font-bold text-lg text-primary">₹{bonusBalance.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">Total</p>
+              <p className="font-gaming font-bold text-lg gold-gradient bg-clip-text text-transparent">₹{totalBalance.toLocaleString()}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
@@ -42,12 +100,12 @@ const PlayerGameResults = () => {
         </Card>
       </div>
 
-      {/* Filter */}
+      {/* Filter (align with API type: win, lose, draw) */}
       <div className="flex gap-2">
-        {["all", "win", "loss", "draw"].map((f) => (
+        {["all", "win", "lose", "draw"].map((f) => (
           <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)}
             className={`text-xs capitalize ${filter === f ? "gold-gradient text-primary-foreground" : ""}`}>
-            {f}
+            {f === "lose" ? "Loss" : f}
           </Button>
         ))}
       </div>
@@ -63,7 +121,7 @@ const PlayerGameResults = () => {
           const category = String(log.category ?? "");
           const betAmount = Number(log.bet_amount ?? log.betAmount ?? 0);
           const winAmount = Number(log.win_amount ?? log.winAmount ?? 0);
-          const result = String(log.result ?? "");
+          const result = String(log.type ?? log.result ?? "");
           const playedAt = log.created_at ?? log.playedAt;
           return (
           <Card key={String(log.id ?? i)} className="hover:border-primary/20 transition-colors">

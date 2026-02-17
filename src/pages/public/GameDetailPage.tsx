@@ -221,6 +221,13 @@ const GameDetailPage = () => {
                   {launching ? "Launching…" : "🎮 START PLAYING"}
                 </Button>
               )}
+              {isPlayer && (
+                <Link to="/player/game-results">
+                  <Button variant="outline" size="sm" className="w-full mt-2 text-xs text-muted-foreground">
+                    View live results and balance
+                  </Button>
+                </Link>
+              )}
               <a href={`https://wa.me/${String(whatsapp).replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="w-full border-success text-success mt-2" size="sm">
                   💬 Instant Deposit via WhatsApp
