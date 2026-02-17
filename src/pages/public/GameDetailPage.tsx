@@ -50,6 +50,10 @@ const GameDetailPage = () => {
   const g = game as Game;
   const minBet = Number(g.min_bet) || 10;
   const maxBet = Number(g.max_bet) || 5000;
+  const totalBalance = isPlayer && wallet != null
+    ? Number((wallet as { main_balance?: string }).main_balance || 0) + Number((wallet as { bonus_balance?: string }).bonus_balance || 0)
+    : 0;
+  const canPlay = totalBalance >= betAmount;
   const related = (games as Game[]).filter((x) => x.category === g.category && x.id !== g.id).slice(0, 12);
   const mostPlayed = (games as Game[]).filter((x) => x.id !== g.id).slice(0, 12);
   const gameHistory: { id: string; username: string; result: string; betAmount: number; winAmount: number }[] = [];
@@ -155,6 +159,12 @@ const GameDetailPage = () => {
                 <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-lg h-14" disabled>
                   Only players can launch games
                 </Button>
+              ) : !canPlay ? (
+                <Link to="/wallet">
+                  <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-lg h-14">
+                    Add Funds to play
+                  </Button>
+                </Link>
               ) : (
                 <Button
                   className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 neon-glow tracking-widest animate-scale-pulse"
@@ -162,9 +172,15 @@ const GameDetailPage = () => {
                   onClick={async () => {
                     setLaunching(true);
                     try {
-                      await launchGame(g.game_uid);
+                      await launchGame(g.id);
                     } catch (e) {
-                      const msg = (e as { detail?: string })?.detail ?? "Launch failed";
+                      const err = e as { status?: number; detail?: string; error?: string };
+                      const msg =
+                        err.status === 404
+                          ? "Game not found"
+                          : err.status === 400
+                            ? err.error ?? err.detail ?? "Game is not available"
+                            : err.detail ?? err.error ?? "Could not get game URL";
                       toast.error(msg);
                     } finally {
                       setLaunching(false);
