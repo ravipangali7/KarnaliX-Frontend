@@ -19,12 +19,22 @@ type PaymentModeRow = Record<string, unknown> & {
   id?: number;
   name?: string;
   type?: string;
+  type_display?: string;
   status?: string;
+  status_display?: string;
   user?: number;
   user_username?: string;
+  wallet_phone?: string;
+  bank_name?: string;
+  bank_branch?: string;
+  bank_account_no?: string;
+  bank_account_holder_name?: string;
   qr_image_url?: string;
   reject_reason?: string;
+  action_by?: number;
+  action_at?: string;
   created_at?: string;
+  updated_at?: string;
 };
 
 const AdminPaymentModeVerification = () => {
@@ -118,22 +128,39 @@ const AdminPaymentModeVerification = () => {
       />
 
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="font-display">Payment Method Details</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-display">Payment Method – Full Details</DialogTitle></DialogHeader>
           {selected && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div><span className="text-muted-foreground text-xs">Name</span><p className="font-medium">{String(selected.name ?? "")}</p></div>
-                <div><span className="text-muted-foreground text-xs">Type</span><p className="font-medium">{String(selected.type ?? "")}</p></div>
-                <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selected.status ?? "pending")} /></p></div>
-                {selected.reject_reason && (
-                  <div className="col-span-2"><span className="text-muted-foreground text-xs">Reject reason</span><p className="font-medium">{String(selected.reject_reason)}</p></div>
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div><span className="text-muted-foreground text-xs block">Name</span><p className="font-medium">{String(selected.name ?? "")}</p></div>
+                <div><span className="text-muted-foreground text-xs block">Owner</span><p className="font-medium">{String(selected.user_username ?? selected.user ?? "")}</p></div>
+                <div><span className="text-muted-foreground text-xs block">Type</span><p className="font-medium">{String(selected.type_display ?? selected.type ?? "")}</p></div>
+                <div><span className="text-muted-foreground text-xs block">Status</span><p><StatusBadge status={String(selected.status ?? "pending")} /></p></div>
+                {selected.wallet_phone != null && String(selected.wallet_phone).trim() !== "" && (
+                  <div className="col-span-2"><span className="text-muted-foreground text-xs block">Wallet / Phone</span><p className="font-mono font-medium">{String(selected.wallet_phone)}</p></div>
                 )}
+                {selected.bank_name != null && String(selected.bank_name).trim() !== "" && (
+                  <>
+                    <div><span className="text-muted-foreground text-xs block">Bank name</span><p className="font-medium">{String(selected.bank_name)}</p></div>
+                    <div><span className="text-muted-foreground text-xs block">Branch</span><p className="font-medium">{String(selected.bank_branch ?? "")}</p></div>
+                    <div><span className="text-muted-foreground text-xs block">Account number</span><p className="font-mono font-medium">{String(selected.bank_account_no ?? "")}</p></div>
+                    <div><span className="text-muted-foreground text-xs block">Account holder</span><p className="font-medium">{String(selected.bank_account_holder_name ?? "")}</p></div>
+                  </>
+                )}
+                {selected.reject_reason != null && String(selected.reject_reason).trim() !== "" && (
+                  <div className="col-span-2"><span className="text-muted-foreground text-xs block">Reject reason</span><p className="font-medium">{String(selected.reject_reason)}</p></div>
+                )}
+                {selected.action_at && (
+                  <div className="col-span-2"><span className="text-muted-foreground text-xs block">Action at</span><p className="font-medium">{new Date(String(selected.action_at)).toLocaleString()}</p></div>
+                )}
+                <div><span className="text-muted-foreground text-xs block">Created</span><p className="font-medium">{selected.created_at ? new Date(String(selected.created_at)).toLocaleString() : "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs block">Updated</span><p className="font-medium">{selected.updated_at ? new Date(String(selected.updated_at)).toLocaleString() : "—"}</p></div>
               </div>
               {selected.qr_image_url && (
                 <div>
-                  <span className="text-muted-foreground text-xs">QR Image</span>
-                  <img src={getMediaUrl(String(selected.qr_image_url))} alt="QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
+                  <span className="text-muted-foreground text-xs block mb-1">QR Image</span>
+                  <img src={getMediaUrl(String(selected.qr_image_url))} alt="QR" className="w-36 h-36 object-contain rounded-lg border border-border" />
                 </div>
               )}
             </div>
