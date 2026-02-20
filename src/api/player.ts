@@ -120,8 +120,9 @@ export async function changePassword(body: { old_password: string; new_password:
   return apiPost(`${P}/change-password/`, body);
 }
 
-export async function getPlayerMessages() {
-  const res = await apiGet(`${P}/messages/`);
+export async function getPlayerMessages(partnerId?: number) {
+  const q = partnerId != null ? `?partner_id=${partnerId}` : "";
+  const res = await apiGet(`${P}/messages${q}`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
 export async function sendPlayerMessage(body: unknown) {

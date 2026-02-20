@@ -65,16 +65,8 @@ export const PlayerLayout = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar (no logo – site header shows branding) */}
       <aside className="hidden md:flex flex-col w-64 bg-navy text-navy-foreground border-r border-sidebar-border flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
-        {/* Logo */}
-        <div className="p-5 border-b border-sidebar-border">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={"/karnali-logo.png"} alt="Karnali X" className="h-8 w-8 rounded" />
-            <span className="font-gaming font-bold text-sm neon-text tracking-wider">KARNALI X</span>
-          </Link>
-        </div>
-
         {/* Balance card in sidebar */}
         <div className="p-4">
           <div className="rounded-xl gold-gradient p-4 neon-glow-sm">
@@ -118,24 +110,10 @@ export const PlayerLayout = () => {
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content Area (mobile: no extra top bar – logo + balance live in PublicHeader) */}
       <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-        {/* Top bar (mobile) */}
-        <header className="sticky top-0 z-50 glass-card border-b border-border/50 h-14 flex items-center px-4 justify-between md:hidden">
-          <div className="flex items-center gap-2">
-            <img src={"/karnali-logo.png"} alt="Karnali X" className="h-7 w-7 rounded" />
-            <span className="font-gaming font-bold text-xs neon-text tracking-wider">KARNALI X</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">Balance</p>
-              <p className="text-sm font-bold text-primary font-gaming">{total}</p>
-            </div>
-          </div>
-        </header>
-
-        {/* Desktop top bar */}
-        <header className="hidden md:flex sticky top-0 z-50 glass-card border-b border-border/50 h-14 items-center px-6 justify-between">
+        {/* Desktop top bar – same horizontal spacing as site header/footer */}
+        <header className="hidden md:flex sticky top-0 z-50 glass-card border-b border-border/50 h-14 items-center justify-between container px-4 mx-auto w-full max-w-[100%]">
           <div>
             <h1 className="font-display font-bold text-lg capitalize">
               {location.pathname.split("/").pop()?.replace(/-/g, " ") || "Dashboard"}
@@ -150,9 +128,11 @@ export const PlayerLayout = () => {
           </div>
         </header>
 
-        {/* Content */}
+        {/* Content – container + px-4 to match header/footer margins */}
         <main className="flex-1 pb-20 md:pb-6 overflow-y-auto">
-          <Outlet />
+          <div className="container px-4 mx-auto w-full max-w-[100%]">
+            <Outlet />
+          </div>
         </main>
       </div>
 

@@ -213,9 +213,14 @@ export async function getActivity(role: "powerhouse" | "super" | "master") {
 }
 
 // --- Messages ---
-export async function getMessages(role: "powerhouse" | "super" | "master") {
-  const res = await apiGet(`${prefix(role)}/messages/`);
+export async function getMessages(role: "powerhouse" | "super" | "master", partnerId?: number) {
+  const path = partnerId != null ? `${prefix(role)}/messages/?partner_id=${partnerId}` : `${prefix(role)}/messages/`;
+  const res = await apiGet(path);
   return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+export async function getMessageContacts(role: "powerhouse" | "super" | "master") {
+  const res = await apiGet(`${prefix(role)}/messages/contacts/`);
+  return (res as unknown as { id: number; username: string; name: string; role: string }[]) ?? [];
 }
 export async function sendMessage(body: unknown, role: "powerhouse" | "super" | "master") {
   return apiPost(`${prefix(role)}/messages/send/`, body);

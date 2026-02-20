@@ -50,6 +50,18 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Home page variant
+
+The app supports two home page designs at `/`. Switch via code or environment:
+
+- **First home** (default): KarnaliX casino-style layout with hero, game categories, providers, and biggest wins. Uses the standard public header and footer.
+- **Second home**: Sports-betting style with a red header, left sidebar (sports list, casino, promotions), live matches section, and FAQ.
+
+To switch:
+
+1. **Environment**: In `.env` set `VITE_HOME_PAGE=first` or `VITE_HOME_PAGE=second`. Omit or use any other value for the first home.
+2. **Code**: Edit `frontend/src/config.ts` and change the `HOME_PAGE_VARIANT` logic (or rely on `VITE_HOME_PAGE`).
+
 ## What technologies are used for this project?
 
 This project is built with:

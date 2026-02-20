@@ -10,10 +10,10 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 // Layouts
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PlayerLayout } from "@/components/layout/PlayerLayout";
+import { PlayerSiteLayout } from "@/components/layout/PlayerSiteLayout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 
 // Public Pages
-import HomePage from "@/pages/public/HomePage";
 import GamesPage from "@/pages/public/GamesPage";
 import GameDetailPage from "@/pages/public/GameDetailPage";
 import BonusPage from "@/pages/public/BonusPage";
@@ -60,8 +60,27 @@ import PowerhouseCMS from "@/pages/admin/PowerhouseCMS";
 import PowerhouseTestimonials from "@/pages/admin/PowerhouseTestimonials";
 
 import NotFound from "@/pages/NotFound";
+import { HOME_PAGE_VARIANT } from "@/config";
+import FirstHomePage from "@/pages/public/FirstHomePage";
+import SecondHomePage from "@/pages/public/SecondHomePage";
+import { SecondPublicLayout } from "@/components/layout/SecondPublicLayout";
 
 const queryClient = new QueryClient();
+
+function HomePageSwitch() {
+  if (HOME_PAGE_VARIANT === "second") {
+    return (
+      <SecondPublicLayout>
+        <SecondHomePage />
+      </SecondPublicLayout>
+    );
+  }
+  return (
+    <PublicLayout>
+      <FirstHomePage />
+    </PublicLayout>
+  );
+}
 
 const App = () => (
   <ThemeProvider>
@@ -73,8 +92,8 @@ const App = () => (
           <BrowserRouter>
             <Routes>
             {/* Public Website */}
+            <Route path="/" element={<HomePageSwitch />} />
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<HomePage />} />
               <Route path="/games" element={<GamesPage />} />
               <Route path="/games/:id" element={<GameDetailPage />} />
               <Route path="/bonus" element={<BonusPage />} />
@@ -86,16 +105,18 @@ const App = () => (
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-            {/* Player Dashboard */}
-            <Route element={<ProtectedRoute allowedRole="player"><PlayerLayout /></ProtectedRoute>}>
-              <Route path="/player" element={<PlayerDashboard />} />
-              <Route path="/player/messages" element={<PlayerMessages />} />
-              <Route path="/player/wallet" element={<PlayerWallet />} />
-              <Route path="/player/transactions" element={<PlayerTransactions />} />
-              <Route path="/player/game-results" element={<PlayerGameResults />} />
-              <Route path="/player/payment-modes" element={<PlayerPaymentModes />} />
-              <Route path="/player/change-password" element={<PlayerChangePassword />} />
-              <Route path="/player/profile" element={<PlayerProfile />} />
+            {/* Player Dashboard (inside site header/footer) */}
+            <Route element={<ProtectedRoute allowedRole="player"><PlayerSiteLayout /></ProtectedRoute>}>
+              <Route path="/player" element={<PlayerLayout />}>
+                <Route index element={<PlayerDashboard />} />
+                <Route path="messages" element={<PlayerMessages />} />
+                <Route path="wallet" element={<PlayerWallet />} />
+                <Route path="transactions" element={<PlayerTransactions />} />
+                <Route path="game-results" element={<PlayerGameResults />} />
+                <Route path="payment-modes" element={<PlayerPaymentModes />} />
+                <Route path="change-password" element={<PlayerChangePassword />} />
+                <Route path="profile" element={<PlayerProfile />} />
+              </Route>
             </Route>
 
             {/* Master Dashboard */}

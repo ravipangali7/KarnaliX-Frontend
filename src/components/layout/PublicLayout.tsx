@@ -4,8 +4,13 @@ import { PublicHeader } from "./PublicHeader";
 import { PublicFooter } from "./PublicFooter";
 import { MessageCircle } from "lucide-react";
 import { getSiteSetting } from "@/api/site";
+import { ReactNode } from "react";
 
-export const PublicLayout = () => {
+interface PublicLayoutProps {
+  children?: ReactNode;
+}
+
+export const PublicLayout = ({ children }: PublicLayoutProps) => {
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const whatsapp = (siteSetting as { whatsapp_number?: string } | undefined)?.whatsapp_number ?? "";
 
@@ -13,7 +18,7 @@ export const PublicLayout = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <PublicHeader />
       <main className="flex-1">
-        <Outlet />
+        {children ?? <Outlet />}
       </main>
       <PublicFooter />
 

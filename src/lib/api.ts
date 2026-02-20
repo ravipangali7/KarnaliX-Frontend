@@ -127,3 +127,14 @@ export function getMediaUrl(path: string): string {
   const base = BASE_URL.replace('/api', '');
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
+
+/** WebSocket URL for real-time messages. Uses same host as API, path /ws/messages/, token in query. */
+export function getMessagesWebSocketUrl(): string | null {
+  const token = getToken();
+  if (!token) return null;
+  const base = BASE_URL.replace(/\/api\/?$/, '').trim();
+  const wsProtocol = base.startsWith('https') ? 'wss' : 'ws';
+  const wsHost = base.replace(/^https?:\/\//, '');
+  const url = `${wsProtocol}://${wsHost}/ws/messages/?token=${encodeURIComponent(token)}`;
+  return url;
+}
