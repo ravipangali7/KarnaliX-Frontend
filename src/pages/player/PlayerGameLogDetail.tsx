@@ -74,10 +74,24 @@ const PlayerGameLogDetail = () => {
           {row("Updated", log.updated_at ? new Date(String(log.updated_at)).toLocaleString() : "—")}
           {log.provider_raw_data && Object.keys(log.provider_raw_data as object).length > 0 && (
             <div className="pt-3 mt-3 border-t border-border">
-              <p className="text-xs text-muted-foreground font-semibold mb-2">Provider raw data</p>
-              <pre className="text-xs bg-muted/50 p-3 rounded-lg overflow-auto max-h-48">
-                {JSON.stringify(log.provider_raw_data, null, 2)}
-              </pre>
+              <p className="text-xs text-muted-foreground font-semibold mb-2">Provider round data</p>
+              <div className="space-y-1 rounded-lg bg-muted/30 p-3">
+                {Object.entries(log.provider_raw_data as Record<string, unknown>).map(([key, val]) => {
+                  const label = key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                  const display =
+                    key === "timestamp" && val
+                      ? new Date(String(val)).toLocaleString()
+                      : (key === "bet_amount" || key === "win_amount" || key === "wallet_before" || key === "wallet_after" || key === "change") && val !== "" && val != null
+                        ? `₹${Number(val).toLocaleString()}`
+                        : String(val ?? "—");
+                  return (
+                    <div key={key} className="flex justify-between py-1.5 text-sm border-b border-border/40 last:border-0">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className="font-medium break-all text-right max-w-[60%]">{display}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </CardContent>
