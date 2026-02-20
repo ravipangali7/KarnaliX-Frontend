@@ -3,9 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getPaymentModes, createPaymentMode, deletePaymentMode } from "@/api/player";
+import { getPaymentModes, createPaymentMode, createPaymentModeFormData, deletePaymentMode } from "@/api/player";
 import { getMediaUrl } from "@/lib/api";
-import { Plus, Trash2, CreditCard, Smartphone } from "lucide-react";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { Plus, Trash2, CreditCard, Smartphone, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
@@ -16,6 +17,8 @@ const PlayerPaymentModes = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [qrFile, setQrFile] = useState<File | null>(null);
+  const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [newMode, setNewMode] = useState({
     type: "ewallet" as "ewallet" | "bank",
     name: "",
@@ -47,6 +50,36 @@ const PlayerPaymentModes = () => {
     return body;
   };
 
+  const buildFormData = (): FormData => {
+    const formData = new FormData();
+    formData.append("name", newMode.name.trim());
+    formData.append("type", newMode.type);
+    if (newMode.type === "ewallet") {
+      formData.append("wallet_phone", newMode.wallet_phone.trim());
+      formData.append("bank_name", "");
+      formData.append("bank_branch", "");
+      formData.append("bank_account_no", "");
+      formData.append("bank_account_holder_name", "");
+    } else {
+      formData.append("wallet_phone", "");
+      formData.append("bank_name", newMode.bank_name.trim());
+      formData.append("bank_branch", newMode.bank_branch.trim());
+      formData.append("bank_account_no", newMode.bank_account_no.trim());
+      formData.append("bank_account_holder_name", newMode.bank_account_holder_name.trim());
+    }
+    if (qrFile) {
+      formData.append("qr_image", qrFile);
+    }
+    return formData;
+  };
+
+  const resetAddForm = () => {
+    setNewMode({ type: "ewallet", name: "", wallet_phone: "", bank_name: "", bank_branch: "", bank_account_no: "", bank_account_holder_name: "" });
+    setQrFile(null);
+    if (qrPreview) URL.revokeObjectURL(qrPreview);
+    setQrPreview(null);
+  };
+
   const handleAdd = async () => {
     if (!newMode.name.trim()) {
       toast({ title: "Enter provider name", variant: "destructive" });
@@ -62,11 +95,15 @@ const PlayerPaymentModes = () => {
     }
     setSubmitting(true);
     try {
-      await createPaymentMode(buildBody());
+      if (qrFile) {
+        await createPaymentModeFormData(buildFormData());
+      } else {
+        await createPaymentMode(buildBody());
+      }
       queryClient.invalidateQueries({ queryKey: ["player-payment-modes"] });
       toast({ title: "Payment method added." });
       setDialogOpen(false);
-      setNewMode({ type: "ewallet", name: "", wallet_phone: "", bank_name: "", bank_branch: "", bank_account_no: "", bank_account_holder_name: "" });
+      resetAddForm();
     } catch (e: unknown) {
       const err = e as { detail?: string };
       toast({ title: err?.detail ?? "Failed to add.", variant: "destructive" });
@@ -98,6 +135,7 @@ const PlayerPaymentModes = () => {
           <Plus className="h-3 w-3" /> ADD
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground">Pending methods are not available for withdrawal until your master approves them.</p>
 
       <div className="space-y-2">
         {modes.map((pm) => (
@@ -110,6 +148,12 @@ const PlayerPaymentModes = () => {
                 <div>
                   <p className="text-sm font-semibold">{String(pm.name ?? "")}</p>
                   <p className="text-xs text-muted-foreground">{pm.type === "ewallet" ? String(pm.wallet_phone ?? pm.account_id ?? "") : String(pm.bank_account_no ?? pm.account_number ?? "")}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <StatusBadge status={String(pm.status ?? "pending")} />
+                    {pm.status === "pending" && (
+                      <span className="text-[10px] text-muted-foreground">Not available for withdrawal until approved by your master.</span>
+                    )}
+                  </div>
                 </div>
                 {pm.qr_image_url && (
                   <img src={getMediaUrl(String(pm.qr_image_url))} alt="QR" className="w-12 h-12 object-contain rounded border border-border flex-shrink-0" />
@@ -128,7 +172,7 @@ const PlayerPaymentModes = () => {
       )}
 
       {/* Add Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setNewMode({ type: "ewallet", name: "", wallet_phone: "", bank_name: "", bank_branch: "", bank_account_no: "", bank_account_holder_name: "" }); }}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetAddForm(); }}>
         <DialogContent className="max-w-sm gaming-card">
           <DialogHeader>
             <DialogTitle className="font-gaming neon-text tracking-wider">ADD PAYMENT MODE</DialogTitle>
@@ -175,6 +219,25 @@ const PlayerPaymentModes = () => {
                 </div>
               </>
             )}
+            <div>
+              <label className="text-xs text-muted-foreground font-medium mb-1 block flex items-center gap-1">
+                <Upload className="h-3 w-3" /> QR image (optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm mt-1 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-primary-foreground"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (qrPreview) URL.revokeObjectURL(qrPreview);
+                  setQrFile(f ?? null);
+                  setQrPreview(f ? URL.createObjectURL(f) : null);
+                }}
+              />
+              {qrPreview && (
+                <img src={qrPreview} alt="QR preview" className="mt-2 h-24 w-24 object-contain border rounded border-border" />
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={submitting}>Cancel</Button>

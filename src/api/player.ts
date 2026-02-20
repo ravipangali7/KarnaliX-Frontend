@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch, apiDelete, BASE_URL } from "@/lib/api";
+import { apiGet, apiPost, apiPostForm, apiPatch, apiDelete, BASE_URL } from "@/lib/api";
 
 const P = "/player";
 
@@ -67,6 +67,10 @@ export async function getPaymentMode(id: number) {
 }
 export async function createPaymentMode(body: unknown) {
   return apiPost(`${P}/payment-modes/`, body);
+}
+/** Create payment mode with optional QR image (FormData). */
+export async function createPaymentModeFormData(formData: FormData) {
+  return apiPostForm(`${P}/payment-modes/`, formData);
 }
 export async function updatePaymentMode(id: number, body: unknown) {
   return apiPatch(`${P}/payment-modes/${id}/`, body);
