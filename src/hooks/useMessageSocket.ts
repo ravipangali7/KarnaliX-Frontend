@@ -18,9 +18,14 @@ export interface MessageNewPayload {
  * When the server sends a "message.new" event, onNewMessage is called with the message payload.
  * Returns { connected } so callers can e.g. disable polling while socket is open.
  */
+const RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT_ATTEMPTS = 10;
+
 export function useMessageSocket(onNewMessage: (payload: MessageNewPayload["message"]) => void) {
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attemptRef = useRef(0);
   const onNewMessageRef = useRef(onNewMessage);
   onNewMessageRef.current = onNewMessage;
 
@@ -28,27 +33,47 @@ export function useMessageSocket(onNewMessage: (payload: MessageNewPayload["mess
     const url = getMessagesWebSocketUrl();
     if (!url) return;
 
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
+    function connect() {
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
 
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-    ws.onerror = () => setConnected(false);
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data) as MessageNewPayload;
-        if (data?.type === "message.new" && data.message) {
-          onNewMessageRef.current(data.message);
+      ws.onopen = () => {
+        setConnected(true);
+        attemptRef.current = 0;
+      };
+      ws.onclose = () => {
+        wsRef.current = null;
+        setConnected(false);
+        if (attemptRef.current < MAX_RECONNECT_ATTEMPTS) {
+          attemptRef.current += 1;
+          reconnectTimeoutRef.current = setTimeout(connect, RECONNECT_DELAY_MS);
         }
-      } catch {
-        // ignore parse errors
-      }
-    };
+      };
+      ws.onerror = () => {
+        setConnected(false);
+      };
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data) as MessageNewPayload;
+          if (data?.type === "message.new" && data.message) {
+            onNewMessageRef.current(data.message);
+          }
+        } catch {
+          // ignore parse errors
+        }
+      };
+    }
+
+    connect();
 
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      const current = wsRef.current;
       wsRef.current = null;
-      ws.close();
+      if (current) current.close();
       setConnected(false);
     };
   }, []);
