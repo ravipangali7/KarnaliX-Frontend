@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPlayerWallet, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
+import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
 import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp } from "lucide-react";
@@ -32,9 +32,14 @@ const PlayerWallet = () => {
   const { data: depositPaymentModes = [] } = useQuery({
     queryKey: ["player-deposit-payment-modes"],
     queryFn: getDepositPaymentModes,
-    enabled: depositOpen || withdrawOpen,
+    enabled: depositOpen,
   });
-  const withdrawPaymentModes = depositPaymentModes;
+  const { data: playerPaymentModes = [] } = useQuery({
+    queryKey: ["player-payment-modes"],
+    queryFn: getPaymentModes,
+    enabled: withdrawOpen,
+  });
+  const withdrawPaymentModes = (playerPaymentModes as Record<string, unknown>[]).filter((pm) => pm.status === "approved");
   const w = wallet as Record<string, unknown> & { recent_deposits?: unknown[]; recent_withdrawals?: unknown[]; main_balance?: string; bonus_balance?: string };
   const myDeposits = w.deposits ?? w.recent_deposits ?? [];
   const myWithdrawals = w.withdrawals ?? w.recent_withdrawals ?? [];
@@ -308,12 +313,12 @@ const PlayerWallet = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-xs text-muted-foreground font-medium mb-2 block">Select payout method (master&apos;s approved methods)</label>
+              <label className="text-xs text-muted-foreground font-medium mb-2 block">Select your approved payout method</label>
               <div className="space-y-2">
-                {(withdrawPaymentModes as Record<string, unknown>[]).length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-2">No approved payout methods. Ask your master to add and approve a payment method.</p>
+                {withdrawPaymentModes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No approved payout methods. Add a payment method and ask your master to approve it.</p>
                 ) : (
-                  (withdrawPaymentModes as Record<string, unknown>[]).map((pm) => (
+                  withdrawPaymentModes.map((pm) => (
                     <div
                       key={String(pm.id ?? "")}
                       onClick={() => setSelectedPM(String(pm.id ?? ""))}

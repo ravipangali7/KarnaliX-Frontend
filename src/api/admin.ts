@@ -187,7 +187,7 @@ export async function deleteMasterPaymentMode(id: number) {
 
 // --- Payment Mode Verification (master, super, powerhouse) ---
 export async function getPaymentModeVerificationList(role: "powerhouse" | "super" | "master", params?: { status?: string }) {
-  const qs = params?.status && params.status !== "all" ? `?status=${encodeURIComponent(params.status)}` : "";
+  const qs = params?.status ? `?status=${encodeURIComponent(params.status)}` : "";
   const res = await apiGet(`${prefix(role)}/payment-mode-verification/${qs}`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }

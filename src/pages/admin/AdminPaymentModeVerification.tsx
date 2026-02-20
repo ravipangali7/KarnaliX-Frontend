@@ -34,7 +34,7 @@ const AdminPaymentModeVerification = () => {
   const [statusFilter, setStatusFilter] = useState("pending");
   const { data: list = [] } = useQuery({
     queryKey: ["payment-mode-verification", role, statusFilter],
-    queryFn: () => getPaymentModeVerificationList(role, statusFilter && statusFilter !== "all" ? { status: statusFilter } : undefined),
+    queryFn: () => getPaymentModeVerificationList(role, { status: statusFilter }),
   });
   const rows = list as PaymentModeRow[];
   const [viewOpen, setViewOpen] = useState(false);
