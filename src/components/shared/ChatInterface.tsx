@@ -24,7 +24,7 @@ export interface ChatMessage {
 }
 
 function normalizeMessage(m: ApiMessage, currentUserId: number): ChatMessage & { isFromMe: boolean } {
-  const isFromMe = m.sender === currentUserId;
+  const isFromMe = Number(m.sender) === Number(currentUserId);
   return {
     id: m.id,
     from: String(m.sender),
@@ -55,8 +55,8 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
   const list = messageList
     .filter(
       (m) =>
-        (m.sender === currentUserId && m.receiver === partnerId) ||
-        (m.receiver === currentUserId && m.sender === partnerId)
+        (Number(m.sender) === Number(currentUserId) && Number(m.receiver) === Number(partnerId)) ||
+        (Number(m.receiver) === Number(currentUserId) && Number(m.sender) === Number(partnerId))
     )
     .sort(
       (a, b) =>
