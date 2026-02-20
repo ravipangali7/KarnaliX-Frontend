@@ -203,6 +203,13 @@ export async function getGameLog(role: "powerhouse" | "super" | "master") {
   const res = await apiGet(`${prefix(role)}/game-log/`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
+export type GameLogDetailResponse = {
+  game_log: Record<string, unknown>;
+  transaction: Record<string, unknown> | null;
+};
+export async function getGameLogDetail(role: "powerhouse" | "super" | "master", id: number | string): Promise<GameLogDetailResponse> {
+  return apiGet<GameLogDetailResponse>(`${prefix(role)}/game-log/${id}/`);
+}
 export async function getTransactions(role: "powerhouse" | "super" | "master") {
   const res = await apiGet(`${prefix(role)}/transactions/`);
   return (res as unknown as Record<string, unknown>[]) ?? [];

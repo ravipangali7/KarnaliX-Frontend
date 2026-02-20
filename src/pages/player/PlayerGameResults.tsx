@@ -1,10 +1,11 @@
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { getPlayerGameLog, getPlayerWallet } from "@/api/player";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Gamepad2, Trophy, TrendingDown, Wallet, Radio } from "lucide-react";
+import { Gamepad2, Trophy, TrendingDown, Wallet, Radio, ExternalLink } from "lucide-react";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -111,8 +112,8 @@ const PlayerGameResults = () => {
       </div>
 
       {/* Desktop header */}
-      <div className="hidden md:grid grid-cols-5 gap-2 text-xs text-muted-foreground px-4 py-2 font-semibold border-b border-border">
-        <span>Game</span><span>Category</span><span>Bet</span><span>Won</span><span className="text-right">Result</span>
+      <div className="hidden md:grid grid-cols-6 gap-2 text-xs text-muted-foreground px-4 py-2 font-semibold border-b border-border">
+        <span>Game</span><span>Category</span><span>Bet</span><span>Won</span><span className="text-right">Result</span><span className="text-right">Details</span>
       </div>
 
       <div className="space-y-2">
@@ -134,12 +135,19 @@ const PlayerGameResults = () => {
                   </div>
                   <StatusBadge status={result} />
                 </div>
-                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground items-center">
                   <span>Bet: ₹{betAmount}</span>
-                  {winAmount > 0 && <span className="text-success font-bold">Won: ₹{winAmount}</span>}
+                  <div className="flex items-center gap-2">
+                    {winAmount > 0 && <span className="text-success font-bold">Won: ₹{winAmount}</span>}
+                    {log.id != null && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" asChild>
+                        <Link to={`/player/game-results/${log.id}`}>View <ExternalLink className="h-3 w-3" /></Link>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="hidden md:grid grid-cols-5 gap-2 items-center">
+              <div className="hidden md:grid grid-cols-6 gap-2 items-center">
                 <div>
                   <p className="text-sm font-semibold">{gameName}</p>
                   <p className="text-[10px] text-muted-foreground">{playedAt ? new Date(String(playedAt)).toLocaleString() : ""}</p>
@@ -150,6 +158,13 @@ const PlayerGameResults = () => {
                   {winAmount > 0 ? `₹${winAmount}` : "-"}
                 </span>
                 <span className="text-right"><StatusBadge status={result} /></span>
+                <span className="text-right">
+                  {log.id != null && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" asChild>
+                      <Link to={`/player/game-results/${log.id}`}>View details</Link>
+                    </Button>
+                  )}
+                </span>
               </div>
             </CardContent>
           </Card>

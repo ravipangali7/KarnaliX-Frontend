@@ -42,6 +42,16 @@ export async function getPlayerGameLog() {
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
 
+export type GameLogDetailResponse = {
+  game_log: Record<string, unknown>;
+  transaction: Record<string, unknown> | null;
+};
+
+export async function getPlayerGameLogDetail(id: number | string): Promise<GameLogDetailResponse> {
+  const res = await apiGet<GameLogDetailResponse>(`${P}/game-log/${id}/`);
+  return res;
+}
+
 /** Master's payment modes (for deposit). Use in deposit modal. */
 export async function getDepositPaymentModes() {
   const res = await apiGet(`${P}/deposit-payment-modes/`);

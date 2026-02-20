@@ -28,6 +28,7 @@ import PlayerMessages from "@/pages/player/PlayerMessages";
 import PlayerWallet from "@/pages/player/PlayerWallet";
 import PlayerTransactions from "@/pages/player/PlayerTransactions";
 import PlayerGameResults from "@/pages/player/PlayerGameResults";
+import PlayerGameLogDetail from "@/pages/player/PlayerGameLogDetail";
 import PlayerPaymentModes from "@/pages/player/PlayerPaymentModes";
 import PlayerChangePassword from "@/pages/player/PlayerChangePassword";
 import PlayerProfile from "@/pages/player/PlayerProfile";
@@ -41,6 +42,7 @@ import AdminSupers from "@/pages/admin/AdminSupers";
 import AdminDeposits from "@/pages/admin/AdminDeposits";
 import AdminWithdrawals from "@/pages/admin/AdminWithdrawals";
 import AdminGameLog from "@/pages/admin/AdminGameLog";
+import AdminGameLogDetail from "@/pages/admin/AdminGameLogDetail";
 import AdminTransactions from "@/pages/admin/AdminTransactions";
 import AdminActivityLog from "@/pages/admin/AdminActivityLog";
 import MasterPaymentModes from "@/pages/admin/MasterPaymentModes";
@@ -113,6 +115,7 @@ const App = () => (
                 <Route path="wallet" element={<PlayerWallet />} />
                 <Route path="transactions" element={<PlayerTransactions />} />
                 <Route path="game-results" element={<PlayerGameResults />} />
+                <Route path="game-results/:id" element={<PlayerGameLogDetail />} />
                 <Route path="payment-modes" element={<PlayerPaymentModes />} />
                 <Route path="change-password" element={<PlayerChangePassword />} />
                 <Route path="profile" element={<PlayerProfile />} />
@@ -130,6 +133,7 @@ const App = () => (
               <Route path="/master/deposits" element={<AdminDeposits />} />
               <Route path="/master/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/master/game-log" element={<AdminGameLog />} />
+              <Route path="/master/game-log/:id" element={<AdminGameLogDetail />} />
               <Route path="/master/transactions" element={<AdminTransactions />} />
               <Route path="/master/activity" element={<AdminActivityLog />} />
               <Route path="/master/profile" element={<AdminProfile />} />
@@ -147,6 +151,7 @@ const App = () => (
               <Route path="/super/deposits" element={<AdminDeposits />} />
               <Route path="/super/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/super/game-log" element={<AdminGameLog />} />
+              <Route path="/super/game-log/:id" element={<AdminGameLogDetail />} />
               <Route path="/super/transactions" element={<AdminTransactions />} />
               <Route path="/super/activity" element={<AdminActivityLog />} />
               <Route path="/super/profile" element={<AdminProfile />} />
@@ -169,6 +174,7 @@ const App = () => (
               <Route path="/powerhouse/games" element={<PowerhouseGames />} />
               <Route path="/powerhouse/bonus-rules" element={<PowerhouseBonusRules />} />
               <Route path="/powerhouse/game-log" element={<AdminGameLog />} />
+              <Route path="/powerhouse/game-log/:id" element={<AdminGameLogDetail />} />
               <Route path="/powerhouse/transactions" element={<AdminTransactions />} />
               <Route path="/powerhouse/activity" element={<AdminActivityLog />} />
               <Route path="/powerhouse/super-settings" element={<PowerhouseSuperSettings />} />

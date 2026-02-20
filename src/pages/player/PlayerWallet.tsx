@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
+import { getPlayerWallet, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
 import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp } from "lucide-react";
@@ -29,12 +29,12 @@ const PlayerWallet = () => {
   const screenshotInputRef = useRef<HTMLInputElement>(null);
 
   const { data: wallet = {} } = useQuery({ queryKey: ["player-wallet"], queryFn: getPlayerWallet });
-  const { data: paymentModes = [] } = useQuery({ queryKey: ["player-payment-modes"], queryFn: getPaymentModes });
   const { data: depositPaymentModes = [] } = useQuery({
     queryKey: ["player-deposit-payment-modes"],
     queryFn: getDepositPaymentModes,
-    enabled: depositOpen,
+    enabled: depositOpen || withdrawOpen,
   });
+  const withdrawPaymentModes = depositPaymentModes;
   const w = wallet as Record<string, unknown> & { recent_deposits?: unknown[]; recent_withdrawals?: unknown[]; main_balance?: string; bonus_balance?: string };
   const myDeposits = w.deposits ?? w.recent_deposits ?? [];
   const myWithdrawals = w.withdrawals ?? w.recent_withdrawals ?? [];
@@ -308,24 +308,28 @@ const PlayerWallet = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-xs text-muted-foreground font-medium mb-2 block">Select Your Payment Mode</label>
+              <label className="text-xs text-muted-foreground font-medium mb-2 block">Select payout method (master&apos;s approved methods)</label>
               <div className="space-y-2">
-                {(paymentModes as Record<string, unknown>[]).map((pm) => (
-                  <div
-                    key={String(pm.id ?? "")}
-                    onClick={() => setSelectedPM(String(pm.id ?? ""))}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                      selectedPM === String(pm.id ?? "") ? "border-accent bg-accent/5" : "border-border hover:border-accent/30"
-                    }`}
-                  >
-                    <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">{(String(pm.name ?? ""))[0]}</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{String(pm.name ?? "")}</p>
-                      <p className="text-[10px] text-muted-foreground">{pm.type === "ewallet" ? String(pm.wallet_phone ?? pm.account_id ?? "") : String(pm.bank_account_no ?? pm.account_number ?? "")}</p>
+                {(withdrawPaymentModes as Record<string, unknown>[]).length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No approved payout methods. Ask your master to add and approve a payment method.</p>
+                ) : (
+                  (withdrawPaymentModes as Record<string, unknown>[]).map((pm) => (
+                    <div
+                      key={String(pm.id ?? "")}
+                      onClick={() => setSelectedPM(String(pm.id ?? ""))}
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                        selectedPM === String(pm.id ?? "") ? "border-accent bg-accent/5" : "border-border hover:border-accent/30"
+                      }`}
+                    >
+                      <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">{(String(pm.name ?? ""))[0]}</div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{String(pm.name ?? "")}</p>
+                        <p className="text-[10px] text-muted-foreground">{pm.type === "ewallet" ? String(pm.wallet_phone ?? pm.account_id ?? "") : String(pm.bank_account_no ?? pm.account_number ?? "")}</p>
+                      </div>
+                      {selectedPM === String(pm.id ?? "") && <CheckCircle className="h-4 w-4 text-accent" />}
                     </div>
-                    {selectedPM === String(pm.id ?? "") && <CheckCircle className="h-4 w-4 text-accent" />}
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
             <div>
