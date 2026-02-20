@@ -16,7 +16,7 @@ const PlayerMessages = () => {
 
   const { connected } = useMessageSocket((msg) => {
     if (partnerId == null) return;
-    if (msg.sender === partnerId || msg.receiver === partnerId) {
+    if (Number(msg.sender) === Number(partnerId) || Number(msg.receiver) === Number(partnerId)) {
       queryClient.invalidateQueries({ queryKey: ["player-messages", partnerId] });
     }
   });
@@ -34,7 +34,13 @@ const PlayerMessages = () => {
     if (partnerId == null) return;
     setSending(true);
     try {
-      await sendPlayerMessage({ receiver: partnerId, message });
+      const created = (await sendPlayerMessage({ receiver: partnerId, message })) as ApiMessage | undefined;
+      if (created && typeof created === "object" && "id" in created) {
+        queryClient.setQueryData<ApiMessage[]>(
+          ["player-messages", partnerId],
+          (prev = []) => [...prev, created as ApiMessage]
+        );
+      }
       await queryClient.invalidateQueries({ queryKey: ["player-messages", partnerId] });
     } catch (e) {
       const err = e as { detail?: string };
