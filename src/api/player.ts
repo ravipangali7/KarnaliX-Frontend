@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPostForm, apiPatch, apiDelete, BASE_URL } from "@/lib/api";
+import { apiGet, apiPost, apiPatch, apiDelete, BASE_URL } from "@/lib/api";
 
 const P = "/player";
 
@@ -130,10 +130,6 @@ export async function getPlayerMessages(partnerId?: number) {
 
 export async function sendPlayerMessage(body: unknown) {
   return apiPost(`${P}/messages/send/`, body);
-}
-
-export async function sendPlayerMessageForm(formData: FormData) {
-  return apiPostForm(`${P}/messages/send/`, formData);
 }
 
 export async function transfer(body: { username: string; amount: string; password: string }) {

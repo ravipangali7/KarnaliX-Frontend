@@ -226,10 +226,6 @@ export async function sendMessage(body: unknown, role: "powerhouse" | "super" | 
   return apiPost(`${prefix(role)}/messages/send/`, body);
 }
 
-export async function sendMessageForm(formData: FormData, role: "powerhouse" | "super" | "master") {
-  return apiPostForm(`${prefix(role)}/messages/send/`, formData);
-}
-
 // --- Settlement (super only) ---
 export async function settleMaster(masterId: number, body: { pin: string }) {
   return apiPost(`${prefix("super")}/settlement/${masterId}/`, body);
