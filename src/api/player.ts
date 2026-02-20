@@ -121,11 +121,13 @@ export async function changePassword(body: { old_password: string; new_password:
 }
 
 export async function getPlayerMessages(partnerId?: number) {
-  const q = partnerId != null ? `?partner_id=${partnerId}` : "";
-  const res = await apiGet(`${P}/messages${q}`);
+  const path =
+    partnerId != null ? `${P}/messages/?partner_id=${partnerId}` : `${P}/messages/`;
+  const res = await apiGet(path);
   const list = res as unknown;
   return Array.isArray(list) ? list : [];
 }
+
 export async function sendPlayerMessage(body: unknown) {
   return apiPost(`${P}/messages/send/`, body);
 }

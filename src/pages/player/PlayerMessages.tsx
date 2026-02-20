@@ -34,19 +34,8 @@ const PlayerMessages = () => {
     if (partnerId == null) return;
     setSending(true);
     try {
-      const res = (await sendPlayerMessage({ receiver: partnerId, message })) as unknown;
-      const created =
-        res != null && typeof res === "object" && "id" in res
-          ? (res as ApiMessage)
-          : (res as { data?: ApiMessage })?.data;
-      if (created && typeof created === "object" && "id" in created) {
-        queryClient.setQueryData<ApiMessage[]>(
-          ["player-messages", partnerId],
-          (prev = []) => [...prev, created as ApiMessage]
-        );
-      }
+      await sendPlayerMessage({ receiver: partnerId, message });
       await queryClient.invalidateQueries({ queryKey: ["player-messages", partnerId] });
-      await queryClient.refetchQueries({ queryKey: ["player-messages", partnerId] });
     } catch (e) {
       const err = e as { detail?: string };
       toast.error(err?.detail ?? "Failed to send message");
