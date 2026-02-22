@@ -99,10 +99,57 @@ const GameDetailPage = () => {
       {/* Game Hero */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-3 relative rounded-2xl overflow-hidden aspect-[16/9] lg:aspect-[4/3]">
-          <GameImageWithFallback src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover" />
+          <GameImageWithFallback src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover blur-md" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          {/* Play game overlay - centered CTA */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+            <div className="pointer-events-auto">
+              {!user ? (
+                <Link to="/login">
+                  <Button className="gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 px-8 neon-glow tracking-widest" aria-label="Play game">
+                    Play game
+                  </Button>
+                </Link>
+              ) : !isPlayer ? (
+                <Button className="bg-muted text-muted-foreground font-gaming font-bold text-lg h-14 px-8" disabled aria-label="Only players can launch games">
+                  Only players can launch games
+                </Button>
+              ) : !canPlay ? (
+                <Link to="/wallet">
+                  <Button className="bg-muted text-muted-foreground font-gaming font-bold text-lg h-14 px-8" aria-label="Add funds to play">
+                    Add Funds to play
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  className="gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 px-8 neon-glow tracking-widest animate-scale-pulse"
+                  disabled={launching}
+                  aria-label="Play game"
+                  onClick={async () => {
+                    setLaunching(true);
+                    try {
+                      await launchGame(g.id);
+                    } catch (e) {
+                      const err = e as { status?: number; detail?: string; error?: string };
+                      const msg =
+                        err.status === 404
+                          ? "Game not found"
+                          : err.status === 400
+                            ? err.error ?? err.detail ?? "Game is not available"
+                            : err.detail ?? err.error ?? "Could not get game URL";
+                      toast.error(msg);
+                    } finally {
+                      setLaunching(false);
+                    }
+                  }}
+                >
+                  {launching ? "Launching…" : "Play game"}
+                </Button>
+              )}
+            </div>
+          </div>
           {/* Live badge */}
-          <div className="absolute top-4 left-4 flex items-center gap-2">
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
             <span className="px-3 py-1 rounded-full bg-destructive/90 text-white text-[10px] font-gaming tracking-wider flex items-center gap-1 animate-pulse-neon">
               <span className="h-1.5 w-1.5 rounded-full bg-white" /> LIVE
             </span>
@@ -110,7 +157,7 @@ const GameDetailPage = () => {
               <Users className="h-3 w-3" /> {livePlayers} playing
             </span>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+          <div className="absolute bottom-0 left-0 right-0 z-20 p-6 md:p-8">
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold gold-gradient text-primary-foreground mb-3">{g.category_name ?? ""}</span>
             <h1 className="font-gaming font-bold text-3xl md:text-4xl text-white tracking-wide text-glow">{g.name}</h1>
             <p className="text-sm text-white/60 mt-2 flex items-center gap-3">
