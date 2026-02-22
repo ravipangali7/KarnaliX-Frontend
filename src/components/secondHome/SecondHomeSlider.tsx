@@ -1,0 +1,54 @@
+import { Link } from "react-router-dom";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Button } from "@/components/ui/button";
+import type { SliderSlide } from "@/hooks/useSecondHomePageData";
+
+interface SecondHomeSliderProps {
+  slides: SliderSlide[];
+}
+
+export function SecondHomeSlider({ slides }: SecondHomeSliderProps) {
+  if (!slides.length) return null;
+  return (
+    <section className="w-full bg-primary/10 border-b border-border">
+      <Carousel opts={{ loop: true }} className="w-full">
+        <CarouselContent>
+          {slides.map((slide) => (
+            <CarouselItem key={slide.id}>
+              <div className="relative flex min-h-[200px] md:min-h-[280px] w-full items-center justify-between gap-6 bg-primary px-4 py-8 md:px-8 md:py-12 rounded-none">
+                {slide.image && (
+                  <div className="absolute inset-0 overflow-hidden rounded-none">
+                    <img src={slide.image} alt="" className="h-full w-full object-cover opacity-30" />
+                  </div>
+                )}
+                <div className="relative z-10 flex flex-1 flex-col md:flex-row md:items-center md:justify-between gap-6 container">
+                  <div className="flex-1">
+                    <h2 className="font-bold text-xl md:text-2xl uppercase tracking-wide leading-tight text-primary-foreground">
+                      {slide.title}
+                    </h2>
+                    {slide.subtitle && (
+                      <p className="text-primary-foreground/90 text-sm mt-2">{slide.subtitle}</p>
+                    )}
+                  </div>
+                  <Link to={slide.ctaHref} className="flex-shrink-0">
+                    <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-bold px-8 h-12">
+                      {slide.ctaText}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className="left-2 border-border bg-card/90 text-foreground hover:bg-muted" />
+        <CarouselNext className="right-2 border-border bg-card/90 text-foreground hover:bg-muted" />
+      </Carousel>
+    </section>
+  );
+}

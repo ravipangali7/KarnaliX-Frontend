@@ -89,6 +89,37 @@
     font-family: 'Roboto Mono', monospace;
   }
 
+  /* Second home: dark + red/blue accents (first-home reference) */
+  .second-home {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --primary: 0 72% 51%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 30% 15%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --border: 222 30% 18%;
+    --navy: 222 47% 4%;
+    --navy-foreground: 210 40% 98%;
+    --odds-blue: 199 89% 48%;
+    --odds-red: 0 72% 51%;
+  }
+  .second-home body {
+    font-family: 'Poppins', sans-serif;
+  }
+  .second-home .odds-cell-blue {
+    background-color: hsl(199 89% 48%);
+    color: white;
+  }
+  .second-home .odds-cell-red {
+    background-color: hsl(0 72% 51%);
+    color: white;
+  }
+
   .dark {
     --background: 230 50% 4%;
     --foreground: 210 40% 95%;
