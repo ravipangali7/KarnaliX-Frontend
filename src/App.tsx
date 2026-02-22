@@ -65,7 +65,9 @@ import NotFound from "@/pages/NotFound";
 import { HOME_PAGE_VARIANT } from "@/config";
 import FirstHomePage from "@/pages/public/FirstHomePage";
 import SecondHomePage from "@/pages/public/SecondHomePage";
+import HomeDesignPage from "@/pages/public/HomeDesignPage";
 import { SecondPublicLayout } from "@/components/layout/SecondPublicLayout";
+import { HomeDesignLayout } from "@/components/layout/HomeDesignLayout";
 
 const queryClient = new QueryClient();
 
@@ -78,9 +80,9 @@ function HomePageSwitch() {
     );
   }
   return (
-    <PublicLayout>
-      <FirstHomePage />
-    </PublicLayout>
+    <HomeDesignLayout>
+      <HomeDesignPage />
+    </HomeDesignLayout>
   );
 }
 

@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 @layer base {
   :root {
@@ -61,6 +61,32 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 230 35% 20%;
     --sidebar-ring: 220 90% 56%;
+  }
+
+  /* Home page design: dark gaming theme (HOME_PAGE_DESIGN.md) */
+  .home-design {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --primary: 187 100% 50%;
+    --secondary: 270 70% 55%;
+    --muted: 222 30% 15%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 45 100% 55%;
+    --border: 222 30% 18%;
+    --radius: 0.75rem;
+    --neon-cyan: 187 100% 50%;
+    --neon-purple: 270 70% 55%;
+    --neon-gold: 45 100% 55%;
+    --neon-green: 142 76% 45%;
+    --neon-red: 0 84% 60%;
+    --neon-pink: 330 85% 60%;
+  }
+  .home-design body {
+    font-family: 'Poppins', sans-serif;
+  }
+  .home-design .font-mono-nums {
+    font-family: 'Roboto Mono', monospace;
   }
 
   .dark {
@@ -229,4 +255,73 @@
   .text-glow-sm {
     text-shadow: 0 0 6px hsl(220 90% 56% / 0.4);
   }
+
+  /* Home design utilities (HOME_PAGE_DESIGN.md) */
+  .glass {
+    background-color: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgb(255 255 255 / 0.1);
+  }
+  .glass-strong {
+    background-color: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgb(255 255 255 / 0.15);
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gradient-text-gold {
+    background: linear-gradient(135deg, hsl(var(--accent)), hsl(25 95% 53%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glow-cyan {
+    box-shadow: 0 0 20px -3px hsl(187 100% 50% / 0.5);
+  }
+  .glow-purple {
+    box-shadow: 0 0 20px -3px hsl(270 70% 55% / 0.5);
+  }
+  .glow-gold {
+    box-shadow: 0 0 20px -3px hsl(45 100% 55% / 0.5);
+  }
+  .bg-hero-pattern {
+    background: radial-gradient(ellipse 80% 50% at 50% 0%, hsl(187 100% 50% / 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, hsl(270 70% 55% / 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 30% at 20% 80%, hsl(45 100% 55% / 0.06) 0%, transparent 50%);
+  }
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out forwards;
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+  .animate-ticker {
+    animation: ticker 30s linear infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }

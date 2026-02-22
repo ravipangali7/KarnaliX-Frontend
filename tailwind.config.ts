@@ -17,6 +17,8 @@ export default {
         sans: ["Inter", "sans-serif"],
         display: ["Rajdhani", "sans-serif"],
         gaming: ["Orbitron", "sans-serif"],
+        poppins: ["Poppins", "sans-serif"],
+        "roboto-mono": ["Roboto Mono", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
