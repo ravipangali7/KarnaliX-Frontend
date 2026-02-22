@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting } from "@/api/site";
-import { getCategories, getProviders, getMediaUrl, type GameCategory, type GameProvider } from "@/api/games";
+import { getCategories, getProviders, type GameCategory, type GameProvider } from "@/api/games";
+import { getMediaUrl } from "@/lib/api";
 import type { ProviderShape } from "@/data/homePageMockData";
 
 export interface SliderSlide {
