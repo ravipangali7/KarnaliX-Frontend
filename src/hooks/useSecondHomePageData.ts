@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSetting } from "@/api/site";
+import { getSiteSetting, getSliderSlides, getLiveBettingSections, type LiveBettingSectionApi } from "@/api/site";
 import { getCategories, getProviders, getGames, getGameImageUrl, type Game, type GameCategory, type GameProvider } from "@/api/games";
 import { getMediaUrl } from "@/lib/api";
 import type { ProviderShape, GameCardShape } from "@/data/homePageMockData";
@@ -69,6 +69,17 @@ const PROVIDER_COLORS = [
   "from-teal-500 to-cyan-500",
 ];
 
+function mapSliderApiToSlide(s: { id: number; title: string; subtitle?: string; image?: string; cta_label: string; cta_link: string }): SliderSlide {
+  return {
+    id: String(s.id),
+    title: s.title ?? "",
+    subtitle: s.subtitle,
+    image: (s.image as string)?.trim() ? getMediaUrl((s.image as string).trim()) : undefined,
+    ctaText: s.cta_label ?? "Join Now",
+    ctaHref: s.cta_link ?? "/register",
+  };
+}
+
 function defaultSliderSlides(site: Record<string, unknown>): SliderSlide[] {
   const heroTitle = (site.hero_title as string)?.trim() || "CRICKET CHAMPIONSHIP - T20 WORLD CUP MADNESS BEGINS - THE COUNTDOWN IS OVER";
   const promoBanners = Array.isArray(site.promo_banners) ? (site.promo_banners as Record<string, unknown>[]) : [];
@@ -91,6 +102,22 @@ function defaultSliderSlides(site: Record<string, unknown>): SliderSlide[] {
       ctaHref: "/register",
     },
   ];
+}
+
+function mapLiveBettingApiToSections(sections: LiveBettingSectionApi[]): LiveBettingSection[] {
+  return sections.slice(0, 10).map((sec) => ({
+    title: sec.title ?? "",
+    events: (sec.events ?? []).map((ev) => ({
+      id: String(ev.id),
+      sport: ev.sport,
+      team1: ev.team1 ?? "",
+      team2: ev.team2 ?? "",
+      date: ev.event_date ?? "",
+      time: ev.event_time ?? "",
+      odds: Array.isArray(ev.odds) ? ev.odds : [],
+      isLive: !!ev.is_live,
+    })),
+  }));
 }
 
 function defaultLiveBettingSections(site: Record<string, unknown>): LiveBettingSection[] {
@@ -136,6 +163,14 @@ export function useSecondHomePageData(): {
     queryKey: ["siteSetting"],
     queryFn: getSiteSetting,
   });
+  const { data: sliderSlidesApi = [], isLoading: sliderLoading } = useQuery({
+    queryKey: ["sliderSlides"],
+    queryFn: getSliderSlides,
+  });
+  const { data: liveBettingApi = [], isLoading: liveBettingLoading } = useQuery({
+    queryKey: ["liveBettingSections"],
+    queryFn: getLiveBettingSections,
+  });
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
@@ -151,8 +186,16 @@ export function useSecondHomePageData(): {
   const games = (gamesResp?.results ?? []) as Game[];
   const categoriesList = (categories ?? []) as GameCategory[];
 
-  const isLoading = siteLoading || categoriesLoading || providersLoading || gamesLoading;
+  const isLoading = siteLoading || sliderLoading || liveBettingLoading || categoriesLoading || providersLoading || gamesLoading;
   const site = (siteSetting as Record<string, unknown>) ?? {};
+  const liveBettingSections: LiveBettingSection[] =
+    Array.isArray(liveBettingApi) && liveBettingApi.length > 0
+      ? mapLiveBettingApiToSections(liveBettingApi)
+      : defaultLiveBettingSections(site);
+  const sliderSlides: SliderSlide[] =
+    Array.isArray(sliderSlidesApi) && sliderSlidesApi.length > 0
+      ? sliderSlidesApi.map(mapSliderApiToSlide)
+      : defaultSliderSlides(site);
   const providersList = (providers ?? []) as GameProvider[];
   const providerCards: ProviderShape[] = providersList.map((p, i) => ({
     name: p.name,
@@ -178,11 +221,11 @@ export function useSecondHomePageData(): {
   }
 
   const data: SecondHomePageData = {
-    sliderSlides: defaultSliderSlides(site),
+    sliderSlides,
     categories: categoriesList,
     providers: providersList,
     providerCards,
-    liveBettingSections: defaultLiveBettingSections(site),
+    liveBettingSections,
     topLiveGames,
     otherGames,
   };
@@ -191,7 +234,6 @@ export function useSecondHomePageData(): {
     refetchSite();
     refetchGames();
   };
-
   return { data, isLoading, isError: !!siteError || !!gamesError, refetch };
 }
 

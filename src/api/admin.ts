@@ -431,6 +431,50 @@ export async function updateSiteSettings(body: unknown) {
   return apiPatch(`${prefix("powerhouse")}/site-settings/update/`, body);
 }
 
+// --- Slider (second home) ---
+export async function getSliderSlidesAdmin() {
+  const res = await apiGet(`${prefix("powerhouse")}/slider/`);
+  return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+export async function createSliderSlide(body: { title: string; subtitle?: string; image?: string; cta_label?: string; cta_link?: string; order?: number }) {
+  return apiPost(`${prefix("powerhouse")}/slider/`, body);
+}
+export async function updateSliderSlide(id: number, body: Partial<{ title: string; subtitle: string; image: string; cta_label: string; cta_link: string; order: number }>) {
+  return apiPatch(`${prefix("powerhouse")}/slider/${id}/`, body);
+}
+export async function deleteSliderSlide(id: number) {
+  return apiDelete(`${prefix("powerhouse")}/slider/${id}/`);
+}
+
+// --- Live Betting (second home) ---
+export async function getLiveBettingSectionsAdmin() {
+  const res = await apiGet(`${prefix("powerhouse")}/live-betting-sections/`);
+  return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+export async function createLiveBettingSection(body: { title: string; order?: number }) {
+  return apiPost(`${prefix("powerhouse")}/live-betting-sections/`, body);
+}
+export async function updateLiveBettingSection(id: number, body: Partial<{ title: string; order: number }>) {
+  return apiPatch(`${prefix("powerhouse")}/live-betting-sections/${id}/`, body);
+}
+export async function deleteLiveBettingSection(id: number) {
+  return apiDelete(`${prefix("powerhouse")}/live-betting-sections/${id}/`);
+}
+export async function getLiveBettingEventsAdmin(sectionId?: number) {
+  const url = sectionId != null ? `${prefix("powerhouse")}/live-betting-events/?section=${sectionId}` : `${prefix("powerhouse")}/live-betting-events/`;
+  const res = await apiGet(url);
+  return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+export async function createLiveBettingEvent(body: { section: number; sport?: string; team1: string; team2: string; event_date?: string; event_time?: string; odds?: number[]; is_live?: boolean; order?: number }) {
+  return apiPost(`${prefix("powerhouse")}/live-betting-events/`, body);
+}
+export async function updateLiveBettingEvent(id: number, body: Partial<{ section: number; sport: string; team1: string; team2: string; event_date: string; event_time: string; odds: number[]; is_live: boolean; order: number }>) {
+  return apiPatch(`${prefix("powerhouse")}/live-betting-events/${id}/`, body);
+}
+export async function deleteLiveBettingEvent(id: number) {
+  return apiDelete(`${prefix("powerhouse")}/live-betting-events/${id}/`);
+}
+
 export async function getCmsPages() {
   const res = await apiGet(`${prefix("powerhouse")}/cms/`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
