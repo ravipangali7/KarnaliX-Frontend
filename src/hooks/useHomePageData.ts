@@ -209,11 +209,12 @@ export function useHomePageData(): {
         })
       : defaultCategories;
 
+  const GAMES_PER_CATEGORY = 10;
   const gamesByCategory: Record<string, GameCardShape[]> = {};
   if (games.length > 0 && categories.length > 0) {
     (categories as GameCategory[]).forEach((c) => {
       const slug = categoryIdToSlug[c.id] ?? slugFromCategoryName(c.name);
-      const catGames = games.filter((g: Game) => g.category === c.id);
+      const catGames = games.filter((g: Game) => g.category === c.id).slice(0, GAMES_PER_CATEGORY);
       gamesByCategory[slug] = catGames.map((g, i) => mapGameToCardShape(g as Game, i));
     });
   }

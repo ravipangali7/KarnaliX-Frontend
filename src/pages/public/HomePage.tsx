@@ -202,7 +202,7 @@ const HomePage = () => {
 
       {/* Category Sections */}
       {!gamesLoading && !gamesError && !categoriesLoading && !categoriesError && categories.slice(0, 5).map((cat: { id: number; name: string }) => {
-        const catGames = games.filter((g: { category: number }) => g.category === cat.id).slice(0, 12);
+        const catGames = games.filter((g: { category: number }) => g.category === cat.id).slice(0, 10);
         if (catGames.length === 0) return null;
         return (
           <section key={cat.id} className="container px-4 pt-8">

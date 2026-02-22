@@ -41,7 +41,7 @@ export function AllGameCategories({ gamesByCategory: gamesByCategoryProp, catego
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {games.map((game) => (
+              {games.slice(0, 10).map((game) => (
                 <GameCardSmall key={game.id} {...game} />
               ))}
             </div>

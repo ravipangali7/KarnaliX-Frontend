@@ -83,11 +83,12 @@ const FirstHomePage = () => {
   const getCountByCategory = (categoryId: number) =>
     games.filter((g: Game) => g.category === categoryId).length;
 
-  const topPicks = games.slice(0, 10);
-  const popular = games.slice(2, 10);
-  const upcoming = games.slice(4, 12);
-  const trending = games.slice(1, 9);
-  const newReleases = games.slice(0, 8);
+  const maxPerSection = 10;
+  const topPicks = games.slice(0, maxPerSection);
+  const popular = games.slice(2, 2 + maxPerSection);
+  const upcoming = games.slice(4, 4 + maxPerSection);
+  const trending = games.slice(1, 1 + maxPerSection);
+  const newReleases = games.slice(0, maxPerSection);
 
   const sectionTitle = "text-sm text-muted-foreground text-center mb-6";
   const gradientText = "bg-gradient-to-r from-violet-500 to-teal-400 bg-clip-text text-transparent font-bold";
