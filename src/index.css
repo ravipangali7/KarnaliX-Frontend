@@ -88,6 +88,14 @@
   .home-design .font-mono-nums {
     font-family: 'Roboto Mono', monospace;
   }
+  .home-design .odds-cell-blue {
+    background-color: hsl(var(--neon-cyan));
+    color: white;
+  }
+  .home-design .odds-cell-red {
+    background-color: hsl(var(--neon-red));
+    color: white;
+  }
 
   /* Second home: dark + red/blue accents (first-home reference) */
   .second-home {

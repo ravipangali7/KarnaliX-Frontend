@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting } from "@/api/site";
-import { getCategories, getProviders, type GameCategory, type GameProvider } from "@/api/games";
+import { getCategories, getProviders, getGames, getGameImageUrl, type Game, type GameCategory, type GameProvider } from "@/api/games";
 import { getMediaUrl } from "@/lib/api";
-import type { ProviderShape } from "@/data/homePageMockData";
+import type { ProviderShape, GameCardShape } from "@/data/homePageMockData";
 
 export interface SliderSlide {
   id: string;
@@ -35,8 +35,29 @@ export interface SecondHomePageData {
   providers: GameProvider[];
   providerCards: ProviderShape[];
   liveBettingSections: LiveBettingSection[];
+  topLiveGames: GameCardShape[];
+  otherGames: GameCardShape[];
 }
 
+function mapGameToCardShape(game: Game, index: number): GameCardShape {
+  const minBet = Number(game.min_bet) || 0;
+  const maxBet = Number(game.max_bet) || 0;
+  return {
+    id: String(game.id),
+    name: game.name,
+    image: getGameImageUrl(game),
+    category: game.category_name ?? "",
+    players: 0,
+    minBet,
+    maxBet,
+    rating: 4.5,
+    isHot: index < 2,
+    isNew: index < 3,
+    provider: game.provider_name ?? game.provider_code ?? "",
+  };
+}
+
+const TOP_LIVE_COUNT = 12;
 const PROVIDER_COLORS = [
   "from-orange-500 to-red-500",
   "from-amber-500 to-orange-500",
@@ -123,8 +144,14 @@ export function useSecondHomePageData(): {
     queryKey: ["providers"],
     queryFn: getProviders,
   });
+  const { data: gamesResp, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
+    queryKey: ["games", "second-home"],
+    queryFn: () => getGames(undefined, undefined, 1, 50),
+  });
+  const games = (gamesResp?.results ?? []) as Game[];
+  const categoriesList = (categories ?? []) as GameCategory[];
 
-  const isLoading = siteLoading || categoriesLoading || providersLoading;
+  const isLoading = siteLoading || categoriesLoading || providersLoading || gamesLoading;
   const site = (siteSetting as Record<string, unknown>) ?? {};
   const providersList = (providers ?? []) as GameProvider[];
   const providerCards: ProviderShape[] = providersList.map((p, i) => ({
@@ -135,19 +162,37 @@ export function useSecondHomePageData(): {
     color: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
   }));
 
+  const liveCategory = categoriesList.find((c) => /live/i.test(c.name));
+  let topLiveGames: GameCardShape[] = [];
+  let otherGames: GameCardShape[] = [];
+  if (games.length > 0) {
+    if (liveCategory) {
+      const liveGames = games.filter((g) => g.category === liveCategory.id);
+      const rest = games.filter((g) => g.category !== liveCategory.id);
+      topLiveGames = liveGames.slice(0, TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
+      otherGames = rest.map((g, i) => mapGameToCardShape(g, i));
+    } else {
+      topLiveGames = games.slice(0, TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
+      otherGames = games.slice(TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
+    }
+  }
+
   const data: SecondHomePageData = {
     sliderSlides: defaultSliderSlides(site),
-    categories: (categories ?? []) as GameCategory[],
+    categories: categoriesList,
     providers: providersList,
     providerCards,
     liveBettingSections: defaultLiveBettingSections(site),
+    topLiveGames,
+    otherGames,
   };
 
   const refetch = () => {
     refetchSite();
+    refetchGames();
   };
 
-  return { data, isLoading, isError: !!siteError, refetch };
+  return { data, isLoading, isError: !!siteError || !!gamesError, refetch };
 }
 
 export { PROVIDER_COLORS };

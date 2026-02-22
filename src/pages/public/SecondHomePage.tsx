@@ -1,6 +1,9 @@
+import { Link } from "react-router-dom";
 import { useSecondHomePageData } from "@/hooks/useSecondHomePageData";
 import { SecondHomeSlider, SecondGameCategoryBar, LiveBettingSection } from "@/components/secondHome";
 import { GameProviders } from "@/components/home/GameProviders";
+import { GameCardSmall } from "@/components/games/GameCard";
+import { ChevronRight } from "lucide-react";
 
 export default function SecondHomePage() {
   const { data, isLoading, isError, refetch } = useSecondHomePageData();
@@ -40,6 +43,36 @@ export default function SecondHomePage() {
       {data.liveBettingSections.map((section, i) => (
         <LiveBettingSection key={i} section={section} />
       ))}
+      {data.topLiveGames.length > 0 && (
+        <section className="container px-4 py-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display font-bold text-xl text-foreground">Top Live Games</h2>
+            <Link to="/games" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
+              View All <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {data.topLiveGames.map((game) => (
+              <GameCardSmall key={game.id} {...game} />
+            ))}
+          </div>
+        </section>
+      )}
+      {data.otherGames.length > 0 && (
+        <section className="container px-4 py-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display font-bold text-xl text-foreground">Other Games</h2>
+            <Link to="/games" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
+              View All <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {data.otherGames.map((game) => (
+              <GameCardSmall key={game.id} {...game} />
+            ))}
+          </div>
+        </section>
+      )}
       <GameProviders providers={data.providerCards} />
     </div>
   );
