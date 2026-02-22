@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import { Users } from "lucide-react";
 
 interface GameCardProps {
@@ -18,7 +19,7 @@ export const GameCard = ({ image, name, category, minBet, maxBet, plays, onClick
       onClick={onClick}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+        <GameImageWithFallback src={image} alt={name} className="w-full h-full group-hover:scale-110 transition-transform duration-500" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
         <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[8px] font-gaming font-semibold gold-gradient text-primary-foreground tracking-wider">
           PLAY

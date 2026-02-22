@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { getProvidersAdmin, createProviderAdmin, getImportGameApiUrl, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
+import { getProvidersAdmin, createProviderAdmin, createProviderAdminForm, getImportGameApiUrl, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ const PowerhouseProviders = () => {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Direct Import modal (game API called from browser; backend only gives URL and persists import)
@@ -37,6 +38,7 @@ const PowerhouseProviders = () => {
     setName("");
     setCode("");
     setIsActive(true);
+    setImageFile(null);
   };
 
   // When Direct Import modal opens, get game API URL only; use existing DB providers (no getProvider; games via providerGame)
@@ -144,8 +146,18 @@ const PowerhouseProviders = () => {
     }
     setSaving(true);
     try {
-      await createProviderAdmin({ name: n, code: c, is_active: isActive });
+      if (imageFile) {
+        const formData = new FormData();
+        formData.set("name", n);
+        formData.set("code", c);
+        formData.set("is_active", String(isActive));
+        formData.set("image", imageFile);
+        await createProviderAdminForm(formData);
+      } else {
+        await createProviderAdmin({ name: n, code: c, is_active: isActive });
+      }
       queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
+      queryClient.invalidateQueries({ queryKey: ["providers"] });
       toast({ title: "Provider created successfully." });
       resetForm();
       setCreateOpen(false);
@@ -180,6 +192,16 @@ const PowerhouseProviders = () => {
           <div className="space-y-3">
             <Input placeholder="Provider Name" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Provider Code" value={code} onChange={(e) => setCode(e.target.value)} />
+            <div>
+              <label className="text-sm font-medium mb-1 block">Provider image (optional)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground"
+                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              />
+              {imageFile && <p className="text-xs text-muted-foreground mt-1">{imageFile.name}</p>}
+            </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
               Active

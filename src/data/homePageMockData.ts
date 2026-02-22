@@ -44,7 +44,10 @@ export interface CategoryShape {
 
 export interface ProviderShape {
   name: string;
+  /** Letter(s) for fallback when no image (e.g. first 2 chars of name). */
   logo: string;
+  /** Optional image URL for provider logo; when set, show img instead of letter logo. */
+  logoImage?: string;
   games: number;
   color: string;
 }

@@ -23,8 +23,12 @@ export function GameProviders({ providers: providersProp }: GameProvidersProps) 
             to={`/games?provider=${encodeURIComponent(p.name)}`}
             className="glass rounded-xl p-4 border border-white/10 flex flex-col items-center gap-2 hover:scale-[1.02] hover:border-primary/30 transition-all"
           >
-            <div className={cn("h-12 w-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-sm", p.color)}>
-              {p.logo}
+            <div className={cn("h-12 w-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-sm overflow-hidden", p.color)}>
+              {p.logoImage ? (
+                <img src={p.logoImage} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>{p.logo}</span>
+              )}
             </div>
             <span className="font-semibold text-sm text-foreground text-center">{p.name}</span>
             <span className="text-xs text-muted-foreground">{p.games}+ Games</span>

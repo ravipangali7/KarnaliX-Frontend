@@ -11,6 +11,7 @@ export interface GameProvider {
   id: number;
   name: string;
   code: string;
+  image?: string;
   is_active?: boolean;
 }
 
@@ -59,13 +60,33 @@ export async function getProviders(): Promise<GameProvider[]> {
   return unwrapList<GameProvider>(res as unknown);
 }
 
-export async function getGames(categoryId?: number, providerId?: number): Promise<Game[]> {
+export interface GamesPaginatedResponse {
+  results: Game[];
+  count: number;
+  next: string | null;
+  previous: string | null;
+}
+
+export async function getGames(
+  categoryId?: number,
+  providerId?: number,
+  page?: number,
+  pageSize: number = 24
+): Promise<GamesPaginatedResponse> {
   const params = new URLSearchParams();
   if (categoryId != null) params.set("category_id", String(categoryId));
   if (providerId != null) params.set("provider_id", String(providerId));
+  if (page != null) params.set("page", String(page));
+  params.set("page_size", String(pageSize));
   const q = params.toString() ? `?${params.toString()}` : "";
-  const res = await apiGet<Game[]>(`/public/games/${q}`);
-  return unwrapList<Game>(res as unknown);
+  const res = await apiGet<GamesPaginatedResponse>(`/public/games/${q}`);
+  const raw = res as unknown as { results?: Game[]; count?: number; next?: string | null; previous?: string | null };
+  return {
+    results: Array.isArray(raw?.results) ? raw.results : [],
+    count: typeof raw?.count === "number" ? raw.count : 0,
+    next: raw?.next ?? null,
+    previous: raw?.previous ?? null,
+  };
 }
 
 export async function getGame(id: string | number): Promise<Game | null> {

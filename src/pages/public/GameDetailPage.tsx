@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GameCard } from "@/components/shared/GameCard";
+import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import { getGame, getGames, getGameImageUrl } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
 import { launchGame, getPlayerWallet } from "@/api/player";
@@ -31,7 +32,8 @@ const GameDetailPage = () => {
   const [betAmount, setBetAmount] = useState(100);
   const [launching, setLaunching] = useState(false);
   const { data: game, isLoading, isError: gameError, refetch: refetchGame } = useQuery({ queryKey: ["game", id], queryFn: () => getGame(id!), enabled: !!id });
-  const { data: games = [] } = useQuery({ queryKey: ["games"], queryFn: () => getGames() });
+  const { data: gamesResp } = useQuery({ queryKey: ["games", "detail"], queryFn: () => getGames(undefined, undefined, 1, 100) });
+  const games = (gamesResp?.results ?? []) as Game[];
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: wallet } = useQuery({
     queryKey: ["playerWallet"],
@@ -97,7 +99,7 @@ const GameDetailPage = () => {
       {/* Game Hero */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-3 relative rounded-2xl overflow-hidden aspect-[16/9] lg:aspect-[4/3]">
-          <img src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover" />
+          <GameImageWithFallback src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
           {/* Live badge */}
           <div className="absolute top-4 left-4 flex items-center gap-2">

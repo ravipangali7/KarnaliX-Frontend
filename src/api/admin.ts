@@ -288,8 +288,16 @@ export async function getProviderAdmin(id: number) {
 export async function createProviderAdmin(body: unknown) {
   return apiPost(`${prefix("powerhouse")}/providers/`, body);
 }
+/** Create provider with optional image file (FormData). */
+export async function createProviderAdminForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/providers/`, formData);
+}
 export async function updateProviderAdmin(id: number, body: unknown) {
   return apiPatch(`${prefix("powerhouse")}/providers/${id}/`, body);
+}
+/** Update provider with optional image file (FormData). */
+export async function updateProviderAdminForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/providers/${id}/`, formData);
 }
 export async function deleteProviderAdmin(id: number) {
   return apiDelete(`${prefix("powerhouse")}/providers/${id}/`);

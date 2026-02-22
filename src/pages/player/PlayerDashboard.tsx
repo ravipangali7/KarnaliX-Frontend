@@ -17,7 +17,8 @@ const PlayerDashboard = () => {
   const { user } = useAuth();
   const { data: dashboard = {} } = useQuery({ queryKey: ["player-dashboard"], queryFn: getPlayerDashboard });
   const { data: transactions = [] } = useQuery({ queryKey: ["player-transactions"], queryFn: getPlayerTransactions });
-  const { data: games = [] } = useQuery({ queryKey: ["games"], queryFn: () => getGames() });
+  const { data: gamesResp } = useQuery({ queryKey: ["games", "dashboard"], queryFn: () => getGames(undefined, undefined, 1, 50) });
+  const games = gamesResp?.results ?? [];
   const recent = (transactions as Record<string, unknown>[]).slice(0, 5);
   const topGames = (games as { id: number; name: string; image?: string; category_name?: string; min_bet: string; max_bet: string }[]).slice(0, 6);
   const [transferOpen, setTransferOpen] = useState(false);

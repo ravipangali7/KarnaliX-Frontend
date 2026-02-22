@@ -54,10 +54,11 @@ const categoryIcons = ["🎮", "🤖", "🕹️", "🎰", "🎡", "🎣", "🃏"
 
 const FirstHomePage = () => {
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
-  const { data: games = [], isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
-    queryKey: ["games"],
-    queryFn: () => getGames(),
+  const { data: gamesResp, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
+    queryKey: ["games", "first-home"],
+    queryFn: () => getGames(undefined, undefined, 1, 100),
   });
+  const games = gamesResp?.results ?? [];
   const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError, refetch: refetchCategories } =
     useQuery({ queryKey: ["categories"], queryFn: getCategories });
   const { data: providers = [], isLoading: providersLoading } = useQuery({ queryKey: ["providers"], queryFn: getProviders });
@@ -82,7 +83,7 @@ const FirstHomePage = () => {
   const getCountByCategory = (categoryId: number) =>
     games.filter((g: Game) => g.category === categoryId).length;
 
-  const topPicks = games.slice(0, 8);
+  const topPicks = games.slice(0, 12);
   const popular = games.slice(2, 10);
   const upcoming = games.slice(4, 12);
   const trending = games.slice(1, 9);

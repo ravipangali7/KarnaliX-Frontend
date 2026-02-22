@@ -31,7 +31,7 @@ import {
   paymentMethods as defaultPaymentMethods,
 } from "@/data/homePageMockData";
 
-const FEATURED_GAMES_COUNT = 8;
+const FEATURED_GAMES_COUNT = 12;
 const PROVIDER_COLORS = [
   "from-orange-500 to-red-500",
   "from-amber-500 to-orange-500",
@@ -133,10 +133,11 @@ export function useHomePageData(): {
     queryKey: ["siteSetting"],
     queryFn: getSiteSetting,
   });
-  const { data: games = [], isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
-    queryKey: ["games"],
-    queryFn: () => getGames(),
+  const { data: gamesResp, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
+    queryKey: ["games", "home-data"],
+    queryFn: () => getGames(undefined, undefined, 1, 200),
   });
+  const games = gamesResp?.results ?? [];
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
@@ -228,6 +229,7 @@ export function useHomePageData(): {
       ? (providers as GameProvider[]).map((p, i) => ({
           name: p.name,
           logo: (p.code ?? p.name.slice(0, 2).toUpperCase()).slice(0, 2),
+          logoImage: p.image?.trim() ? getMediaUrl(p.image.trim()) : undefined,
           games: providerGamesCount[p.id] ?? 0,
           color: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
         }))

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Users, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import type { GameCardShape } from "@/data/homePageMockData";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +14,7 @@ export function GameCardSmall({ id, name, image, category, players, minBet, maxB
     <Link to={`/games/${id}`}>
       <Card className="overflow-hidden rounded-xl glass border-white/10 group hover:scale-[1.02] hover:border-primary/30 transition-all duration-300 flex-shrink-0">
         <div className="relative aspect-[4/3] overflow-hidden">
-          <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+          <GameImageWithFallback src={image} alt={name} className="w-full h-full group-hover:scale-110 transition-transform duration-500" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
           <div className="absolute top-2 right-2 flex gap-1">
             {isHot && <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-500/90 text-white">HOT</span>}
@@ -51,7 +52,7 @@ export function GameCardLarge({ id, name, image, category, players, minBet, maxB
     <Link to={`/games/${id}`} className="snap-start shrink-0 w-[280px] md:w-[320px]">
       <Card className="overflow-hidden rounded-xl glass border-white/10 group h-full hover:scale-[1.02] hover:border-primary/30 transition-all duration-300">
         <div className="relative aspect-video overflow-hidden">
-          <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+          <GameImageWithFallback src={image} alt={name} className="w-full h-full group-hover:scale-110 transition-transform duration-500" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
           <div className="absolute top-2 right-2 flex gap-1">
             {isHot && <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-500/90 text-white">HOT</span>}

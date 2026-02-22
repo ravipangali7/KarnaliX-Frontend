@@ -4,37 +4,56 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/shared/GameCard";
+import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { getGames, getCategories, getProviders, getGameImageUrl } from "@/api/games";
 import type { Game } from "@/api/games";
 import { Search, Grid3X3, List } from "lucide-react";
 
+const PAGE_SIZE = 24;
+
 const GamesPage = () => {
-  const [searchParams] = useSearchParams();
-  const categoryParam = searchParams.get("category");
-  const providerParam = searchParams.get("provider");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = searchParams.get("category") ?? "all";
+  const providerParam = searchParams.get("provider") ?? "all";
+  const pageParam = searchParams.get("page");
+  const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState(categoryParam || "all");
-  const [activeProvider, setActiveProvider] = useState(providerParam || "all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const categoryId = activeCategory === "all" ? undefined : Number(activeCategory) || undefined;
-  const providerId = activeProvider === "all" ? undefined : Number(activeProvider) || undefined;
-  const { data: games = [], isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({ queryKey: ["games", categoryId, providerId], queryFn: () => getGames(categoryId, providerId) });
+  const categoryId = categoryParam === "all" ? undefined : Number(categoryParam) || undefined;
+  const providerId = providerParam === "all" ? undefined : Number(providerParam) || undefined;
+
+  const setFilters = (updates: { category?: string; provider?: string; page?: number }) => {
+    const next = new URLSearchParams(searchParams);
+    if (updates.category !== undefined) next.set("category", updates.category);
+    if (updates.provider !== undefined) next.set("provider", updates.provider);
+    if (updates.page !== undefined) next.set("page", String(updates.page));
+    setSearchParams(next);
+  };
+
+  const { data: gamesData, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
+    queryKey: ["games", categoryId, providerId, currentPage],
+    queryFn: () => getGames(categoryId, providerId, currentPage, PAGE_SIZE),
+  });
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
   const { data: providers = [] } = useQuery({ queryKey: ["providers"], queryFn: getProviders });
 
-  const filtered = games.filter((g: Game) => {
-    const matchSearch = g.name.toLowerCase().includes(search.toLowerCase()) || (g.category_name ?? "").toLowerCase().includes(search.toLowerCase()) || (g.provider_name ?? "").toLowerCase().includes(search.toLowerCase());
-    const matchCategory = activeCategory === "all" || g.category === Number(activeCategory);
-    const matchProvider = activeProvider === "all" || g.provider === Number(activeProvider);
-    return matchSearch && matchCategory && matchProvider;
+  const results = gamesData?.results ?? [];
+  const totalCount = gamesData?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  const filtered = results.filter((g: Game) => {
+    const matchSearch = !search.trim() || g.name.toLowerCase().includes(search.toLowerCase()) || (g.category_name ?? "").toLowerCase().includes(search.toLowerCase()) || (g.provider_name ?? "").toLowerCase().includes(search.toLowerCase());
+    return matchSearch;
   });
 
   return (
     <div className="container px-4 py-6 space-y-4">
       <div>
         <h1 className="font-gaming font-bold text-2xl neon-text tracking-wide">ALL GAMES</h1>
-        <p className="text-sm text-muted-foreground mt-1">Discover {filtered.length} exciting games to play and win</p>
+        <p className="text-sm text-muted-foreground mt-1">Discover {totalCount} exciting games to play and win</p>
       </div>
 
       {/* Search */}
@@ -51,20 +70,20 @@ const GamesPage = () => {
       {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         <Button
-          variant={activeCategory === "all" ? "default" : "outline"}
+          variant={categoryParam === "all" ? "default" : "outline"}
           size="sm"
-          onClick={() => setActiveCategory("all")}
-          className={activeCategory === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
+          onClick={() => setFilters({ category: "all", page: 1 })}
+          className={categoryParam === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
         >
           All Games
         </Button>
         {categories.map((cat: { id: number; name: string }) => (
           <Button
             key={cat.id}
-            variant={activeCategory === String(cat.id) ? "default" : "outline"}
+            variant={categoryParam === String(cat.id) ? "default" : "outline"}
             size="sm"
-            onClick={() => setActiveCategory(String(cat.id))}
-            className={`whitespace-nowrap ${activeCategory === String(cat.id) ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}`}
+            onClick={() => setFilters({ category: String(cat.id), page: 1 })}
+            className={`whitespace-nowrap ${categoryParam === String(cat.id) ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}`}
           >
             {cat.name}
           </Button>
@@ -76,20 +95,20 @@ const GamesPage = () => {
         <div className="flex gap-2 overflow-x-auto pb-1">
           <span className="text-xs text-muted-foreground self-center mr-1 flex-shrink-0">Provider:</span>
           <Button
-            variant={activeProvider === "all" ? "default" : "outline"}
+            variant={providerParam === "all" ? "default" : "outline"}
             size="sm"
-            onClick={() => setActiveProvider("all")}
-            className={activeProvider === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
+            onClick={() => setFilters({ provider: "all", page: 1 })}
+            className={providerParam === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
           >
             All
           </Button>
           {providers.map((prov: { id: number; name: string; code: string }) => (
             <Button
               key={prov.id}
-              variant={activeProvider === String(prov.id) ? "default" : "outline"}
+              variant={providerParam === String(prov.id) ? "default" : "outline"}
               size="sm"
-              onClick={() => setActiveProvider(String(prov.id))}
-              className={`whitespace-nowrap ${activeProvider === String(prov.id) ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}`}
+              onClick={() => setFilters({ provider: String(prov.id), page: 1 })}
+              className={`whitespace-nowrap ${providerParam === String(prov.id) ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}`}
             >
               {prov.name}
             </Button>
@@ -132,7 +151,9 @@ const GamesPage = () => {
           {filtered.map((game: Game) => (
             <Link key={game.id} to={`/games/${game.id}`}>
               <div className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/50 hover:neon-glow-sm transition-all">
-                <img src={getGameImageUrl(game)} alt={game.name} className="h-12 w-16 object-cover rounded" />
+                <div className="h-12 w-16 rounded overflow-hidden flex-shrink-0">
+                  <GameImageWithFallback src={getGameImageUrl(game)} alt={game.name} className="h-full w-full object-cover" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm truncate">{game.name}</h3>
                   <p className="text-xs text-muted-foreground">{game.category_name ?? ""} • {game.provider_name ?? ""}</p>
@@ -148,6 +169,35 @@ const GamesPage = () => {
 
       {!gamesLoading && !gamesError && filtered.length === 0 && (
         <p className="text-center text-muted-foreground py-12">No games found</p>
+      )}
+
+      {/* Pagination */}
+      {!gamesLoading && !gamesError && totalPages > 1 && (
+        <Pagination className="pt-4">
+          <PaginationContent className="gap-2">
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => { e.preventDefault(); setFilters({ page: currentPage - 1 }); }}
+                className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                aria-disabled={currentPage <= 1}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="px-3 py-2 text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => { e.preventDefault(); setFilters({ page: currentPage + 1 }); }}
+                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                aria-disabled={currentPage >= totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       )}
     </div>
   );

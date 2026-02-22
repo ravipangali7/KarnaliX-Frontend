@@ -30,12 +30,13 @@ const fadeUp = {
 
 const HomePage = () => {
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
-  const { data: games = [], isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({ queryKey: ["games"], queryFn: () => getGames() });
+  const { data: gamesData, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({ queryKey: ["games", "home"], queryFn: () => getGames(undefined, undefined, 1, 100) });
+  const games = gamesData?.results ?? [];
   const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError, refetch: refetchCategories } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
   const { data: testimonials = [] } = useQuery({ queryKey: ["testimonials"], queryFn: getTestimonials });
   const heroTitle = (siteSetting as Record<string, string> | undefined)?.hero_title ?? "Play. Win. Dominate.";
   const heroSubtitle = (siteSetting as Record<string, string> | undefined)?.hero_subtitle ?? "Nepal's Premier Online Gaming Platform";
-  const topGames = games.slice(0, 10);
+  const topGames = games.slice(0, 12);
 
   return (
     <div className="space-y-0 pb-8">
