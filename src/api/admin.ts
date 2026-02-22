@@ -319,6 +319,9 @@ export async function createGameForm(formData: FormData) {
 export async function updateGame(id: number, body: unknown) {
   return apiPatch(`${prefix("powerhouse")}/games/${id}/`, body);
 }
+export async function updateGameForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/games/${id}/`, formData);
+}
 export async function deleteGame(id: number) {
   return apiDelete(`${prefix("powerhouse")}/games/${id}/`);
 }
