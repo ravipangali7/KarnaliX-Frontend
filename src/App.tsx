@@ -32,6 +32,7 @@ import PlayerGameLogDetail from "@/pages/player/PlayerGameLogDetail";
 import PlayerPaymentModes from "@/pages/player/PlayerPaymentModes";
 import PlayerChangePassword from "@/pages/player/PlayerChangePassword";
 import PlayerProfile from "@/pages/player/PlayerProfile";
+import PlayerReferralPage from "@/pages/player/PlayerReferralPage";
 
 // Admin Pages (shared across roles)
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -121,6 +122,7 @@ const App = () => (
                 <Route path="payment-modes" element={<PlayerPaymentModes />} />
                 <Route path="change-password" element={<PlayerChangePassword />} />
                 <Route path="profile" element={<PlayerProfile />} />
+                <Route path="referral" element={<PlayerReferralPage />} />
               </Route>
             </Route>
 

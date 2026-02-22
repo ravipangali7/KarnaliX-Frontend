@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Home, MessageCircle, Wallet, Clock, User, Gamepad2, Shield, Key, CreditCard, BarChart3, LogOut } from "lucide-react";
+import { Home, MessageCircle, Wallet, Clock, User, Gamepad2, Shield, Key, CreditCard, BarChart3, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const tabs = [
@@ -19,6 +19,7 @@ const sidebarLinks = [
   { label: "Transactions", path: "/player/transactions", icon: Clock },
   { label: "Game Results", path: "/player/game-results", icon: BarChart3 },
   { label: "Payment Modes", path: "/player/payment-modes", icon: CreditCard },
+  { label: "Refer", path: "/player/referral", icon: Users },
   { label: "Change Password", path: "/player/change-password", icon: Key },
   { label: "Profile", path: "/player/profile", icon: User },
 ];

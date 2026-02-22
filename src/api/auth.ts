@@ -44,3 +44,18 @@ export async function forgotPasswordWhatsappContact(userId: number): Promise<{ w
   );
   return res as unknown as { whatsapp_number: string | null };
 }
+
+// --- Signup (phone + OTP, then register) ---
+export async function signupCheckPhone(phone: string): Promise<{ exists: boolean }> {
+  const res = await apiPost<{ exists: boolean }>("/public/auth/signup/check-phone/", { phone });
+  return res as unknown as { exists: boolean };
+}
+
+export async function signupSendOtp(phone: string): Promise<void> {
+  await apiPost("/public/auth/signup/send-otp/", { phone });
+}
+
+export async function signupVerifyOtp(phone: string, otp: string): Promise<{ signup_token: string }> {
+  const res = await apiPost<{ signup_token: string }>("/public/auth/signup/verify-otp/", { phone, otp });
+  return res as unknown as { signup_token: string };
+}
