@@ -313,6 +313,9 @@ export async function getGameAdmin(id: number) {
 export async function createGame(body: unknown) {
   return apiPost(`${prefix("powerhouse")}/games/`, body);
 }
+export async function createGameForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/games/`, formData);
+}
 export async function updateGame(id: number, body: unknown) {
   return apiPatch(`${prefix("powerhouse")}/games/${id}/`, body);
 }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { getGamesAdmin, getCategoriesAdmin, getProvidersAdmin, createGame } from "@/api/admin";
+import { getGamesAdmin, getCategoriesAdmin, getProvidersAdmin, createGame, createGameForm } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "@/hooks/use-toast";
 
@@ -21,7 +21,7 @@ const PowerhouseGames = () => {
   const [providerId, setProviderId] = useState<number | "">("");
   const [minBet, setMinBet] = useState("10");
   const [maxBet, setMaxBet] = useState("5000");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -32,7 +32,7 @@ const PowerhouseGames = () => {
     setProviderId("");
     setMinBet("10");
     setMaxBet("5000");
-    setImageUrl("");
+    setImageFile(null);
     setIsActive(true);
   };
 
@@ -67,16 +67,28 @@ const PowerhouseGames = () => {
     }
     setSaving(true);
     try {
-      await createGame({
-        name: n,
-        game_uid: uid,
-        category: categoryId,
-        provider: providerId,
-        min_bet: minBet || "0",
-        max_bet: maxBet || "0",
-        image_url: imageUrl.trim() || null,
-        is_active: isActive,
-      });
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("name", n);
+        formData.append("game_uid", uid);
+        formData.append("category", String(categoryId));
+        formData.append("provider", String(providerId));
+        formData.append("min_bet", minBet || "0");
+        formData.append("max_bet", maxBet || "0");
+        formData.append("is_active", String(isActive));
+        formData.append("image", imageFile);
+        await createGameForm(formData);
+      } else {
+        await createGame({
+          name: n,
+          game_uid: uid,
+          category: categoryId,
+          provider: providerId,
+          min_bet: minBet || "0",
+          max_bet: maxBet || "0",
+          is_active: isActive,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["admin-games"] });
       toast({ title: "Game created successfully." });
       resetForm();
@@ -125,7 +137,16 @@ const PowerhouseGames = () => {
                 <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
               ))}
             </select>
-            <Input placeholder="Image URL (optional)" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Game image (optional)</label>
+              <input
+                key={createOpen ? "open" : "closed"}
+                type="file"
+                accept="image/*"
+                className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
+                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Input placeholder="Min Bet" type="number" value={minBet} onChange={(e) => setMinBet(e.target.value)} />
               <Input placeholder="Max Bet" type="number" value={maxBet} onChange={(e) => setMaxBet(e.target.value)} />
