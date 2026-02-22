@@ -83,7 +83,7 @@ const FirstHomePage = () => {
   const getCountByCategory = (categoryId: number) =>
     games.filter((g: Game) => g.category === categoryId).length;
 
-  const topPicks = games.slice(0, 12);
+  const topPicks = games.slice(0, 10);
   const popular = games.slice(2, 10);
   const upcoming = games.slice(4, 12);
   const trending = games.slice(1, 9);
