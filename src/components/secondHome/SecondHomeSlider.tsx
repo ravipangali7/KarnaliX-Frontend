@@ -16,7 +16,7 @@ interface SecondHomeSliderProps {
 export function SecondHomeSlider({ slides }: SecondHomeSliderProps) {
   if (!slides.length) return null;
   return (
-    <section className="w-full bg-primary/10 border-b border-white/10">
+    <section className="w-full border-b border-white/10">
       <Carousel opts={{ loop: true }} className="w-full">
         <CarouselContent>
           {slides.map((slide) => (
