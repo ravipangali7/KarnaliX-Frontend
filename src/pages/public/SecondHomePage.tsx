@@ -47,11 +47,11 @@ export default function SecondHomePage() {
       <SecondGameCategoryBar categories={data.categories} />
 
       {/* Scrolling static section (e.g. Ind vs Pak) */}
-      <div className="container px-4 py-6">
+      {/* <div className="container px-4 py-6">
         {data.liveBettingSections.map((section, i) => (
           <LiveBettingSection key={i} section={section} />
         ))}
-      </div>
+      </div> */}
 
       {/* Top Games: 16 cards, 8 visible, horizontal auto-scroll, image only, click -> game */}
       <SecondHomeTopGamesCarousel games={data.topGames} />
