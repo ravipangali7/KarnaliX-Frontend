@@ -241,7 +241,7 @@ export function useSecondHomePageData(): {
   }
   const topGames = [...topLiveGames, ...otherGames].slice(0, 16);
 
-  const sportsIframeUrl = (site.sports_iframe_url as string)?.trim() || "";
+  const sportsIframeUrl = (site.sports_iframe_url as string)?.trim() || "https://sprodm.uni247.xyz/?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWRmOTZiZjUtNGU2ZC00MWIyLWFmOGMtMTU5MTRmZjgyZjBjIiwicGxheWVyX2lkIjoiaGI1ZjQ5MTI2U1RBUiIsIm1lcmNoYW50X2NvZGUiOiJjbXQtaGQtc3ViLTg4MHIyYmYiLCJpc3N1ZWRfYXQiOiIyMDI2LTAyLTIzVDEwOjM5OjQyLjAyNjgyMDA2MloiLCJleHBpcmVzX2F0IjoiMjAyNi0wMi0yM1QxMzozOTo0Mi4wMjY4MjAxMjJaIiwibGFuZ3VhZ2UiOiJlbiJ9.5W0ZztMElPLnVqvFwaqh3ehaIhQYVieBe2FwnDMNNDw#/";
 
   const promoBannersRaw = Array.isArray(site.promo_banners) ? (site.promo_banners as Record<string, unknown>[]) : [];
   const promosGrid: PromoShape[] = promoBannersRaw.length >= 2
