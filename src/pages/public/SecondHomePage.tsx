@@ -56,15 +56,19 @@ export default function SecondHomePage() {
       {/* Top Games: 16 cards, 8 visible, horizontal auto-scroll, image only, click -> game */}
       <SecondHomeTopGamesCarousel games={data.topGames} />
 
-      {/* Sports iframe (configurable via site settings sports_iframe_url) */}
+      {/* Sports iframe: full width, viewport crop to hide remote header/footer */}
       {data.sportsIframeUrl && (
-        <section className="container px-4 py-6">
-          <h2 className="font-display font-bold text-xl text-foreground mb-4">Live Sports</h2>
-          <div className="rounded-xl overflow-hidden border border-white/10 aspect-video max-h-[400px]">
+        <section className="w-full">
+          <div className="w-full overflow-hidden h-[70vh] min-h-[400px] relative bg-background">
             <iframe
               src={data.sportsIframeUrl}
               title="Sports"
-              className="w-full h-full min-h-[300px] border-0"
+              className="absolute left-0 border-0 w-full"
+              style={{
+                height: "calc(100% + 144px)",
+                top: 0,
+                transform: "translateY(-64px)",
+              }}
               allowFullScreen
             />
           </div>
