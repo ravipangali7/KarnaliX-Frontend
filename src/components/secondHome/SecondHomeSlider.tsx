@@ -28,7 +28,7 @@ export function SecondHomeSlider({ slides }: SecondHomeSliderProps) {
                   </div>
                 )}
                 <div className="relative z-10 flex flex-1 flex-col md:flex-row md:items-center md:justify-between gap-6 container">
-                  <div className="flex-1">
+                  {/* <div className="flex-1">
                     <h2 className="font-bold text-xl md:text-2xl uppercase tracking-wide leading-tight text-primary-foreground">
                       {slide.title}
                     </h2>
@@ -40,7 +40,7 @@ export function SecondHomeSlider({ slides }: SecondHomeSliderProps) {
                     <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-bold px-8 h-12">
                       {slide.ctaText}
                     </Button>
-                  </Link>
+                  </Link> */}
                 </div>
               </div>
             </CarouselItem>
