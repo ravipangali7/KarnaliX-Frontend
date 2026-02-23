@@ -37,7 +37,7 @@ export default function SecondHomePage() {
   }
 
   return (
-    <div className="space-y-0 pb-8">
+    <div className="space-y-0 pb-8 bg-background">
       <SecondHomeSlider slides={data.sliderSlides} />
       <SecondGameCategoryBar categories={data.categories} />
       <div className="container px-4 py-6 grid grid-cols-1 md:grid-cols-[70%_1fr] gap-6">

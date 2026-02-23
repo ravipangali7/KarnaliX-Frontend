@@ -16,7 +16,7 @@ interface SecondHomeSidebarProps {
 export function SecondHomeSidebar({ categories = [] }: SecondHomeSidebarProps) {
   return (
     <aside className="space-y-6">
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="rounded-lg glass border border-white/10 p-4">
         <h3 className="font-display font-semibold text-sm text-foreground mb-3">Quick links</h3>
         <ul className="space-y-2">
           {quickLinks.map((item) => (
@@ -32,7 +32,7 @@ export function SecondHomeSidebar({ categories = [] }: SecondHomeSidebarProps) {
         </ul>
       </div>
       {categories.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-4">
+        <div className="rounded-lg glass border border-white/10 p-4">
           <h3 className="font-display font-semibold text-sm text-foreground mb-3">Browse by category</h3>
           <ul className="space-y-2">
             {categories.slice(0, 6).map((cat) => (
@@ -48,7 +48,7 @@ export function SecondHomeSidebar({ categories = [] }: SecondHomeSidebarProps) {
           </ul>
         </div>
       )}
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="rounded-lg glass border border-white/10 p-4">
         <Link to="/bonus" className="text-sm font-medium text-primary hover:underline">
           Promotions
         </Link>

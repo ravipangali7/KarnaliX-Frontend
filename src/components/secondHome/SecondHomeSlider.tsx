@@ -16,7 +16,7 @@ interface SecondHomeSliderProps {
 export function SecondHomeSlider({ slides }: SecondHomeSliderProps) {
   if (!slides.length) return null;
   return (
-    <section className="w-full bg-primary/10 border-b border-border">
+    <section className="w-full bg-primary/10 border-b border-white/10">
       <Carousel opts={{ loop: true }} className="w-full">
         <CarouselContent>
           {slides.map((slide) => (
@@ -46,8 +46,8 @@ export function SecondHomeSlider({ slides }: SecondHomeSliderProps) {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-2 border-border bg-card/90 text-foreground hover:bg-muted" />
-        <CarouselNext className="right-2 border-border bg-card/90 text-foreground hover:bg-muted" />
+        <CarouselPrevious className="left-2 glass border-white/10 text-foreground hover:bg-white/5" />
+        <CarouselNext className="right-2 glass border-white/10 text-foreground hover:bg-white/5" />
       </Carousel>
     </section>
   );

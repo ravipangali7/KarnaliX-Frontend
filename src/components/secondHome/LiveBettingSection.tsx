@@ -15,10 +15,10 @@ export function LiveBettingSection({ section }: LiveBettingSectionProps) {
   return (
     <section className="container px-4 py-6">
       <h2 className="font-display font-bold text-xl mb-3 text-foreground">{title}</h2>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-lg glass border border-white/10">
         <table className="w-full min-w-[400px] text-sm">
           <thead>
-            <tr className="bg-muted/50 border-b border-border">
+            <tr className="bg-card/60 border-b border-white/10">
               <th className="text-left font-semibold text-foreground p-3 w-10"></th>
               <th className="text-left font-semibold text-foreground p-3">Match</th>
               <th className="text-left font-semibold text-foreground p-3 w-20">Time</th>
@@ -34,8 +34,8 @@ export function LiveBettingSection({ section }: LiveBettingSectionProps) {
             {events.map((ev, rowIndex) => (
               <tr
                 key={ev.id}
-                className={`border-b border-border last:border-b-0 ${
-                  rowIndex % 2 === 0 ? "bg-card" : "bg-muted/20"
+                className={`border-b border-white/10 last:border-b-0 ${
+                  rowIndex % 2 === 0 ? "bg-card" : "bg-white/5"
                 }`}
               >
                 <td className="p-2">
