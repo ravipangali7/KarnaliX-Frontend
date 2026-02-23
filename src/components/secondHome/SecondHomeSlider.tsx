@@ -21,7 +21,7 @@ export function SecondHomeSlider({ slides }: SecondHomeSliderProps) {
         <CarouselContent>
           {slides.map((slide) => (
             <CarouselItem key={slide.id}>
-              <div className="relative flex min-h-[200px] md:min-h-[280px] w-full items-center justify-between gap-6 bg-primary px-4 py-8 md:px-8 md:py-12 rounded-none">
+              <div className="relative flex min-h-[200px] md:min-h-[280px] w-full items-center justify-between gap-6 px-4 py-8 md:px-8 md:py-12 rounded-none">
                 {slide.image && (
                   <div className="absolute inset-0 overflow-hidden rounded-none">
                     <img src={slide.image} alt="" className="h-full w-full object-cover opacity-30" />
