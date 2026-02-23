@@ -51,6 +51,7 @@ import AdminPaymentModeVerification from "@/pages/admin/AdminPaymentModeVerifica
 import AdminProfile from "@/pages/admin/AdminProfile";
 import AdminChangePassword from "@/pages/admin/AdminChangePassword";
 import AdminPlayerReport from "@/pages/admin/AdminPlayerReport";
+import AdminAccounting from "@/pages/admin/AdminAccounting";
 
 // Powerhouse-only Pages
 import PowerhouseCategories from "@/pages/admin/PowerhouseCategories";
@@ -145,6 +146,7 @@ const App = () => (
               <Route path="/master/game-log" element={<AdminGameLog />} />
               <Route path="/master/game-log/:id" element={<AdminGameLogDetail />} />
               <Route path="/master/transactions" element={<AdminTransactions />} />
+              <Route path="/master/accounting" element={<AdminAccounting />} />
               <Route path="/master/activity" element={<AdminActivityLog />} />
               <Route path="/master/profile" element={<AdminProfile />} />
               <Route path="/master/change-password" element={<AdminChangePassword />} />
@@ -163,6 +165,7 @@ const App = () => (
               <Route path="/super/game-log" element={<AdminGameLog />} />
               <Route path="/super/game-log/:id" element={<AdminGameLogDetail />} />
               <Route path="/super/transactions" element={<AdminTransactions />} />
+              <Route path="/super/accounting" element={<AdminAccounting />} />
               <Route path="/super/activity" element={<AdminActivityLog />} />
               <Route path="/super/profile" element={<AdminProfile />} />
               <Route path="/super/change-password" element={<AdminChangePassword />} />

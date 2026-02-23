@@ -224,6 +224,39 @@ export async function getActivity(role: "powerhouse" | "super" | "master") {
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
 
+// --- Accounting report (master & super only) ---
+export type AccountingReportParams = { date_from?: string; date_to?: string };
+export type AccountingSummary = {
+  total_pl: string;
+  total_deposits: string;
+  deposits_count: number;
+  total_withdrawals: string;
+  withdrawals_count: number;
+  game_logs_count: number;
+  transactions_count: number;
+  settlements_count?: number;
+  settlements_total?: string;
+};
+export type AccountingReportResponse = {
+  summary: AccountingSummary;
+  game_logs: Record<string, unknown>[];
+  transactions: Record<string, unknown>[];
+  deposits: Record<string, unknown>[];
+  withdrawals: Record<string, unknown>[];
+  settlements?: { id: number; from_user_username: string | null; amount: string; created_at: string | null }[];
+};
+export async function getAccountingReport(
+  role: "master" | "super",
+  params?: AccountingReportParams
+): Promise<AccountingReportResponse> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  const url = `${prefix(role)}/accounting-report/${qs ? `?${qs}` : ""}`;
+  return apiGet<AccountingReportResponse>(url);
+}
+
 // --- Messages ---
 export async function getMessages(role: "powerhouse" | "super" | "master", partnerId?: number) {
   const path = partnerId != null ? `${prefix(role)}/messages/?partner_id=${partnerId}` : `${prefix(role)}/messages/`;

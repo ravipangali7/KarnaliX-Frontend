@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
   Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight,
-  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image
+  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image,
+  Calculator
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDashboard, getUnreadMessageCount } from "@/api/admin";
@@ -61,6 +62,7 @@ const getNavItems = (role: string) => {
       { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
       { label: "Game Log", path: "/game-log", icon: Gamepad2 },
       { label: "Transactions", path: "/transactions", icon: Clock },
+      { label: "Accounting", path: "/accounting", icon: Calculator },
       { label: "Activity Log", path: "/activity", icon: Activity },
     ];
   }
@@ -69,12 +71,13 @@ const getNavItems = (role: string) => {
     ...base,
     ...profileItems,
     { label: "Player Users", path: "/players", icon: Users },
-      { label: "Payment Methods", path: "/payment-modes", icon: CreditCard },
-      { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
-      { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
+    { label: "Payment Methods", path: "/payment-modes", icon: CreditCard },
+    { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
+    { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
     { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
     { label: "Game Log", path: "/game-log", icon: Gamepad2 },
     { label: "Transactions", path: "/transactions", icon: Clock },
+    { label: "Accounting", path: "/accounting", icon: Calculator },
     { label: "Activity Log", path: "/activity", icon: Activity },
   ];
 };
