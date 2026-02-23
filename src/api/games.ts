@@ -1,4 +1,5 @@
 import { apiGet, getMediaUrl } from "@/lib/api";
+import type { ComingSoonShape } from "@/data/homePageMockData";
 
 export interface GameCategory {
   id: number;
@@ -92,4 +93,42 @@ export async function getGames(
 export async function getGame(id: string | number): Promise<Game | null> {
   const res = await apiGet<Game>(`/public/games/${id}/`);
   return unwrapSingle<Game>(res as unknown);
+}
+
+/** Coming-soon list item from API (subset of Game + coming_soon_*). */
+export interface ComingSoonGameApi {
+  id: number;
+  name: string;
+  image?: string;
+  image_url?: string;
+  coming_soon_launch_date?: string | null;
+  coming_soon_description?: string;
+}
+
+function formatLaunchDate(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  } catch {
+    return value;
+  }
+}
+
+/** Fetch coming-soon games from backend; returns shape expected by ComingSoon component. */
+export async function getComingSoonGames(): Promise<ComingSoonShape[]> {
+  try {
+    const res = await apiGet<ComingSoonGameApi[]>("/public/coming-soon-games/");
+    const list = unwrapList<ComingSoonGameApi>(res as unknown);
+    return list.map((item) => ({
+      id: String(item.id),
+      name: item.name,
+      image: getGameImageUrl(item as unknown as Game),
+      launchDate: formatLaunchDate(item.coming_soon_launch_date ?? undefined),
+      description: item.coming_soon_description ?? undefined,
+    }));
+  } catch {
+    return [];
+  }
 }

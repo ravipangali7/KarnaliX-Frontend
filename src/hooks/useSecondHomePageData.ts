@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, type LiveBettingSectionApi } from "@/api/site";
-import { getCategories, getProviders, getGames, getGameImageUrl, type Game, type GameCategory, type GameProvider } from "@/api/games";
+import { getCategories, getProviders, getGames, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
 import { getMediaUrl } from "@/lib/api";
 import type { ProviderShape, GameCardShape, PromoShape, TestimonialShape, ComingSoonShape } from "@/data/homePageMockData";
 import { comingSoon as defaultComingSoon, testimonials as defaultTestimonials } from "@/data/homePageMockData";
@@ -198,6 +198,10 @@ export function useSecondHomePageData(): {
     queryKey: ["testimonials"],
     queryFn: getTestimonials,
   });
+  const { data: comingSoonApi } = useQuery({
+    queryKey: ["comingSoonGames"],
+    queryFn: getComingSoonGames,
+  });
   const games = (gamesResp?.results ?? []) as Game[];
   const categoriesList = (categories ?? []) as GameCategory[];
 
@@ -307,7 +311,7 @@ export function useSecondHomePageData(): {
     promosGrid,
     tournamentPromo,
     cashbackPromo,
-    comingSoon: defaultComingSoon,
+    comingSoon: Array.isArray(comingSoonApi) && comingSoonApi.length > 0 ? comingSoonApi : defaultComingSoon,
     testimonials: testimonialsMapped,
   };
 

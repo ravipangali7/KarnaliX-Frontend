@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting, getTestimonials, getCmsFooterPages } from "@/api/site";
-import { getGames, getCategories, getProviders, getGameImageUrl, type Game, type GameCategory, type GameProvider } from "@/api/games";
+import { getGames, getCategories, getProviders, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
 import { getMediaUrl } from "@/lib/api";
 import type {
   HeroData,
@@ -154,6 +154,10 @@ export function useHomePageData(): {
     queryKey: ["cmsFooter"],
     queryFn: getCmsFooterPages,
   });
+  const { data: comingSoonApi } = useQuery({
+    queryKey: ["comingSoonGames"],
+    queryFn: getComingSoonGames,
+  });
 
   const isLoading = siteLoading || gamesLoading || categoriesLoading || providersLoading || testimonialsLoading;
   const isError = siteError || gamesError;
@@ -286,7 +290,7 @@ export function useHomePageData(): {
     providers: providersMapped,
     testimonials: testimonialsMapped,
     recentWins,
-    comingSoon: defaultComingSoon,
+    comingSoon: Array.isArray(comingSoonApi) && comingSoonApi.length > 0 ? comingSoonApi : defaultComingSoon,
     liveOddsTicker,
     footerContact,
     footerLinks,
