@@ -59,6 +59,7 @@ import PowerhouseGames from "@/pages/admin/PowerhouseGames";
 import PowerhouseBonusRules from "@/pages/admin/PowerhouseBonusRules";
 import PowerhouseSuperSettings from "@/pages/admin/PowerhouseSuperSettings";
 import PowerhouseSiteSettings from "@/pages/admin/PowerhouseSiteSettings";
+import PowerhouseSlider from "@/pages/admin/PowerhouseSlider";
 import PowerhouseCMS from "@/pages/admin/PowerhouseCMS";
 import PowerhouseTestimonials from "@/pages/admin/PowerhouseTestimonials";
 
@@ -181,6 +182,7 @@ const App = () => (
               <Route path="/powerhouse/categories" element={<PowerhouseCategories />} />
               <Route path="/powerhouse/providers" element={<PowerhouseProviders />} />
               <Route path="/powerhouse/games" element={<PowerhouseGames />} />
+              <Route path="/powerhouse/slider" element={<PowerhouseSlider />} />
               <Route path="/powerhouse/bonus-rules" element={<PowerhouseBonusRules />} />
               <Route path="/powerhouse/game-log" element={<AdminGameLog />} />
               <Route path="/powerhouse/game-log/:id" element={<AdminGameLogDetail />} />

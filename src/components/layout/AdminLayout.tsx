@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
   Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight,
-  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key
+  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDashboard, getUnreadMessageCount } from "@/api/admin";
@@ -38,6 +38,7 @@ const getNavItems = (role: string) => {
       { label: "Categories", path: "/categories", icon: Tag },
       { label: "Providers", path: "/providers", icon: Box },
       { label: "Games", path: "/games", icon: Gamepad2 },
+      { label: "Slider", path: "/slider", icon: Image },
       { label: "Bonus Rules", path: "/bonus-rules", icon: Gift },
       { label: "Game Log", path: "/game-log", icon: Gamepad2 },
       { label: "Transactions", path: "/transactions", icon: Clock },

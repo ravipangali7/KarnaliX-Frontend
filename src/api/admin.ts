@@ -468,6 +468,12 @@ export async function updateSliderSlide(id: number, body: Partial<{ title: strin
 export async function deleteSliderSlide(id: number) {
   return apiDelete(`${prefix("powerhouse")}/slider/${id}/`);
 }
+export async function createSliderSlideForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/slider/`, formData);
+}
+export async function updateSliderSlideForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/slider/${id}/`, formData);
+}
 
 // --- Live Betting (second home) ---
 export async function getLiveBettingSectionsAdmin() {

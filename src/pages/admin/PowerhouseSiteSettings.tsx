@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSettingsAdmin, updateSiteSettings, updateSiteSettingsForm, getSliderSlidesAdmin, createSliderSlide, updateSliderSlide, deleteSliderSlide, getLiveBettingSectionsAdmin, createLiveBettingSection, updateLiveBettingSection, deleteLiveBettingSection, createLiveBettingEvent, updateLiveBettingEvent, deleteLiveBettingEvent } from "@/api/admin";
+import { getSiteSettingsAdmin, updateSiteSettings, updateSiteSettingsForm, getLiveBettingSectionsAdmin, createLiveBettingSection, updateLiveBettingSection, deleteLiveBettingSection, createLiveBettingEvent, updateLiveBettingEvent, deleteLiveBettingEvent } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { getMediaUrl } from "@/lib/api";
 import { ChevronUp, ChevronDown, Trash2, Plus, ChevronRight, Tag, Box, Gamepad2, Gift, FileText, Star, Settings } from "lucide-react";
@@ -31,16 +31,6 @@ export interface LiveBettingSectionAdmin {
   events: LiveBettingEventAdmin[];
 }
 
-export interface SliderSlideAdmin {
-  id: number;
-  title: string;
-  subtitle?: string;
-  image?: string;
-  cta_label: string;
-  cta_link: string;
-  order: number;
-}
-
 export interface PromoBannerSlide {
   title?: string;
   subtitle?: string;
@@ -63,13 +53,6 @@ const PowerhouseSiteSettings = () => {
   const [footerDescription, setFooterDescription] = useState("");
   const [promoBanners, setPromoBanners] = useState<PromoBannerSlide[]>([]);
   const [saving, setSaving] = useState(false);
-  const { data: sliderSlidesApi = [], refetch: refetchSlider } = useQuery({
-    queryKey: ["admin-slider-slides"],
-    queryFn: getSliderSlidesAdmin,
-  });
-  const sliderSlides = (sliderSlidesApi as SliderSlideAdmin[]).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  const [sliderSaving, setSliderSaving] = useState(false);
-  const [editingSlideId, setEditingSlideId] = useState<number | null>(null);
   const { data: liveBettingSectionsApi = [], refetch: refetchLiveBetting } = useQuery({
     queryKey: ["admin-live-betting-sections"],
     queryFn: getLiveBettingSectionsAdmin,
@@ -146,85 +129,6 @@ const PowerhouseSiteSettings = () => {
       toast({ title: msg, variant: "destructive" });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleSliderAdd = async () => {
-    setSliderSaving(true);
-    try {
-      await createSliderSlide({
-        title: "New Slide",
-        subtitle: "",
-        image: "",
-        cta_label: "Join Now",
-        cta_link: "/register",
-        order: sliderSlides.length,
-      });
-      queryClient.invalidateQueries({ queryKey: ["admin-slider-slides"] });
-      queryClient.invalidateQueries({ queryKey: ["sliderSlides"] });
-      toast({ title: "Slide added." });
-    } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to add slide";
-      toast({ title: msg, variant: "destructive" });
-    } finally {
-      setSliderSaving(false);
-    }
-  };
-
-  const handleSliderUpdate = async (id: number, data: Partial<SliderSlideAdmin>) => {
-    setSliderSaving(true);
-    try {
-      await updateSliderSlide(id, data);
-      queryClient.invalidateQueries({ queryKey: ["admin-slider-slides"] });
-      queryClient.invalidateQueries({ queryKey: ["sliderSlides"] });
-      setEditingSlideId(null);
-      toast({ title: "Slide updated." });
-    } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to update";
-      toast({ title: msg, variant: "destructive" });
-    } finally {
-      setSliderSaving(false);
-    }
-  };
-
-  const handleSliderDelete = async (id: number) => {
-    if (!confirm("Delete this slide?")) return;
-    setSliderSaving(true);
-    try {
-      await deleteSliderSlide(id);
-      queryClient.invalidateQueries({ queryKey: ["admin-slider-slides"] });
-      queryClient.invalidateQueries({ queryKey: ["sliderSlides"] });
-      setEditingSlideId(null);
-      toast({ title: "Slide deleted." });
-    } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to delete";
-      toast({ title: msg, variant: "destructive" });
-    } finally {
-      setSliderSaving(false);
-    }
-  };
-
-  const handleSliderReorder = async (index: number, direction: "up" | "down") => {
-    const slide = sliderSlides[index];
-    if (!slide) return;
-    const newOrder = direction === "up" ? index - 1 : index + 1;
-    if (newOrder < 0 || newOrder >= sliderSlides.length) return;
-    const other = sliderSlides[newOrder];
-    if (!other) return;
-    setSliderSaving(true);
-    try {
-      await Promise.all([
-        updateSliderSlide(slide.id, { order: newOrder }),
-        updateSliderSlide(other.id, { order: index }),
-      ]);
-      queryClient.invalidateQueries({ queryKey: ["admin-slider-slides"] });
-      queryClient.invalidateQueries({ queryKey: ["sliderSlides"] });
-      toast({ title: "Order updated." });
-    } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to reorder";
-      toast({ title: msg, variant: "destructive" });
-    } finally {
-      setSliderSaving(false);
     }
   };
 
@@ -429,49 +333,9 @@ const PowerhouseSiteSettings = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-display">Slider (second home)</CardTitle>
-          <Button type="button" size="sm" variant="outline" onClick={handleSliderAdd} disabled={sliderSaving}>
-            <Plus className="h-4 w-4 mr-1" /> Add slide
-          </Button>
-        </CardHeader>
-        <CardContent className="p-4 pt-2 space-y-4">
-          <p className="text-xs text-muted-foreground">Slides for the second home page slider. When empty, the second home falls back to Promo Banners above.</p>
-          {sliderSlides.length === 0 && <p className="text-xs text-muted-foreground">No slides. Add a slide to show on the second home page.</p>}
-          {sliderSlides.map((slide, i) => (
-            <div key={slide.id} className="rounded-lg border border-border p-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Slide {i + 1}</span>
-                <div className="flex gap-1">
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8" disabled={i === 0} onClick={() => handleSliderReorder(i, "up")}><ChevronUp className="h-4 w-4" /></Button>
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8" disabled={i === sliderSlides.length - 1} onClick={() => handleSliderReorder(i, "down")}><ChevronDown className="h-4 w-4" /></Button>
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleSliderDelete(slide.id)} disabled={sliderSaving}><Trash2 className="h-4 w-4" /></Button>
-                </div>
-              </div>
-              {editingSlideId === slide.id ? (
-                <>
-                  <div><label className="text-xs text-muted-foreground">Title</label><Input defaultValue={slide.title} id={`st-${slide.id}`} placeholder="Title" /></div>
-                  <div><label className="text-xs text-muted-foreground">Subtitle</label><Input defaultValue={slide.subtitle ?? ""} id={`ss-${slide.id}`} placeholder="Subtitle" /></div>
-                  <div><label className="text-xs text-muted-foreground">Image (path or URL)</label><Input defaultValue={slide.image ?? ""} id={`si-${slide.id}`} placeholder="Optional" /></div>
-                  <div><label className="text-xs text-muted-foreground">CTA Label</label><Input defaultValue={slide.cta_label ?? "Join Now"} id={`sc-${slide.id}`} placeholder="Join Now" /></div>
-                  <div><label className="text-xs text-muted-foreground">CTA Link</label><Input defaultValue={slide.cta_link ?? "/register"} id={`sl-${slide.id}`} placeholder="/register" /></div>
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => { const t = (document.getElementById(`st-${slide.id}`) as HTMLInputElement)?.value; const s = (document.getElementById(`ss-${slide.id}`) as HTMLInputElement)?.value; const im = (document.getElementById(`si-${slide.id}`) as HTMLInputElement)?.value; const c = (document.getElementById(`sc-${slide.id}`) as HTMLInputElement)?.value; const l = (document.getElementById(`sl-${slide.id}`) as HTMLInputElement)?.value; handleSliderUpdate(slide.id, { title: t, subtitle: s, image: im, cta_label: c, cta_link: l }); }}>Save</Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditingSlideId(null)}>Cancel</Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-medium">{slide.title || "(No title)"}</p>
-                  {slide.subtitle && <p className="text-xs text-muted-foreground">{slide.subtitle}</p>}
-                  <Button size="sm" variant="outline" onClick={() => setEditingSlideId(slide.id)}>Edit</Button>
-                </>
-              )}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      <p className="text-sm text-muted-foreground">
+        Manage second home slider slides on the <Link to="/powerhouse/slider" className="text-primary underline">Slider</Link> page.
+      </p>
 
       <Card>
         <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
