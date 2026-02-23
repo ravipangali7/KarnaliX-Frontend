@@ -3,9 +3,9 @@ import { apiGet, apiPost, apiPostForm, apiPatch, apiDelete, BASE_URL } from "@/l
 const P = "/player";
 
 /**
- * Launch game by internal game id: GET /api/player/games/<id>/launch/, then open launch_url in new tab.
+ * Fetch launch URL only (for in-app iframe). GET /api/player/games/<id>/launch/ -> launch_url.
  */
-export async function launchGame(gameId: number): Promise<void> {
+export async function getGameLaunchUrl(gameId: number): Promise<string> {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("Login to play");
   const url = `${BASE_URL.replace(/\/$/, "")}${P}/games/${gameId}/launch/`;
@@ -19,12 +19,25 @@ export async function launchGame(gameId: number): Promise<void> {
   }
   const launchUrl = data?.launch_url?.trim();
   if (!launchUrl) throw new Error("Could not get game URL");
+  return launchUrl;
+}
+
+/**
+ * Launch game by internal game id: GET /api/player/games/<id>/launch/, then open launch_url in new tab.
+ */
+export async function launchGame(gameId: number): Promise<void> {
+  const launchUrl = await getGameLaunchUrl(gameId);
   window.open(launchUrl, "_blank", "noopener,noreferrer");
 }
 
 export async function getPlayerDashboard() {
   const res = await apiGet<Record<string, unknown>>(`${P}/dashboard/`);
   return res as unknown as Record<string, unknown>;
+}
+
+export async function getPlayerUnreadMessageCount(): Promise<number> {
+  const res = await apiGet<{ unread_count: number }>(`${P}/messages/unread-count/`);
+  return (res as unknown as { unread_count?: number })?.unread_count ?? 0;
 }
 
 export async function getPlayerWallet() {

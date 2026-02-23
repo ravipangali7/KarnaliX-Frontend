@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSetting, getSliderSlides, getLiveBettingSections, type LiveBettingSectionApi } from "@/api/site";
+import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, type LiveBettingSectionApi } from "@/api/site";
 import { getCategories, getProviders, getGames, getGameImageUrl, type Game, type GameCategory, type GameProvider } from "@/api/games";
 import { getMediaUrl } from "@/lib/api";
-import type { ProviderShape, GameCardShape } from "@/data/homePageMockData";
+import type { ProviderShape, GameCardShape, PromoShape, TestimonialShape, ComingSoonShape } from "@/data/homePageMockData";
+import { comingSoon as defaultComingSoon, testimonials as defaultTestimonials } from "@/data/homePageMockData";
 
 export interface SliderSlide {
   id: string;
@@ -37,6 +38,16 @@ export interface SecondHomePageData {
   liveBettingSections: LiveBettingSection[];
   topLiveGames: GameCardShape[];
   otherGames: GameCardShape[];
+  /** First 16 games for Top Games carousel (combined from live + other). */
+  topGames: GameCardShape[];
+  /** Games grouped by category id for category-wise rows. */
+  gamesByCategory: Record<number, GameCardShape[]>;
+  sportsIframeUrl: string;
+  promosGrid: PromoShape[];
+  tournamentPromo: PromoShape | null;
+  cashbackPromo: PromoShape | null;
+  comingSoon: ComingSoonShape[];
+  testimonials: TestimonialShape[];
 }
 
 function mapGameToCardShape(game: Game, index: number): GameCardShape {
@@ -181,7 +192,11 @@ export function useSecondHomePageData(): {
   });
   const { data: gamesResp, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
     queryKey: ["games", "second-home"],
-    queryFn: () => getGames(undefined, undefined, 1, 50),
+    queryFn: () => getGames(undefined, undefined, 1, 100),
+  });
+  const { data: testimonialsApi = [] } = useQuery({
+    queryKey: ["testimonials"],
+    queryFn: getTestimonials,
   });
   const games = (gamesResp?.results ?? []) as Game[];
   const categoriesList = (categories ?? []) as GameCategory[];
@@ -208,6 +223,7 @@ export function useSecondHomePageData(): {
   const liveCategory = categoriesList.find((c) => /live/i.test(c.name));
   let topLiveGames: GameCardShape[] = [];
   let otherGames: GameCardShape[] = [];
+  const gamesByCategory: Record<number, GameCardShape[]> = {};
   if (games.length > 0) {
     if (liveCategory) {
       const liveGames = games.filter((g) => g.category === liveCategory.id);
@@ -218,7 +234,64 @@ export function useSecondHomePageData(): {
       topLiveGames = games.slice(0, TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
       otherGames = games.slice(TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
     }
+    categoriesList.forEach((cat) => {
+      const catGames = games.filter((g) => g.category === cat.id).map((g, i) => mapGameToCardShape(g, i));
+      if (catGames.length > 0) gamesByCategory[cat.id] = catGames;
+    });
   }
+  const topGames = [...topLiveGames, ...otherGames].slice(0, 16);
+
+  const sportsIframeUrl = (site.sports_iframe_url as string)?.trim() || "";
+
+  const promoBannersRaw = Array.isArray(site.promo_banners) ? (site.promo_banners as Record<string, unknown>[]) : [];
+  const promosGrid: PromoShape[] = promoBannersRaw.length >= 2
+    ? promoBannersRaw.slice(0, 2).map((p, i) => ({
+        variant: (["welcome", "referral", "tournament", "cashback"] as const)[i % 4],
+        badge: (p.badge as string) ?? "",
+        title: (p.title as string) ?? "",
+        highlight: (p.highlight as string) ?? "",
+        subtitle: (p.subtitle as string) ?? "",
+        description: (p.description as string) ?? "",
+        cta: (p.cta_label as string) ?? (p.cta as string) ?? "Learn More",
+        href: (p.cta_link as string) ?? (p.href as string) ?? "/promotions",
+      }))
+    : [];
+  const tournamentPromo: PromoShape | null = promoBannersRaw.length >= 3
+    ? {
+        variant: "tournament",
+        badge: (promoBannersRaw[2].badge as string) ?? "",
+        title: (promoBannersRaw[2].title as string) ?? "",
+        highlight: (promoBannersRaw[2].highlight as string) ?? "",
+        subtitle: (promoBannersRaw[2].subtitle as string) ?? "",
+        description: (promoBannersRaw[2].description as string) ?? "",
+        cta: (promoBannersRaw[2].cta_label as string) ?? "Join Now",
+        href: (promoBannersRaw[2].cta_link as string) ?? "/tournaments",
+      }
+    : null;
+  const cashbackPromo: PromoShape | null = promoBannersRaw.length >= 4
+    ? {
+        variant: "cashback",
+        badge: (promoBannersRaw[3].badge as string) ?? "",
+        title: (promoBannersRaw[3].title as string) ?? "",
+        highlight: (promoBannersRaw[3].highlight as string) ?? "",
+        subtitle: (promoBannersRaw[3].subtitle as string) ?? "",
+        description: (promoBannersRaw[3].description as string) ?? "",
+        cta: (promoBannersRaw[3].cta_label as string) ?? "Learn More",
+        href: (promoBannersRaw[3].cta_link as string) ?? "/promotions",
+      }
+    : null;
+
+  const testimonialsMapped: TestimonialShape[] = Array.isArray(testimonialsApi) && testimonialsApi.length > 0
+    ? (testimonialsApi as { id?: number; name?: string; testimonial_from?: string; message?: string; stars?: number; game_name?: string; image?: string }[]).map((t, i) => ({
+        id: t.id ?? i,
+        name: t.name ?? "Player",
+        avatar: t.image ? getMediaUrl(t.image) : undefined,
+        location: t.testimonial_from,
+        game: t.game_name,
+        message: t.message ?? "",
+        rating: t.stars ?? 5,
+      }))
+    : defaultTestimonials;
 
   const data: SecondHomePageData = {
     sliderSlides,
@@ -228,6 +301,14 @@ export function useSecondHomePageData(): {
     liveBettingSections,
     topLiveGames,
     otherGames,
+    topGames,
+    gamesByCategory,
+    sportsIframeUrl,
+    promosGrid,
+    tournamentPromo,
+    cashbackPromo,
+    comingSoon: defaultComingSoon,
+    testimonials: testimonialsMapped,
   };
 
   const refetch = () => {

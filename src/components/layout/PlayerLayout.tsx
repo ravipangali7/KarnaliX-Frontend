@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Home, MessageCircle, Wallet, Clock, User, Gamepad2, Shield, Key, CreditCard, BarChart3, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getPlayerUnreadMessageCount } from "@/api/player";
+import { Badge } from "@/components/ui/badge";
 
 const tabs = [
   { label: "Home", path: "/player", icon: Home },
@@ -34,6 +36,12 @@ export const PlayerLayout = () => {
   const total = user?.total_balance != null ? formatBal(user.total_balance) : "₹0";
   const main = formatBal(user?.main_balance);
   const bonus = formatBal(user?.bonus_balance);
+
+  const { data: unreadMessages = 0 } = useQuery({
+    queryKey: ["player-messages-unread"],
+    queryFn: getPlayerUnreadMessageCount,
+  });
+  const messageBadge = Number(unreadMessages) || 0;
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -93,7 +101,12 @@ export const PlayerLayout = () => {
               }`}
             >
               <link.icon className={`h-4 w-4 ${isActive(link.path) ? "text-sidebar-primary" : ""}`} />
-              <span>{link.label}</span>
+              <span className="flex-1 truncate">{link.label}</span>
+              {link.path === "/player/messages" && messageBadge > 0 && (
+                <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
+                  {messageBadge > 99 ? "99+" : messageBadge}
+                </Badge>
+              )}
             </Link>
           ))}
         </nav>
@@ -144,13 +157,20 @@ export const PlayerLayout = () => {
             <Link
               key={tab.path}
               to={tab.path}
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all ${
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all relative ${
                 isActive(tab.path)
                   ? "text-primary"
                   : "text-muted-foreground"
               }`}
             >
-              <tab.icon className={`h-5 w-5 ${isActive(tab.path) ? "scale-110 drop-shadow-[0_0_8px_hsl(220,90%,56%)]" : ""} transition-transform`} />
+              <span className="relative inline-block">
+                <tab.icon className={`h-5 w-5 ${isActive(tab.path) ? "scale-110 drop-shadow-[0_0_8px_hsl(220,90%,56%)]" : ""} transition-transform`} />
+                {tab.path === "/player/messages" && messageBadge > 0 && (
+                  <Badge variant="destructive" className="absolute -top-1.5 -right-2 min-w-4 h-4 p-0 text-[9px] justify-center">
+                    {messageBadge > 99 ? "99+" : messageBadge}
+                  </Badge>
+                )}
+              </span>
               <span className="text-[10px] font-medium">{tab.label}</span>
             </Link>
           ))}

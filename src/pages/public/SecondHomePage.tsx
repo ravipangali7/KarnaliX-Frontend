@@ -1,10 +1,15 @@
-import { Link } from "react-router-dom";
 import { useSecondHomePageData } from "@/hooks/useSecondHomePageData";
-import { SecondHomeSlider, SecondGameCategoryBar, LiveBettingSection, SecondHomeSidebar } from "@/components/secondHome";
+import {
+  SecondHomeSlider,
+  SecondGameCategoryBar,
+  LiveBettingSection,
+  SecondHomeTopGamesCarousel,
+  SecondHomeCategoryGames,
+} from "@/components/secondHome";
 import { GameProviders } from "@/components/home/GameProviders";
-import { GameCardSmall } from "@/components/games/GameCard";
-import { ChevronRight } from "lucide-react";
-
+import { PromoBannerGrid, PromoBanner } from "@/components/home/PromoBanner";
+import { ComingSoon } from "@/components/home/ComingSoon";
+import { Testimonials } from "@/components/home/Testimonials";
 export default function SecondHomePage() {
   const { data, isLoading, isError, refetch } = useSecondHomePageData();
 
@@ -40,50 +45,58 @@ export default function SecondHomePage() {
     <div className="space-y-0 pb-8 bg-background">
       <SecondHomeSlider slides={data.sliderSlides} />
       <SecondGameCategoryBar categories={data.categories} />
-      <div className="container px-4 py-6 grid grid-cols-1 md:grid-cols-[70%_1fr] gap-6">
-        <div className="min-w-0 space-y-0">
-          {data.liveBettingSections.map((section, i) => (
-            <LiveBettingSection key={i} section={section} />
-          ))}
-          {data.topLiveGames.length > 0 && (
-            <section className="py-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display font-bold text-xl text-foreground">Top Live Games</h2>
-                <Link to="/games" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
-                  View All <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {data.topLiveGames.map((game) => (
-                  <GameCardSmall key={game.id} {...game} />
-                ))}
-              </div>
-            </section>
-          )}
-          {data.otherGames.length > 0 && (
-            <section className="py-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display font-bold text-xl text-foreground">Other Games</h2>
-                <Link to="/games" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
-                  View All <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {data.otherGames.map((game) => (
-                  <GameCardSmall key={game.id} {...game} />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-        <div className="hidden md:block md:min-w-0">
-          <SecondHomeSidebar categories={data.categories} />
-        </div>
+
+      {/* Scrolling static section (e.g. Ind vs Pak) */}
+      <div className="container px-4 py-6">
+        {data.liveBettingSections.map((section, i) => (
+          <LiveBettingSection key={i} section={section} />
+        ))}
       </div>
-      <div className="md:hidden container px-4 pb-6">
-        <SecondHomeSidebar categories={data.categories} />
-      </div>
+
+      {/* Top Games: 16 cards, 8 visible, horizontal auto-scroll, image only, click -> game */}
+      <SecondHomeTopGamesCarousel games={data.topGames} />
+
+      {/* Sports iframe (configurable via site settings sports_iframe_url) */}
+      {data.sportsIframeUrl && (
+        <section className="container px-4 py-6">
+          <h2 className="font-display font-bold text-xl text-foreground mb-4">Live Sports</h2>
+          <div className="rounded-xl overflow-hidden border border-white/10 aspect-video max-h-[400px]">
+            <iframe
+              src={data.sportsIframeUrl}
+              title="Sports"
+              className="w-full h-full min-h-[300px] border-0"
+              allowFullScreen
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Providers: image + name only, circular irregular shape */}
       <GameProviders providers={data.providerCards} />
+
+      {/* Games by category: category name + horizontal scroll */}
+      <SecondHomeCategoryGames categories={data.categories} gamesByCategory={data.gamesByCategory} />
+
+      {/* Promotion and bonus (like first home) */}
+      {data.promosGrid.length > 0 && (
+        <PromoBannerGrid promos={data.promosGrid} />
+      )}
+      {data.tournamentPromo && (
+        <section className="container px-4 py-6">
+          <PromoBanner promo={data.tournamentPromo} fullWidth />
+        </section>
+      )}
+      {data.cashbackPromo && (
+        <section className="container px-4 py-6">
+          <PromoBanner promo={data.cashbackPromo} fullWidth />
+        </section>
+      )}
+
+      {/* Coming Soon */}
+      <ComingSoon comingSoon={data.comingSoon} />
+
+      {/* Review / Testimonials */}
+      <Testimonials testimonials={data.testimonials} />
     </div>
   );
 }

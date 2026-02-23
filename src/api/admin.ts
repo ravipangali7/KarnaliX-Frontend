@@ -11,6 +11,11 @@ export async function getDashboard(role: "powerhouse" | "super" | "master") {
   return res as unknown as Record<string, unknown>;
 }
 
+export async function getUnreadMessageCount(role: "powerhouse" | "super" | "master") {
+  const res = await apiGet<{ unread_count: number }>(`${prefix(role)}/messages/unread-count/`);
+  return (res as { unread_count: number })?.unread_count ?? 0;
+}
+
 // --- Current user (profile / change password) ---
 export type AdminRole = "powerhouse" | "super" | "master";
 export async function getProfile(role: AdminRole) {

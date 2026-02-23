@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,9 @@ import { GameCard } from "@/components/shared/GameCard";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import { getGame, getGames, getGameImageUrl } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
-import { launchGame, getPlayerWallet } from "@/api/player";
+import { getPlayerWallet } from "@/api/player";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Game } from "@/api/games";
-import { toast } from "sonner";
 import { Shield, Zap, Lock, Users, Trophy, Clock, Flame, TrendingUp, Crown, Dice1, Target, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -26,11 +25,11 @@ const recentWinners = [
 
 const GameDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
   const isPlayer = user?.role === "player";
   const [betAmount, setBetAmount] = useState(100);
-  const [launching, setLaunching] = useState(false);
   const { data: game, isLoading, isError: gameError, refetch: refetchGame } = useQuery({ queryKey: ["game", id], queryFn: () => getGame(id!), enabled: !!id });
   const { data: gamesResp } = useQuery({ queryKey: ["games", "detail"], queryFn: () => getGames(undefined, undefined, 1, 100) });
   const games = (gamesResp?.results ?? []) as Game[];
@@ -123,27 +122,10 @@ const GameDetailPage = () => {
               ) : (
                 <Button
                   className="gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 px-8 neon-glow tracking-widest animate-scale-pulse"
-                  disabled={launching}
                   aria-label="Play game"
-                  onClick={async () => {
-                    setLaunching(true);
-                    try {
-                      await launchGame(g.id);
-                    } catch (e) {
-                      const err = e as { status?: number; detail?: string; error?: string };
-                      const msg =
-                        err.status === 404
-                          ? "Game not found"
-                          : err.status === 400
-                            ? err.error ?? err.detail ?? "Game is not available"
-                            : err.detail ?? err.error ?? "Could not get game URL";
-                      toast.error(msg);
-                    } finally {
-                      setLaunching(false);
-                    }
-                  }}
+                  onClick={() => navigate(`/games/${g.id}/play`)}
                 >
-                  {launching ? "Launching…" : "Play game"}
+                  Play game
                 </Button>
               )}
             </div>
@@ -248,26 +230,9 @@ const GameDetailPage = () => {
               ) : (
                 <Button
                   className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 neon-glow tracking-widest animate-scale-pulse"
-                  disabled={launching}
-                  onClick={async () => {
-                    setLaunching(true);
-                    try {
-                      await launchGame(g.id);
-                    } catch (e) {
-                      const err = e as { status?: number; detail?: string; error?: string };
-                      const msg =
-                        err.status === 404
-                          ? "Game not found"
-                          : err.status === 400
-                            ? err.error ?? err.detail ?? "Game is not available"
-                            : err.detail ?? err.error ?? "Could not get game URL";
-                      toast.error(msg);
-                    } finally {
-                      setLaunching(false);
-                    }
-                  }}
+                  onClick={() => navigate(`/games/${g.id}/play`)}
                 >
-                  {launching ? "Launching…" : "🎮 START PLAYING"}
+                  🎮 START PLAYING
                 </Button>
               )}
               {isPlayer && (

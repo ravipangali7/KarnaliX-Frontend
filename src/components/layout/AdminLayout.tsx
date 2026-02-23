@@ -1,11 +1,14 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
   Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight,
   Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getDashboard, getUnreadMessageCount } from "@/api/admin";
+import { Badge } from "@/components/ui/badge";
 
 interface AdminLayoutProps {
   role: "master" | "super" | "powerhouse";
@@ -110,6 +113,20 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
   const navItems = getNavItems(role);
   const balances = getBalanceHeaders(role, user);
 
+  const { data: dashboard } = useQuery({
+    queryKey: ["admin-dashboard", role],
+    queryFn: () => getDashboard(role),
+  });
+  const { data: unreadMessages = 0 } = useQuery({
+    queryKey: ["admin-messages-unread", role],
+    queryFn: () => getUnreadMessageCount(role),
+  });
+  const badgeCounts: Record<string, number> = {
+    "/messages": Number(unreadMessages) || 0,
+    "/deposits": Number(dashboard?.pending_deposits) || 0,
+    "/withdrawals": Number(dashboard?.pending_withdrawals) || 0,
+  };
+
   const isActive = (path: string) => {
     const fullPath = prefix + path;
     return path === "" ? location.pathname === prefix || location.pathname === prefix + "/" : location.pathname.startsWith(fullPath);
@@ -138,7 +155,16 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
               }`}
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && (
+                <>
+                  <span className="truncate">{item.label}</span>
+                  {badgeCounts[item.path] != null && badgeCounts[item.path] > 0 && (
+                    <Badge variant="destructive" className="ml-auto text-[10px] min-w-5 h-5 justify-center px-1">
+                      {badgeCounts[item.path] > 99 ? "99+" : badgeCounts[item.path]}
+                    </Badge>
+                  )}
+                </>
+              )}
             </Link>
           ))}
         </nav>
@@ -176,7 +202,12 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
                   }`}
                 >
                   <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <span className="flex-1 truncate">{item.label}</span>
+                  {badgeCounts[item.path] != null && badgeCounts[item.path] > 0 && (
+                    <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
+                      {badgeCounts[item.path] > 99 ? "99+" : badgeCounts[item.path]}
+                    </Badge>
+                  )}
                 </Link>
               ))}
             </nav>

@@ -69,6 +69,8 @@ import SecondHomePage from "@/pages/public/SecondHomePage";
 import HomeDesignPage from "@/pages/public/HomeDesignPage";
 import { SecondPublicLayout } from "@/components/layout/SecondPublicLayout";
 import { HomeDesignLayout } from "@/components/layout/HomeDesignLayout";
+import { GamePlayLayout } from "@/components/layout/GamePlayLayout";
+import GamePlayPage from "@/pages/public/GamePlayPage";
 
 const queryClient = new QueryClient();
 
@@ -101,9 +103,12 @@ const App = () => (
             <Route element={<PublicLayout />}>
               <Route path="/games" element={<GamesPage />} />
               <Route path="/games/:id" element={<GameDetailPage />} />
-              <Route path="/bonus" element={<BonusPage />} />
-              <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/bonus" element={<BonusPage />} />
+            <Route path="/wallet" element={<WalletPage />} />
             </Route>
+
+            {/* In-app game play (header + iframe + footer), player only */}
+            <Route path="/games/:id/play" element={<ProtectedRoute allowedRole="player"><GamePlayLayout><GamePlayPage /></GamePlayLayout></ProtectedRoute>} />
 
             {/* Auth (no layout) */}
             <Route path="/login" element={<LoginPage />} />
