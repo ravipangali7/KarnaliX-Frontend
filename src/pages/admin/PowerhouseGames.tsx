@@ -4,6 +4,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
 import { getGamesAdmin, getCategoriesAdmin, getProvidersAdmin, createGame, createGameForm, updateGame, updateGameForm } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -24,6 +25,9 @@ const PowerhouseGames = () => {
   const [maxBet, setMaxBet] = useState("5000");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isActive, setIsActive] = useState(true);
+  const [isComingSoon, setIsComingSoon] = useState(false);
+  const [comingSoonLaunchDate, setComingSoonLaunchDate] = useState("");
+  const [comingSoonDescription, setComingSoonDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Record<string, unknown> | null>(null);
@@ -48,6 +52,9 @@ const PowerhouseGames = () => {
     setMaxBet("5000");
     setImageFile(null);
     setIsActive(true);
+    setIsComingSoon(false);
+    setComingSoonLaunchDate("");
+    setComingSoonDescription("");
     setEditingGame(null);
   };
 
@@ -60,6 +67,10 @@ const PowerhouseGames = () => {
     setMinBet(String(row.min_bet ?? "10"));
     setMaxBet(String(row.max_bet ?? "5000"));
     setIsActive(Boolean(row.is_active));
+    setIsComingSoon(Boolean(row.is_coming_soon));
+    const launchDate = row.coming_soon_launch_date;
+    setComingSoonLaunchDate(launchDate ? String(launchDate).slice(0, 10) : "");
+    setComingSoonDescription(String(row.coming_soon_description ?? ""));
     setImageFile(null);
     setEditOpen(true);
   };
@@ -104,6 +115,9 @@ const PowerhouseGames = () => {
         formData.append("min_bet", minBet || "0");
         formData.append("max_bet", maxBet || "0");
         formData.append("is_active", String(isActive));
+        formData.append("is_coming_soon", String(isComingSoon));
+        if (comingSoonLaunchDate.trim()) formData.append("coming_soon_launch_date", comingSoonLaunchDate.trim());
+        formData.append("coming_soon_description", comingSoonDescription.trim());
         formData.append("image", imageFile);
         await createGameForm(formData);
       } else {
@@ -115,6 +129,9 @@ const PowerhouseGames = () => {
           min_bet: minBet || "0",
           max_bet: maxBet || "0",
           is_active: isActive,
+          is_coming_soon: isComingSoon,
+          coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
+          coming_soon_description: comingSoonDescription.trim() || "",
         });
       }
       queryClient.invalidateQueries({ queryKey: ["admin-games"] });
@@ -153,6 +170,9 @@ const PowerhouseGames = () => {
         formData.append("min_bet", minBet || "0");
         formData.append("max_bet", maxBet || "0");
         formData.append("is_active", String(isActive));
+        formData.append("is_coming_soon", String(isComingSoon));
+        if (comingSoonLaunchDate.trim()) formData.append("coming_soon_launch_date", comingSoonLaunchDate.trim());
+        formData.append("coming_soon_description", comingSoonDescription.trim());
         formData.append("image", imageFile);
         await updateGameForm(id, formData);
       } else {
@@ -164,6 +184,9 @@ const PowerhouseGames = () => {
           min_bet: minBet || "0",
           max_bet: maxBet || "0",
           is_active: isActive,
+          is_coming_soon: isComingSoon,
+          coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
+          coming_soon_description: comingSoonDescription.trim() || "",
         });
       }
       queryClient.invalidateQueries({ queryKey: ["admin-games"] });
@@ -237,6 +260,25 @@ const PowerhouseGames = () => {
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
               Active
             </label>
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs font-medium text-muted-foreground">Coming soon</p>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isComingSoon} onChange={(e) => setIsComingSoon(e.target.checked)} className="rounded border-border" />
+                Mark as coming soon
+              </label>
+              {isComingSoon && (
+                <>
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">Launch date (optional)</label>
+                    <Input type="date" value={comingSoonLaunchDate} onChange={(e) => setComingSoonLaunchDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
+                    <Textarea placeholder="Short description for the card" value={comingSoonDescription} onChange={(e) => setComingSoonDescription(e.target.value)} rows={2} className="resize-none" />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancel</Button>
@@ -303,6 +345,25 @@ const PowerhouseGames = () => {
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
               Active
             </label>
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs font-medium text-muted-foreground">Coming soon</p>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isComingSoon} onChange={(e) => setIsComingSoon(e.target.checked)} className="rounded border-border" />
+                Mark as coming soon
+              </label>
+              {isComingSoon && (
+                <>
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">Launch date (optional)</label>
+                    <Input type="date" value={comingSoonLaunchDate} onChange={(e) => setComingSoonLaunchDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
+                    <Textarea placeholder="Short description for the card" value={comingSoonDescription} onChange={(e) => setComingSoonDescription(e.target.value)} rows={2} className="resize-none" />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>Cancel</Button>
