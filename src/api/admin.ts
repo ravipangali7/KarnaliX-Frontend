@@ -271,8 +271,16 @@ export async function getCategoryAdmin(id: number) {
 export async function createCategoryAdmin(body: unknown) {
   return apiPost(`${prefix("powerhouse")}/categories/`, body);
 }
+/** Create category with optional SVG file (FormData). */
+export async function createCategoryAdminForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/categories/`, formData);
+}
 export async function updateCategoryAdmin(id: number, body: unknown) {
   return apiPatch(`${prefix("powerhouse")}/categories/${id}/`, body);
+}
+/** Update category with optional SVG file (FormData). */
+export async function updateCategoryAdminForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/categories/${id}/`, formData);
 }
 export async function deleteCategoryAdmin(id: number) {
   return apiDelete(`${prefix("powerhouse")}/categories/${id}/`);
@@ -436,6 +444,10 @@ export async function getSiteSettingsAdmin() {
 export async function updateSiteSettings(body: unknown) {
   return apiPatch(`${prefix("powerhouse")}/site-settings/update/`, body);
 }
+/** Update site settings with logo file (FormData). Send name, phone1, phone2, email1, whatsapp_number, hero_title, hero_subtitle, footer_description, promo_banners (JSON string), logo (file). */
+export async function updateSiteSettingsForm(formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/site-settings/update/`, formData);
+}
 
 // --- Slider (second home) ---
 export async function getSliderSlidesAdmin() {
@@ -491,8 +503,16 @@ export async function getCmsPage(id: number) {
 export async function createCmsPage(body: unknown) {
   return apiPost(`${prefix("powerhouse")}/cms/`, body);
 }
+/** Create CMS page with optional image file (FormData). */
+export async function createCmsPageForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/cms/`, formData);
+}
 export async function updateCmsPage(id: number, body: unknown) {
   return apiPatch(`${prefix("powerhouse")}/cms/${id}/`, body);
+}
+/** Update CMS page with optional image file (FormData). */
+export async function updateCmsPageForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/cms/${id}/`, formData);
 }
 export async function deleteCmsPage(id: number) {
   return apiDelete(`${prefix("powerhouse")}/cms/${id}/`);
@@ -508,8 +528,16 @@ export async function getTestimonialAdmin(id: number) {
 export async function createTestimonial(body: unknown) {
   return apiPost(`${prefix("powerhouse")}/testimonials/`, body);
 }
+/** Create testimonial with optional image file (FormData). */
+export async function createTestimonialForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/testimonials/`, formData);
+}
 export async function updateTestimonial(id: number, body: unknown) {
   return apiPatch(`${prefix("powerhouse")}/testimonials/${id}/`, body);
+}
+/** Update testimonial with optional image file (FormData). */
+export async function updateTestimonialForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/testimonials/${id}/`, formData);
 }
 export async function deleteTestimonial(id: number) {
   return apiDelete(`${prefix("powerhouse")}/testimonials/${id}/`);

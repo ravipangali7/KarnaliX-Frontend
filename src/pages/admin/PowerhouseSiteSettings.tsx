@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSettingsAdmin, updateSiteSettings, getSliderSlidesAdmin, createSliderSlide, updateSliderSlide, deleteSliderSlide, getLiveBettingSectionsAdmin, createLiveBettingSection, updateLiveBettingSection, deleteLiveBettingSection, createLiveBettingEvent, updateLiveBettingEvent, deleteLiveBettingEvent } from "@/api/admin";
+import { getSiteSettingsAdmin, updateSiteSettings, updateSiteSettingsForm, getSliderSlidesAdmin, createSliderSlide, updateSliderSlide, deleteSliderSlide, getLiveBettingSectionsAdmin, createLiveBettingSection, updateLiveBettingSection, deleteLiveBettingSection, createLiveBettingEvent, updateLiveBettingEvent, deleteLiveBettingEvent } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
-import { ChevronUp, ChevronDown, Trash2, Plus, ChevronRight } from "lucide-react";
+import { getMediaUrl } from "@/lib/api";
+import { ChevronUp, ChevronDown, Trash2, Plus, ChevronRight, Tag, Box, Gamepad2, Gift, FileText, Star, Settings } from "lucide-react";
 
 export interface LiveBettingEventAdmin {
   id: number;
@@ -77,6 +79,18 @@ const PowerhouseSiteSettings = () => {
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [addingEventSectionId, setAddingEventSectionId] = useState<number | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(logoFile);
+    setLogoPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [logoFile]);
 
   useEffect(() => {
     const s = (siteSettings ?? {}) as Record<string, unknown>;
@@ -98,17 +112,32 @@ const PowerhouseSiteSettings = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateSiteSettings({
-        name: name.trim(),
-        logo: logo.trim() || null,
-        phones: [phone1.trim(), phone2.trim()].filter(Boolean),
-        emails: [email1.trim()].filter(Boolean),
-        whatsapp_number: whatsappNumber.trim(),
-        hero_title: heroTitle.trim(),
-        hero_subtitle: heroSubtitle.trim(),
-        footer_description: footerDescription.trim(),
-        promo_banners: promoBanners,
-      });
+      if (logoFile) {
+        const formData = new FormData();
+        formData.set("name", name.trim());
+        formData.set("phone1", phone1.trim());
+        formData.set("phone2", phone2.trim());
+        formData.set("email1", email1.trim());
+        formData.set("whatsapp_number", whatsappNumber.trim());
+        formData.set("hero_title", heroTitle.trim());
+        formData.set("hero_subtitle", heroSubtitle.trim());
+        formData.set("footer_description", footerDescription.trim());
+        formData.set("promo_banners", JSON.stringify(promoBanners));
+        formData.set("logo", logoFile);
+        await updateSiteSettingsForm(formData);
+      } else {
+        await updateSiteSettings({
+          name: name.trim(),
+          logo: logo.trim() || null,
+          phones: [phone1.trim(), phone2.trim()].filter(Boolean),
+          emails: [email1.trim()].filter(Boolean),
+          whatsapp_number: whatsappNumber.trim(),
+          hero_title: heroTitle.trim(),
+          hero_subtitle: heroSubtitle.trim(),
+          footer_description: footerDescription.trim(),
+          promo_banners: promoBanners,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["admin-site-settings"] });
       queryClient.invalidateQueries({ queryKey: ["siteSetting"] });
       toast({ title: "Site settings saved." });
@@ -297,14 +326,59 @@ const PowerhouseSiteSettings = () => {
     }
   };
 
+  const quickLinks = [
+    { label: "Categories", path: "/powerhouse/categories", icon: Tag },
+    { label: "Providers", path: "/powerhouse/providers", icon: Box },
+    { label: "Games", path: "/powerhouse/games", icon: Gamepad2 },
+    { label: "Bonus Rules", path: "/powerhouse/bonus-rules", icon: Gift },
+    { label: "CMS Pages", path: "/powerhouse/cms", icon: FileText },
+    { label: "Testimonials", path: "/powerhouse/testimonials", icon: Star },
+    { label: "Super Settings", path: "/powerhouse/super-settings", icon: Settings },
+  ];
+
   return (
     <div className="space-y-4 max-w-lg">
+      <Card>
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-display">Manage content</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-2">
+          <p className="text-xs text-muted-foreground mb-3">Quick links to listing and manage each section.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {quickLinks.map((item) => (
+              <Link key={item.path} to={item.path}>
+                <Button type="button" variant="outline" className="w-full justify-start gap-2 h-9 text-sm">
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
+                  {item.label}
+                </Button>
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
       <h2 className="font-display font-bold text-xl">Site Settings</h2>
       <Card>
         <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-display">General</CardTitle></CardHeader>
         <CardContent className="p-4 pt-2 space-y-3">
           <div><label className="text-xs text-muted-foreground">Site Name</label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><label className="text-xs text-muted-foreground">Logo URL</label><Input value={logo} onChange={(e) => setLogo(e.target.value)} /></div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Logo (upload image)</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
+              onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+            />
+            {(logoPreviewUrl || (logo && logo.trim())) && (
+              <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-20 h-20">
+                <img
+                  src={logoPreviewUrl ?? getMediaUrl(logo.trim())}
+                  alt="Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

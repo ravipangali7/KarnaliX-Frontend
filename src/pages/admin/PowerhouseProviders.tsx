@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { getProvidersAdmin, createProviderAdmin, createProviderAdminForm, getImportGameApiUrl, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
+import { getProvidersAdmin, createProviderAdmin, createProviderAdminForm, updateProviderAdmin, updateProviderAdminForm, getImportGameApiUrl, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
+import { getMediaUrl } from "@/lib/api";
 
 const PowerhouseProviders = () => {
   const queryClient = useQueryClient();
@@ -19,6 +20,9 @@ const PowerhouseProviders = () => {
   const [isActive, setIsActive] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<Record<string, unknown> | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   // Direct Import modal (game API called from browser; backend only gives URL and persists import)
   const [importOpen, setImportOpen] = useState(false);
@@ -39,6 +43,27 @@ const PowerhouseProviders = () => {
     setCode("");
     setIsActive(true);
     setImageFile(null);
+    setEditingProvider(null);
+    setImagePreviewUrl(null);
+  };
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
+  const openEdit = (row: Record<string, unknown>) => {
+    setEditingProvider(row);
+    setName(String(row.name ?? ""));
+    setCode(String(row.code ?? ""));
+    setIsActive(Boolean(row.is_active));
+    setImageFile(null);
+    setEditOpen(true);
   };
 
   // When Direct Import modal opens, get game API URL only; use existing DB providers (no getProvider; games via providerGame)
@@ -123,14 +148,24 @@ const PowerhouseProviders = () => {
   };
 
   const columns = [
+    {
+      header: "Image",
+      accessor: (row: Record<string, unknown>) => {
+        const img = row.image;
+        if (img && typeof img === "string" && img.trim()) {
+          return <img src={getMediaUrl(img.trim())} alt="" className="h-8 w-8 rounded object-cover bg-muted" />;
+        }
+        return <span className="h-8 w-8 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">—</span>;
+      },
+    },
     { header: "Name", accessor: (row: Record<string, unknown>) => String(row.name ?? "") },
     { header: "Code", accessor: (row: Record<string, unknown>) => String(row.code ?? "") },
     { header: "Status", accessor: (row: Record<string, unknown>) => <StatusBadge status={row.is_active ? "active" : "suspended"} /> },
     {
       header: "Actions",
-      accessor: () => (
+      accessor: (row: Record<string, unknown>) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm" className="text-xs">Edit</Button>
+          <Button variant="ghost" size="sm" className="text-xs" onClick={() => openEdit(row)}>Edit</Button>
           <Button variant="ghost" size="sm" className="text-xs text-crimson">Delete</Button>
         </div>
       ),
@@ -169,6 +204,40 @@ const PowerhouseProviders = () => {
     }
   };
 
+  const handleSaveEdit = async () => {
+    if (!editingProvider?.id) return;
+    const n = name.trim();
+    const c = code.trim();
+    if (!n || !c) {
+      toast({ title: "Name and Code are required", variant: "destructive" });
+      return;
+    }
+    const id = Number(editingProvider.id);
+    setSaving(true);
+    try {
+      if (imageFile) {
+        const formData = new FormData();
+        formData.set("name", n);
+        formData.set("code", c);
+        formData.set("is_active", String(isActive));
+        formData.set("image", imageFile);
+        await updateProviderAdminForm(id, formData);
+      } else {
+        await updateProviderAdmin(id, { name: n, code: c, is_active: isActive });
+      }
+      queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
+      queryClient.invalidateQueries({ queryKey: ["providers"] });
+      toast({ title: "Provider updated successfully." });
+      resetForm();
+      setEditOpen(false);
+    } catch (e) {
+      const msg = (e as { detail?: string })?.detail ?? "Failed to update provider";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Game Providers</h2>
@@ -201,6 +270,11 @@ const PowerhouseProviders = () => {
                 onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
               />
               {imageFile && <p className="text-xs text-muted-foreground mt-1">{imageFile.name}</p>}
+              {imagePreviewUrl && (
+                <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-16 h-16">
+                  <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
@@ -210,6 +284,48 @@ const PowerhouseProviders = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancel</Button>
             <Button className="gold-gradient text-primary-foreground" onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => {
+          setEditOpen(open);
+          if (!open) resetForm();
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="font-display">Edit Provider</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Input placeholder="Provider Name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input placeholder="Provider Code" value={code} onChange={(e) => setCode(e.target.value)} />
+            <div>
+              <label className="text-sm font-medium mb-1 block">Provider image (optional, leave empty to keep current)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm"
+                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              />
+              {(imagePreviewUrl || (editingProvider?.image && typeof editingProvider.image === "string" && editingProvider.image.trim())) && (
+                <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-16 h-16">
+                  <img
+                    src={imagePreviewUrl ?? getMediaUrl((editingProvider?.image as string).trim())}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
+              Active
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>Cancel</Button>
+            <Button className="gold-gradient text-primary-foreground" onClick={handleSaveEdit} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

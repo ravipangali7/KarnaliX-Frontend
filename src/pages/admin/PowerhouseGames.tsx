@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getGamesAdmin, getCategoriesAdmin, getProvidersAdmin, createGame, createGameForm, updateGame, updateGameForm } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "@/hooks/use-toast";
+import { getMediaUrl } from "@/lib/api";
 
 const PowerhouseGames = () => {
   const queryClient = useQueryClient();
@@ -26,6 +27,17 @@ const PowerhouseGames = () => {
   const [saving, setSaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Record<string, unknown> | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   const resetForm = () => {
     setName("");
@@ -211,6 +223,11 @@ const PowerhouseGames = () => {
                 className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
                 onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
               />
+              {imagePreviewUrl && (
+                <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-24 h-24">
+                  <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input placeholder="Min Bet" type="number" value={minBet} onChange={(e) => setMinBet(e.target.value)} />
@@ -268,6 +285,15 @@ const PowerhouseGames = () => {
                 className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
                 onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
               />
+              {(imagePreviewUrl || (editingGame?.image && typeof editingGame.image === "string" && editingGame.image.trim())) && (
+                <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-24 h-24">
+                  <img
+                    src={imagePreviewUrl ?? getMediaUrl((editingGame?.image as string).trim())}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input placeholder="Min Bet" type="number" value={minBet} onChange={(e) => setMinBet(e.target.value)} />
