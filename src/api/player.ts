@@ -135,6 +135,11 @@ export async function withdrawRequest(body: unknown) {
   return apiPost(`${P}/withdraw-request/`, body);
 }
 
+/** Create a bonus request (claim). Body: amount, bonus_type (welcome | deposit | referral), bonus_rule (optional id), remarks (optional). */
+export async function bonusRequestCreate(body: { amount: number | string; bonus_type: string; bonus_rule?: number; remarks?: string }) {
+  return apiPost(`${P}/bonus-request/`, body);
+}
+
 export async function getProfile() {
   return apiGet(`${P}/profile/`);
 }

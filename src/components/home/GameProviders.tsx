@@ -19,8 +19,8 @@ export function GameProviders({ providers: providersProp }: GameProvidersProps) 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
         {providers.map((p) => (
           <Link
-            key={p.name}
-            to={`/games?provider=${encodeURIComponent(p.name)}`}
+            key={p.id ?? p.name}
+            to={p.single_game_id != null ? `/games/${p.single_game_id}/play` : p.id != null ? `/providers/${p.id}` : `/games`}
             className="glass rounded-xl p-4 border border-white/10 flex flex-col items-center gap-2 hover:scale-[1.02] hover:border-primary/30 transition-all"
           >
             {/* Circular irregular shape: organic blob via border-radius */}

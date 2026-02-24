@@ -13,7 +13,20 @@ export interface GameProvider {
   name: string;
   code: string;
   image?: string;
+  banner?: string;
   is_active?: boolean;
+  /** When set, provider has exactly one active game with is_single_game=true; link to this game instead of provider page. */
+  single_game_id?: number | null;
+}
+
+export interface ProviderDetailCategory {
+  id: number;
+  name: string;
+}
+
+export interface ProviderDetail extends GameProvider {
+  games_count: number;
+  categories: ProviderDetailCategory[];
 }
 
 export interface Game {
@@ -30,6 +43,7 @@ export interface Game {
   provider_name?: string;
   provider_code?: string;
   is_active?: boolean;
+  is_single_game?: boolean;
 }
 
 function unwrapList<T>(res: unknown): T[] {
@@ -59,6 +73,18 @@ export async function getCategories(): Promise<GameCategory[]> {
 export async function getProviders(): Promise<GameProvider[]> {
   const res = await apiGet<GameProvider[]>("/public/providers/");
   return unwrapList<GameProvider>(res as unknown);
+}
+
+/** Fetch single provider detail with games_count and categories (for provider page). Image/banner are returned as full display URLs. */
+export async function getProviderDetail(id: number): Promise<ProviderDetail | null> {
+  const res = await apiGet<ProviderDetail>(`/public/providers/${id}/`);
+  const raw = unwrapSingle<ProviderDetail>(res as unknown);
+  if (!raw) return null;
+  return {
+    ...raw,
+    image: raw.image?.trim() ? getMediaUrl(raw.image.trim()) : undefined,
+    banner: raw.banner?.trim() ? getMediaUrl(raw.banner.trim()) : undefined,
+  };
 }
 
 export interface GamesPaginatedResponse {

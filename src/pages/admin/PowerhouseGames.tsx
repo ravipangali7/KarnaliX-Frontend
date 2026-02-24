@@ -26,6 +26,7 @@ const PowerhouseGames = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [isComingSoon, setIsComingSoon] = useState(false);
+  const [isSingleGame, setIsSingleGame] = useState(false);
   const [comingSoonLaunchDate, setComingSoonLaunchDate] = useState("");
   const [comingSoonDescription, setComingSoonDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -53,6 +54,7 @@ const PowerhouseGames = () => {
     setImageFile(null);
     setIsActive(true);
     setIsComingSoon(false);
+    setIsSingleGame(false);
     setComingSoonLaunchDate("");
     setComingSoonDescription("");
     setEditingGame(null);
@@ -68,6 +70,7 @@ const PowerhouseGames = () => {
     setMaxBet(String(row.max_bet ?? "5000"));
     setIsActive(Boolean(row.is_active));
     setIsComingSoon(Boolean(row.is_coming_soon));
+    setIsSingleGame(Boolean(row.is_single_game));
     const launchDate = row.coming_soon_launch_date;
     setComingSoonLaunchDate(launchDate ? String(launchDate).slice(0, 10) : "");
     setComingSoonDescription(String(row.coming_soon_description ?? ""));
@@ -116,6 +119,7 @@ const PowerhouseGames = () => {
         formData.append("max_bet", maxBet || "0");
         formData.append("is_active", String(isActive));
         formData.append("is_coming_soon", String(isComingSoon));
+        formData.append("is_single_game", String(isSingleGame));
         if (comingSoonLaunchDate.trim()) formData.append("coming_soon_launch_date", comingSoonLaunchDate.trim());
         formData.append("coming_soon_description", comingSoonDescription.trim());
         formData.append("image", imageFile);
@@ -130,6 +134,7 @@ const PowerhouseGames = () => {
           max_bet: maxBet || "0",
           is_active: isActive,
           is_coming_soon: isComingSoon,
+          is_single_game: isSingleGame,
           coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
           coming_soon_description: comingSoonDescription.trim() || "",
         });
@@ -171,6 +176,7 @@ const PowerhouseGames = () => {
         formData.append("max_bet", maxBet || "0");
         formData.append("is_active", String(isActive));
         formData.append("is_coming_soon", String(isComingSoon));
+        formData.append("is_single_game", String(isSingleGame));
         if (comingSoonLaunchDate.trim()) formData.append("coming_soon_launch_date", comingSoonLaunchDate.trim());
         formData.append("coming_soon_description", comingSoonDescription.trim());
         formData.append("image", imageFile);
@@ -185,6 +191,7 @@ const PowerhouseGames = () => {
           max_bet: maxBet || "0",
           is_active: isActive,
           is_coming_soon: isComingSoon,
+          is_single_game: isSingleGame,
           coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
           coming_soon_description: comingSoonDescription.trim() || "",
         });
@@ -279,6 +286,12 @@ const PowerhouseGames = () => {
                 </>
               )}
             </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isSingleGame} onChange={(e) => setIsSingleGame(e.target.checked)} className="rounded border-border" />
+                Single game (open directly when provider is clicked)
+              </label>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancel</Button>
@@ -363,6 +376,12 @@ const PowerhouseGames = () => {
                   </div>
                 </>
               )}
+            </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isSingleGame} onChange={(e) => setIsSingleGame(e.target.checked)} className="rounded border-border" />
+                Single game (open directly when provider is clicked)
+              </label>
             </div>
           </div>
           <DialogFooter>

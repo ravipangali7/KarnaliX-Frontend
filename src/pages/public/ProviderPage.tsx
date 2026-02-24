@@ -1,0 +1,181 @@
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { GameCard } from "@/components/shared/GameCard";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { getProviderDetail, getGames, getGameImageUrl } from "@/api/games";
+import type { Game } from "@/api/games";
+
+const PAGE_SIZE = 24;
+
+const ProviderPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = searchParams.get("category") ?? "all";
+  const pageParam = searchParams.get("page");
+  const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+
+  const providerId = id ? parseInt(id, 10) : NaN;
+  const categoryId = categoryParam === "all" ? undefined : Number(categoryParam) || undefined;
+
+  const { data: provider, isLoading: providerLoading, isError: providerError } = useQuery({
+    queryKey: ["provider-detail", providerId],
+    queryFn: () => getProviderDetail(providerId),
+    enabled: Number.isInteger(providerId) && providerId > 0,
+  });
+
+  const { data: gamesData, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
+    queryKey: ["games", providerId, categoryId, currentPage],
+    queryFn: () => getGames(categoryId, providerId, currentPage, PAGE_SIZE),
+    enabled: Number.isInteger(providerId) && providerId > 0,
+  });
+
+  const setFilters = (updates: { category?: string; page?: number }) => {
+    const next = new URLSearchParams(searchParams);
+    if (updates.category !== undefined) next.set("category", updates.category);
+    if (updates.page !== undefined) next.set("page", String(updates.page));
+    setSearchParams(next);
+  };
+
+  const results = gamesData?.results ?? [];
+  const totalCount = gamesData?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const categories = provider?.categories ?? [];
+
+  if (!id || !Number.isInteger(providerId) || providerId <= 0) {
+    return (
+      <div className="container px-4 py-6">
+        <p className="text-muted-foreground">Invalid provider.</p>
+        <Link to="/games" className="text-primary hover:underline mt-2 inline-block">Back to games</Link>
+      </div>
+    );
+  }
+
+  if (providerError || (provider && !providerLoading && !provider)) {
+    return (
+      <div className="container px-4 py-6">
+        <p className="text-muted-foreground">Provider not found.</p>
+        <Link to="/games" className="text-primary hover:underline mt-2 inline-block">Back to games</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container px-4 py-6 space-y-6">
+      {/* Banner + name + total games */}
+      <div className="space-y-3">
+        {providerLoading ? (
+          <div className="h-32 md:h-48 rounded-xl bg-muted animate-pulse" />
+        ) : (
+          <div className="relative w-full rounded-xl overflow-hidden bg-muted aspect-[3/1] max-h-48 md:max-h-56">
+            {(provider?.banner || provider?.image) ? (
+              <img
+                src={provider.banner || provider.image}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground font-display text-lg">
+                {provider?.name ?? "Provider"}
+              </div>
+            )}
+          </div>
+        )}
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h1 className="font-gaming font-bold text-2xl neon-text tracking-wide">
+            {providerLoading ? "…" : provider?.name ?? ""}
+          </h1>
+          {provider && (
+            <span className="text-sm text-muted-foreground">
+              {provider.games_count} game{provider.games_count !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Category filters */}
+      {categories.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <Button
+            variant={categoryParam === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilters({ category: "all", page: 1 })}
+            className={categoryParam === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
+          >
+            All
+          </Button>
+          {categories.map((cat) => (
+            <Button
+              key={cat.id}
+              variant={categoryParam === String(cat.id) ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilters({ category: String(cat.id), page: 1 })}
+              className={`whitespace-nowrap ${categoryParam === String(cat.id) ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}`}
+            >
+              {cat.name}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {/* Games grid */}
+      {gamesLoading && <p className="text-center text-muted-foreground py-8">Loading games…</p>}
+      {gamesError && !gamesLoading && (
+        <div className="text-center py-8 space-y-2">
+          <p className="text-muted-foreground">Could not load games.</p>
+          <Button variant="outline" size="sm" onClick={() => refetchGames()}>Retry</Button>
+        </div>
+      )}
+      {!gamesLoading && !gamesError && (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {results.map((game: Game) => (
+            <Link key={game.id} to={`/games/${game.id}`}>
+              <GameCard
+                image={getGameImageUrl(game)}
+                name={game.name}
+                category={game.category_name ?? ""}
+                minBet={Number(game.min_bet)}
+                maxBet={Number(game.max_bet)}
+              />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {!gamesLoading && !gamesError && results.length === 0 && (
+        <p className="text-center text-muted-foreground py-12">No games in this category</p>
+      )}
+
+      {/* Pagination */}
+      {!gamesLoading && !gamesError && totalPages > 1 && (
+        <Pagination className="pt-4">
+          <PaginationContent className="gap-2">
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => { e.preventDefault(); setFilters({ page: currentPage - 1 }); }}
+                className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                aria-disabled={currentPage <= 1}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="px-3 py-2 text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => { e.preventDefault(); setFilters({ page: currentPage + 1 }); }}
+                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                aria-disabled={currentPage >= totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
+    </div>
+  );
+};
+
+export default ProviderPage;

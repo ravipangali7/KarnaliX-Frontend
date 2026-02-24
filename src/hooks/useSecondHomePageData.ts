@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, type LiveBettingSectionApi } from "@/api/site";
 import { getCategories, getProviders, getGames, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
+import { getBonusRules, mapBonusRulesToPromoShapes } from "@/api/bonus";
 import { getMediaUrl } from "@/lib/api";
 import type { ProviderShape, GameCardShape, PromoShape, TestimonialShape, ComingSoonShape } from "@/data/homePageMockData";
 import { comingSoon as defaultComingSoon, testimonials as defaultTestimonials } from "@/data/homePageMockData";
@@ -43,6 +44,8 @@ export interface SecondHomePageData {
   /** Games grouped by category id for category-wise rows. */
   gamesByCategory: Record<number, GameCardShape[]>;
   sportsIframeUrl: string;
+  /** Welcome + Deposit promos for section after banner, before top games. */
+  welcomeDepositPromos: PromoShape[];
   promosGrid: PromoShape[];
   tournamentPromo: PromoShape | null;
   cashbackPromo: PromoShape | null;
@@ -202,6 +205,10 @@ export function useSecondHomePageData(): {
     queryKey: ["comingSoonGames"],
     queryFn: getComingSoonGames,
   });
+  const { data: bonusRules = [] } = useQuery({
+    queryKey: ["bonusRules"],
+    queryFn: getBonusRules,
+  });
   const games = (gamesResp?.results ?? []) as Game[];
   const categoriesList = (categories ?? []) as GameCategory[];
 
@@ -217,11 +224,13 @@ export function useSecondHomePageData(): {
       : defaultSliderSlides(site);
   const providersList = (providers ?? []) as GameProvider[];
   const providerCards: ProviderShape[] = providersList.map((p, i) => ({
+    id: p.id,
     name: p.name,
     logo: (p.code ?? p.name.slice(0, 2).toUpperCase()).slice(0, 2),
     logoImage: p.image?.trim() ? getMediaUrl(p.image.trim()) : undefined,
     games: 0,
     color: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
+    single_game_id: p.single_game_id ?? undefined,
   }));
 
   const liveCategory = categoriesList.find((c) => /live/i.test(c.name));
@@ -247,19 +256,27 @@ export function useSecondHomePageData(): {
 
   const sportsIframeUrl = (site.sports_iframe_url as string)?.trim() || "https://sprodm.uni247.xyz/?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWRmOTZiZjUtNGU2ZC00MWIyLWFmOGMtMTU5MTRmZjgyZjBjIiwicGxheWVyX2lkIjoiaGI1ZjQ5MTI2U1RBUiIsIm1lcmNoYW50X2NvZGUiOiJjbXQtaGQtc3ViLTg4MHIyYmYiLCJpc3N1ZWRfYXQiOiIyMDI2LTAyLTIzVDEwOjM5OjQyLjAyNjgyMDA2MloiLCJleHBpcmVzX2F0IjoiMjAyNi0wMi0yM1QxMzozOTo0Mi4wMjY4MjAxMjJaIiwibGFuZ3VhZ2UiOiJlbiJ9.5W0ZztMElPLnVqvFwaqh3ehaIhQYVieBe2FwnDMNNDw#/";
 
+  const bonusPromos = bonusRules.length > 0 ? mapBonusRulesToPromoShapes(bonusRules) : [];
+  const welcomeDepositPromos: PromoShape[] = bonusPromos.filter(
+    (p) => p.variant === "welcome" || p.variant === "deposit"
+  );
+  const referOnlyPromos: PromoShape[] = bonusPromos.filter((p) => p.variant === "referral");
   const promoBannersRaw = Array.isArray(site.promo_banners) ? (site.promo_banners as Record<string, unknown>[]) : [];
-  const promosGrid: PromoShape[] = promoBannersRaw.length >= 2
-    ? promoBannersRaw.slice(0, 2).map((p, i) => ({
-        variant: (["welcome", "referral", "tournament", "cashback"] as const)[i % 4],
-        badge: (p.badge as string) ?? "",
-        title: (p.title as string) ?? "",
-        highlight: (p.highlight as string) ?? "",
-        subtitle: (p.subtitle as string) ?? "",
-        description: (p.description as string) ?? "",
-        cta: (p.cta_label as string) ?? (p.cta as string) ?? "Learn More",
-        href: (p.cta_link as string) ?? (p.href as string) ?? "/promotions",
-      }))
-    : [];
+  const promosGrid: PromoShape[] =
+    bonusPromos.length > 0
+      ? referOnlyPromos
+      : promoBannersRaw.length >= 2
+        ? promoBannersRaw.slice(0, 2).map((p, i) => ({
+            variant: (["welcome", "deposit", "referral", "tournament", "cashback"] as const)[i % 5],
+            badge: (p.badge as string) ?? "",
+            title: (p.title as string) ?? "",
+            highlight: (p.highlight as string) ?? "",
+            subtitle: (p.subtitle as string) ?? "",
+            description: (p.description as string) ?? "",
+            cta: (p.cta_label as string) ?? (p.cta as string) ?? "Learn More",
+            href: (p.cta_link as string) ?? (p.href as string) ?? "/promotions",
+          }))
+        : [];
   const tournamentPromo: PromoShape | null = promoBannersRaw.length >= 3
     ? {
         variant: "tournament",
@@ -308,6 +325,7 @@ export function useSecondHomePageData(): {
     topGames,
     gamesByCategory,
     sportsIframeUrl,
+    welcomeDepositPromos,
     promosGrid,
     tournamentPromo,
     cashbackPromo,

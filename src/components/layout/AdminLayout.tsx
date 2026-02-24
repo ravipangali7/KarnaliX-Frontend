@@ -36,6 +36,7 @@ const getNavItems = (role: string) => {
       { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
       { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
       { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
+      { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
       { label: "Categories", path: "/categories", icon: Tag },
       { label: "Providers", path: "/providers", icon: Box },
       { label: "Games", path: "/games", icon: Gamepad2 },
@@ -60,6 +61,7 @@ const getNavItems = (role: string) => {
       { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
       { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
       { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
+      { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
       { label: "Game Log", path: "/game-log", icon: Gamepad2 },
       { label: "Transactions", path: "/transactions", icon: Clock },
       { label: "Accounting", path: "/accounting", icon: Calculator },
@@ -75,6 +77,7 @@ const getNavItems = (role: string) => {
     { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
     { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
     { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
+    { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
     { label: "Game Log", path: "/game-log", icon: Gamepad2 },
     { label: "Transactions", path: "/transactions", icon: Clock },
     { label: "Accounting", path: "/accounting", icon: Calculator },
@@ -129,6 +132,7 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
     "/messages": Number(unreadMessages) || 0,
     "/deposits": Number(dashboard?.pending_deposits) || 0,
     "/withdrawals": Number(dashboard?.pending_withdrawals) || 0,
+    "/bonus-requests": Number(dashboard?.pending_bonus_requests) || 0,
   };
 
   const isActive = (path: string) => {

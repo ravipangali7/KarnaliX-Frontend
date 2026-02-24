@@ -44,6 +44,18 @@ export default function SecondHomePage() {
   return (
     <div className="space-y-0 pb-8 bg-background">
       <SecondHomeSlider slides={data.sliderSlides} />
+
+      {/* Welcome + Deposit: after banner, before top games */}
+      {data.welcomeDepositPromos.length > 0 && (
+        <section className="container px-4 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data.welcomeDepositPromos.map((promo, i) => (
+              <PromoBanner key={i} promo={promo} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <SecondGameCategoryBar categories={data.categories} />
 
       {/* Scrolling static section (e.g. Ind vs Pak) */}
@@ -57,7 +69,7 @@ export default function SecondHomePage() {
       <SecondHomeTopGamesCarousel games={data.topGames} />
 
       {/* Sports iframe: full width, viewport crop to hide remote header/footer */}
-      {data.sportsIframeUrl && (
+      {/* {data.sportsIframeUrl && (
         <section className="w-full">
           <div className="w-full overflow-hidden h-[70vh] min-h-[400px] relative bg-background">
             <iframe
@@ -73,7 +85,7 @@ export default function SecondHomePage() {
             />
           </div>
         </section>
-      )}
+      )} */}
 
       {/* Providers: image + name only, circular irregular shape */}
       <GameProviders providers={data.providerCards} />

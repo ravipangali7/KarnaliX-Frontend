@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
 import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
-import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -40,9 +40,10 @@ const PlayerWallet = () => {
     enabled: withdrawOpen,
   });
   const withdrawPaymentModes = (playerPaymentModes as Record<string, unknown>[]).filter((pm) => pm.status === "approved");
-  const w = wallet as Record<string, unknown> & { recent_deposits?: unknown[]; recent_withdrawals?: unknown[]; main_balance?: string; bonus_balance?: string };
+  const w = wallet as Record<string, unknown> & { recent_deposits?: unknown[]; recent_withdrawals?: unknown[]; bonus_requests?: unknown[]; main_balance?: string; bonus_balance?: string };
   const myDeposits = w.deposits ?? w.recent_deposits ?? [];
   const myWithdrawals = w.withdrawals ?? w.recent_withdrawals ?? [];
+  const myBonusRequests = w.bonus_requests ?? [];
   const mainBalance = Number(w.main_balance ?? 0);
   const bonusBalance = Number(w.bonus_balance ?? 0);
 
@@ -94,9 +95,10 @@ const PlayerWallet = () => {
 
       {/* History Tabs */}
       <Tabs defaultValue="deposits">
-        <TabsList className="w-full">
-          <TabsTrigger value="deposits" className="flex-1 gap-1 font-display"><ArrowDownCircle className="h-3 w-3" /> Deposit History</TabsTrigger>
-          <TabsTrigger value="withdrawals" className="flex-1 gap-1 font-display"><ArrowUpCircle className="h-3 w-3" /> Withdrawal History</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3">
+          <TabsTrigger value="deposits" className="gap-1 font-display text-xs"><ArrowDownCircle className="h-3 w-3" /> Deposits</TabsTrigger>
+          <TabsTrigger value="withdrawals" className="gap-1 font-display text-xs"><ArrowUpCircle className="h-3 w-3" /> Withdrawals</TabsTrigger>
+          <TabsTrigger value="bonus-requests" className="gap-1 font-display text-xs"><Gift className="h-3 w-3" /> Bonus Requests</TabsTrigger>
         </TabsList>
 
         <TabsContent value="deposits" className="space-y-2 mt-3">
@@ -148,6 +150,32 @@ const PlayerWallet = () => {
                   <span className="text-xs text-muted-foreground">{w.created_at ? new Date(String(w.created_at)).toLocaleDateString() : ""}</span>
                   <span className="text-xs text-muted-foreground">{String(w.account_details ?? "-")}</span>
                   <span className="text-right"><StatusBadge status={String(w.status ?? "pending")} /></span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="bonus-requests" className="space-y-2 mt-3">
+          {myBonusRequests.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No bonus requests yet. Claim a bonus from the Bonus page.</p>}
+          <div className="hidden md:grid grid-cols-4 gap-2 text-xs text-muted-foreground px-4 py-2 font-semibold">
+            <span>Amount</span><span>Type</span><span>Date</span><span className="text-right">Status</span>
+          </div>
+          {myBonusRequests.map((br: Record<string, unknown>, i: number) => (
+            <Card key={String(br.id ?? i)} className="hover:border-primary/20 transition-colors">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center justify-between md:hidden">
+                  <div>
+                    <p className="text-sm font-bold">₹{Number(br.amount ?? 0).toLocaleString()}</p>
+                    <p className="text-[10px] text-muted-foreground">{String(br.bonus_type_display ?? br.bonus_type ?? "")} • {br.created_at ? new Date(String(br.created_at)).toLocaleDateString() : ""}</p>
+                  </div>
+                  <StatusBadge status={String(br.status ?? "pending")} />
+                </div>
+                <div className="hidden md:grid grid-cols-4 gap-2 items-center">
+                  <span className="font-bold text-sm">₹{Number(br.amount ?? 0).toLocaleString()}</span>
+                  <span className="text-sm">{String(br.bonus_type_display ?? br.bonus_type ?? "")}</span>
+                  <span className="text-xs text-muted-foreground">{br.created_at ? new Date(String(br.created_at)).toLocaleDateString() : ""}</span>
+                  <span className="text-right"><StatusBadge status={String(br.status ?? "pending")} /></span>
                 </div>
               </CardContent>
             </Card>

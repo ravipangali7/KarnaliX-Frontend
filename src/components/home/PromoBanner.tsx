@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Gift, Users, Trophy, Percent } from "lucide-react";
+import { Gift, Users, Trophy, Percent, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PromoShape } from "@/data/homePageMockData";
 import { promosGrid as defaultPromos } from "@/data/homePageMockData";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 const variantStyles: Record<string, string> = {
   welcome: "from-violet-600/90 to-purple-800/90 border-violet-500/30",
+  deposit: "from-amber-600/90 to-cyan-800/90 border-amber-500/30",
   referral: "from-emerald-600/90 to-teal-800/90 border-emerald-500/30",
   tournament: "from-amber-600/90 to-orange-800/90 border-amber-500/30",
   cashback: "from-cyan-600/90 to-blue-800/90 border-cyan-500/30",
@@ -14,6 +15,7 @@ const variantStyles: Record<string, string> = {
 
 const variantIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   welcome: Gift,
+  deposit: Wallet,
   referral: Users,
   tournament: Trophy,
   cashback: Percent,
@@ -68,11 +70,14 @@ export function PromoBanner({ promo, className, fullWidth }: PromoBannerProps) {
 
 export function PromoBannerGrid({ promos: promosProp }: { promos?: PromoShape[] | null }) {
   const promos = promosProp && promosProp.length > 0 ? promosProp : defaultPromos;
+  const firstIsRefer = promos[0]?.variant === "referral";
   return (
     <section className="container px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {promos.map((promo, i) => (
-          <PromoBanner key={i} promo={promo} />
+          <div key={i} className={i === 0 && firstIsRefer ? "md:col-span-2" : undefined}>
+            <PromoBanner promo={promo} fullWidth={i === 0 && firstIsRefer} />
+          </div>
         ))}
       </div>
     </section>

@@ -1,17 +1,20 @@
 import { Outlet } from "react-router-dom";
-import { PublicHeader } from "./PublicHeader";
-import { PublicFooter } from "./PublicFooter";
+import { HomeHeader } from "./HomeHeader";
+import { HomeFooter } from "./HomeFooter";
+import { MobileNav } from "./MobileNav";
+import { WhatsAppButton } from "./WhatsAppButton";
 
 /**
- * Player dashboard wrapped in the same site header and footer as the public site.
- * Renders PublicHeader, then Outlet (which renders PlayerLayout + child routes), then PublicFooter.
+ * Player dashboard wrapped in the same site header and footer as the second home.
  */
 export const PlayerSiteLayout = () => (
-  <div className="min-h-screen flex flex-col bg-background">
-    <PublicHeader />
-    <div className="flex-1 flex flex-col">
+  <div className="home-design min-h-screen flex flex-col bg-background">
+    <HomeHeader />
+    <main className="flex-1 overflow-auto flex flex-col pt-[calc(3.5rem+2.25rem)] md:pt-[calc(3.5rem+2.25rem)] pb-20 md:pb-0">
       <Outlet />
-    </div>
-    <PublicFooter />
+    </main>
+    <HomeFooter />
+    <MobileNav />
+    <WhatsAppButton />
   </div>
 );

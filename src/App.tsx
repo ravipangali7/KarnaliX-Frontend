@@ -16,6 +16,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 // Public Pages
 import GamesPage from "@/pages/public/GamesPage";
 import GameDetailPage from "@/pages/public/GameDetailPage";
+import ProviderPage from "@/pages/public/ProviderPage";
 import BonusPage from "@/pages/public/BonusPage";
 import WalletPage from "@/pages/public/WalletPage";
 import LoginPage from "@/pages/public/LoginPage";
@@ -42,6 +43,7 @@ import AdminMasters from "@/pages/admin/AdminMasters";
 import AdminSupers from "@/pages/admin/AdminSupers";
 import AdminDeposits from "@/pages/admin/AdminDeposits";
 import AdminWithdrawals from "@/pages/admin/AdminWithdrawals";
+import AdminBonusRequests from "@/pages/admin/AdminBonusRequests";
 import AdminGameLog from "@/pages/admin/AdminGameLog";
 import AdminGameLogDetail from "@/pages/admin/AdminGameLogDetail";
 import AdminTransactions from "@/pages/admin/AdminTransactions";
@@ -105,6 +107,7 @@ const App = () => (
             <Route element={<PublicLayout />}>
               <Route path="/games" element={<GamesPage />} />
               <Route path="/games/:id" element={<GameDetailPage />} />
+              <Route path="/providers/:id" element={<ProviderPage />} />
             <Route path="/bonus" element={<BonusPage />} />
             <Route path="/wallet" element={<WalletPage />} />
             </Route>
@@ -143,6 +146,7 @@ const App = () => (
               <Route path="/master/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/master/deposits" element={<AdminDeposits />} />
               <Route path="/master/withdrawals" element={<AdminWithdrawals />} />
+              <Route path="/master/bonus-requests" element={<AdminBonusRequests />} />
               <Route path="/master/game-log" element={<AdminGameLog />} />
               <Route path="/master/game-log/:id" element={<AdminGameLogDetail />} />
               <Route path="/master/transactions" element={<AdminTransactions />} />
@@ -162,6 +166,7 @@ const App = () => (
               <Route path="/super/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/super/deposits" element={<AdminDeposits />} />
               <Route path="/super/withdrawals" element={<AdminWithdrawals />} />
+              <Route path="/super/bonus-requests" element={<AdminBonusRequests />} />
               <Route path="/super/game-log" element={<AdminGameLog />} />
               <Route path="/super/game-log/:id" element={<AdminGameLogDetail />} />
               <Route path="/super/transactions" element={<AdminTransactions />} />
@@ -182,6 +187,7 @@ const App = () => (
               <Route path="/powerhouse/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/powerhouse/deposits" element={<AdminDeposits />} />
               <Route path="/powerhouse/withdrawals" element={<AdminWithdrawals />} />
+              <Route path="/powerhouse/bonus-requests" element={<AdminBonusRequests />} />
               <Route path="/powerhouse/categories" element={<PowerhouseCategories />} />
               <Route path="/powerhouse/providers" element={<PowerhouseProviders />} />
               <Route path="/powerhouse/games" element={<PowerhouseGames />} />

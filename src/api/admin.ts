@@ -164,6 +164,25 @@ export async function rejectWithdraw(id: number, body?: { reject_reason?: string
   return apiPost(`${prefix(role)}/withdrawals/${id}/reject/`, body ?? {});
 }
 
+// --- Bonus Requests ---
+export async function getBonusRequests(role: "powerhouse" | "super" | "master", params?: ListParams) {
+  const res = await apiGet(`${prefix(role)}/bonus-requests/${buildQueryString(params)}`);
+  return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+export async function getBonusRequest(id: number, role: "powerhouse" | "super" | "master") {
+  return apiGet(`${prefix(role)}/bonus-requests/${id}/`);
+}
+/** Update bonus request amount (master, super, powerhouse). Only pending requests can be updated. */
+export async function updateBonusRequest(id: number, body: { amount: number | string }, role: "powerhouse" | "super" | "master") {
+  return apiPatch(`${prefix(role)}/bonus-requests/${id}/`, body);
+}
+export async function approveBonusRequest(id: number, body: { password?: string; pin?: string }, role: "powerhouse" | "super" | "master") {
+  return apiPost(`${prefix(role)}/bonus-requests/${id}/approve/`, body);
+}
+export async function rejectBonusRequest(id: number, body?: { reject_reason?: string }, role: "powerhouse" | "super" | "master") {
+  return apiPost(`${prefix(role)}/bonus-requests/${id}/reject/`, body ?? {});
+}
+
 // --- Master: Payment modes (master role only) ---
 export async function getMasterPaymentModes() {
   const res = await apiGet(`${prefix("master")}/payment-modes/`);

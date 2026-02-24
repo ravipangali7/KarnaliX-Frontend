@@ -19,10 +19,12 @@ const PowerhouseProviders = () => {
   const [code, setCode] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<Record<string, unknown> | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(null);
 
   // Direct Import modal (game API called from browser; backend only gives URL and persists import)
   const [importOpen, setImportOpen] = useState(false);
@@ -43,8 +45,10 @@ const PowerhouseProviders = () => {
     setCode("");
     setIsActive(true);
     setImageFile(null);
+    setBannerFile(null);
     setEditingProvider(null);
     setImagePreviewUrl(null);
+    setBannerPreviewUrl(null);
   };
 
   useEffect(() => {
@@ -57,12 +61,23 @@ const PowerhouseProviders = () => {
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
+  useEffect(() => {
+    if (!bannerFile) {
+      setBannerPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(bannerFile);
+    setBannerPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [bannerFile]);
+
   const openEdit = (row: Record<string, unknown>) => {
     setEditingProvider(row);
     setName(String(row.name ?? ""));
     setCode(String(row.code ?? ""));
     setIsActive(Boolean(row.is_active));
     setImageFile(null);
+    setBannerFile(null);
     setEditOpen(true);
   };
 
@@ -158,6 +173,16 @@ const PowerhouseProviders = () => {
         return <span className="h-8 w-8 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">—</span>;
       },
     },
+    {
+      header: "Banner",
+      accessor: (row: Record<string, unknown>) => {
+        const banner = row.banner;
+        if (banner && typeof banner === "string" && banner.trim()) {
+          return <img src={getMediaUrl(banner.trim())} alt="" className="h-8 w-20 rounded object-cover bg-muted" />;
+        }
+        return <span className="h-8 w-20 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">—</span>;
+      },
+    },
     { header: "Name", accessor: (row: Record<string, unknown>) => String(row.name ?? "") },
     { header: "Code", accessor: (row: Record<string, unknown>) => String(row.code ?? "") },
     { header: "Status", accessor: (row: Record<string, unknown>) => <StatusBadge status={row.is_active ? "active" : "suspended"} /> },
@@ -181,12 +206,13 @@ const PowerhouseProviders = () => {
     }
     setSaving(true);
     try {
-      if (imageFile) {
+      if (imageFile || bannerFile) {
         const formData = new FormData();
         formData.set("name", n);
         formData.set("code", c);
         formData.set("is_active", String(isActive));
-        formData.set("image", imageFile);
+        if (imageFile) formData.set("image", imageFile);
+        if (bannerFile) formData.set("banner", bannerFile);
         await createProviderAdminForm(formData);
       } else {
         await createProviderAdmin({ name: n, code: c, is_active: isActive });
@@ -215,12 +241,13 @@ const PowerhouseProviders = () => {
     const id = Number(editingProvider.id);
     setSaving(true);
     try {
-      if (imageFile) {
+      if (imageFile || bannerFile) {
         const formData = new FormData();
         formData.set("name", n);
         formData.set("code", c);
         formData.set("is_active", String(isActive));
-        formData.set("image", imageFile);
+        if (imageFile) formData.set("image", imageFile);
+        if (bannerFile) formData.set("banner", bannerFile);
         await updateProviderAdminForm(id, formData);
       } else {
         await updateProviderAdmin(id, { name: n, code: c, is_active: isActive });
@@ -276,6 +303,21 @@ const PowerhouseProviders = () => {
                 </div>
               )}
             </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Provider banner (optional)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground"
+                onChange={(e) => setBannerFile(e.target.files?.[0] ?? null)}
+              />
+              {bannerFile && <p className="text-xs text-muted-foreground mt-1">{bannerFile.name}</p>}
+              {bannerPreviewUrl && (
+                <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-full max-h-24">
+                  <img src={bannerPreviewUrl} alt="Banner preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
               Active
@@ -313,6 +355,24 @@ const PowerhouseProviders = () => {
                   <img
                     src={imagePreviewUrl ?? getMediaUrl((editingProvider?.image as string).trim())}
                     alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Provider banner (optional, leave empty to keep current)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm"
+                onChange={(e) => setBannerFile(e.target.files?.[0] ?? null)}
+              />
+              {(bannerPreviewUrl || (editingProvider?.banner && typeof editingProvider.banner === "string" && editingProvider.banner.trim())) && (
+                <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-full max-h-24">
+                  <img
+                    src={bannerPreviewUrl ?? getMediaUrl((editingProvider?.banner as string).trim())}
+                    alt="Banner preview"
                     className="w-full h-full object-cover"
                   />
                 </div>

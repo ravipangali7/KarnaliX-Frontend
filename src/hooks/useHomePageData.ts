@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting, getTestimonials, getCmsFooterPages } from "@/api/site";
 import { getGames, getCategories, getProviders, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
+import { getBonusRules, mapBonusRulesToPromoShapes } from "@/api/bonus";
 import { getMediaUrl } from "@/lib/api";
 import type {
   HeroData,
@@ -158,6 +159,10 @@ export function useHomePageData(): {
     queryKey: ["comingSoonGames"],
     queryFn: getComingSoonGames,
   });
+  const { data: bonusRules = [] } = useQuery({
+    queryKey: ["bonusRules"],
+    queryFn: getBonusRules,
+  });
 
   const isLoading = siteLoading || gamesLoading || categoriesLoading || providersLoading || testimonialsLoading;
   const isError = siteError || gamesError;
@@ -192,11 +197,15 @@ export function useHomePageData(): {
       ? games.slice(0, FEATURED_GAMES_COUNT).map((g, i) => mapGameToCardShape(g as Game, i))
       : defaultFeaturedGames as GameCardShape[];
 
+  const bonusPromos =
+    bonusRules.length > 0 ? mapBonusRulesToPromoShapes(bonusRules) : [];
   const promoBannersRaw = Array.isArray(site.promo_banners) ? (site.promo_banners as Record<string, unknown>[]) : [];
   const promosGrid: PromoShape[] =
-    promoBannersRaw.length >= 2
-      ? promoBannersRaw.slice(0, 2).map(mapPromoBannerToShape)
-      : defaultPromosGrid;
+    bonusPromos.length > 0
+      ? bonusPromos
+      : promoBannersRaw.length >= 2
+        ? promoBannersRaw.slice(0, 2).map(mapPromoBannerToShape)
+        : defaultPromosGrid;
   const tournamentPromo: PromoShape =
     promoBannersRaw.length >= 3 ? mapPromoBannerToShape(promoBannersRaw[2], 2) : defaultTournamentPromo;
   const cashbackPromo: PromoShape =

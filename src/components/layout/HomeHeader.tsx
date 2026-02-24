@@ -9,11 +9,17 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { label: "Home", path: "/" },
   { label: "Games", path: "/games" },
-  { label: "Sports", path: "/sports" },
-  { label: "Live Casino", path: "/games/liveCasino" },
-  { label: "Promotions", path: "/promotions" },
-  { label: "Affiliate", path: "/affiliate" },
 ];
+
+function getDashboardPath(role: string): string {
+  switch (role) {
+    case "powerhouse": return "/powerhouse";
+    case "super": return "/super";
+    case "master": return "/master";
+    case "player":
+    default: return "/player";
+  }
+}
 
 export const HomeHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -21,6 +27,8 @@ export const HomeHeader = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
+  const dashboardPath = user?.role ? getDashboardPath(user.role) : "/player";
+  const messagesPath = isLoggedIn ? `${dashboardPath}/messages` : "/login";
   const walletBalance = user?.total_balance != null ? `₹${Number(user.total_balance).toLocaleString()}` : "₹0.00";
 
   const handleLogout = () => {
@@ -55,6 +63,44 @@ export const HomeHeader = () => {
                 {item.label}
               </Link>
             ))}
+            <Link
+              to="/bonus"
+              className={cn(
+                "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                location.pathname === "/bonus" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              )}
+            >
+              Bonus
+            </Link>
+            <Link
+              to={messagesPath}
+              className={cn(
+                "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                location.pathname === messagesPath || location.pathname.startsWith(`${dashboardPath}/messages`) ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              )}
+            >
+              Message
+            </Link>
+            {isLoggedIn && (
+              <>
+                <Link
+                  to={dashboardPath}
+                  className={cn(
+                    "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    location.pathname === dashboardPath || location.pathname.startsWith(`${dashboardPath}/`) ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  )}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            )}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -66,14 +112,7 @@ export const HomeHeader = () => {
               <Bell className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-neon-green animate-pulse" />
             </Button>
-            {isLoggedIn ? (
-              <>
-                <Link to="/player">
-                  <Button variant="glass" size="sm">Dashboard</Button>
-                </Link>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>Logout</Button>
-              </>
-            ) : (
+            {!isLoggedIn && (
               <>
                 <Link to="/login">
                   <Button variant="ghost" size="sm">Login</Button>
@@ -126,29 +165,36 @@ export const HomeHeader = () => {
               {item.label}
             </Link>
           ))}
+          <Link to="/bonus" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium", location.pathname === "/bonus" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
+            Bonus
+          </Link>
+          <Link to={messagesPath} onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium", location.pathname === messagesPath || location.pathname.startsWith(`${dashboardPath}/messages`) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
+            Message
+          </Link>
+          {isLoggedIn && (
+            <>
+              <Link to={dashboardPath} onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium", location.pathname === dashboardPath || location.pathname.startsWith(`${dashboardPath}/`) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
+                Dashboard
+              </Link>
+              <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-white/5 w-full text-left">
+                Logout
+              </button>
+            </>
+          )}
           <div className="flex items-center gap-2 pt-2 px-4">
             <Wallet className="h-4 w-4 text-primary" />
             <span className="font-roboto-mono text-sm">{walletBalance}</span>
           </div>
-          <div className="flex gap-2 pt-2">
-            {isLoggedIn ? (
-              <>
-                <Link to="/player" onClick={() => setMenuOpen(false)} className="flex-1">
-                  <Button variant="glass" size="sm" className="w-full">Dashboard</Button>
-                </Link>
-                <Button variant="ghost" size="sm" className="flex-1" onClick={handleLogout}>Logout</Button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1">
-                  <Button variant="outline" size="sm" className="w-full">Login</Button>
-                </Link>
-                <Link to="/register" onClick={() => setMenuOpen(false)} className="flex-1">
-                  <Button variant="neon" size="sm" className="w-full">Sign Up</Button>
-                </Link>
-              </>
-            )}
-          </div>
+          {!isLoggedIn && (
+            <div className="flex gap-2 pt-2">
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1">
+                <Button variant="outline" size="sm" className="w-full">Login</Button>
+              </Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)} className="flex-1">
+                <Button variant="neon" size="sm" className="w-full">Sign Up</Button>
+              </Link>
+            </div>
+          )}
         </nav>
       )}
     </header>

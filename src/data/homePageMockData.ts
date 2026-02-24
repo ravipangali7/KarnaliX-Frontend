@@ -26,7 +26,7 @@ export interface GameCardShape {
 }
 
 export interface PromoShape {
-  variant?: "welcome" | "referral" | "tournament" | "cashback";
+  variant?: "welcome" | "deposit" | "referral" | "tournament" | "cashback";
   badge?: string;
   title?: string;
   highlight?: string;
@@ -43,6 +43,7 @@ export interface CategoryShape {
 }
 
 export interface ProviderShape {
+  id?: number;
   name: string;
   /** Letter(s) for fallback when no image (e.g. first 2 chars of name). */
   logo: string;
@@ -50,6 +51,8 @@ export interface ProviderShape {
   logoImage?: string;
   games: number;
   color: string;
+  /** When set, link to this game (detail) instead of provider page. */
+  single_game_id?: number | null;
 }
 
 export interface ComingSoonShape {
