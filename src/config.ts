@@ -6,6 +6,7 @@
 //   (import.meta.env.VITE_HOME_PAGE as string)?.trim()?.toLowerCase() === "second"
 //     ? "second"
 //     : "first";
-export const HOME_PAGE_VARIANT = "second";
+// export const HOME_PAGE_VARIANT = "second";
+export const HOME_PAGE_VARIANT = "first";
 
 export type HomePageVariant = "first" | "second";
