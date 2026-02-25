@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/shared/GameCard";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { getGames, getCategories, getProviders, getGameImageUrl } from "@/api/games";
-import type { Game } from "@/api/games";
-import { Search, Grid3X3, List } from "lucide-react";
+import type { Game, GameProvider } from "@/api/games";
+import { getMediaUrl } from "@/lib/api";
+import { Grid3X3, List } from "lucide-react";
+
+const IRREGULAR_SHAPE = "60% 40% 50% 50% / 50% 60% 40% 50%";
 
 const PAGE_SIZE = 24;
 
@@ -19,7 +21,6 @@ const GamesPage = () => {
   const pageParam = searchParams.get("page");
   const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
-  const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const categoryId = categoryParam === "all" ? undefined : Number(categoryParam) || undefined;
@@ -44,11 +45,6 @@ const GamesPage = () => {
   const totalCount = gamesData?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  const filtered = results.filter((g: Game) => {
-    const matchSearch = !search.trim() || g.name.toLowerCase().includes(search.toLowerCase()) || (g.category_name ?? "").toLowerCase().includes(search.toLowerCase()) || (g.provider_name ?? "").toLowerCase().includes(search.toLowerCase());
-    return matchSearch;
-  });
-
   return (
     <div className="container px-4 py-6 space-y-4">
       <div>
@@ -56,18 +52,53 @@ const GamesPage = () => {
         <p className="text-sm text-muted-foreground mt-1">Discover {totalCount} exciting games to play and win</p>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by game name or category..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 h-11"
-        />
-      </div>
+      {/* Provider filter (above category) - image with irregular shape */}
+      {providers.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pb-1">
+          <span className="text-xs text-muted-foreground mr-1 flex-shrink-0">Provider:</span>
+          <Button
+            variant={providerParam === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilters({ provider: "all", page: 1 })}
+            className={providerParam === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
+          >
+            All
+          </Button>
+          {(providers as GameProvider[]).map((prov) => {
+            const isSelected = providerParam === String(prov.id);
+            const imgUrl = prov.image?.trim() ? getMediaUrl(prov.image.trim()) : undefined;
+            const initial = (prov.name ?? "?").slice(0, 2).toUpperCase();
+            return (
+              <button
+                key={prov.id}
+                type="button"
+                onClick={() => setFilters({ provider: String(prov.id), page: 1 })}
+                className={`flex flex-col items-center gap-1 shrink-0 transition-all rounded-lg border-2 ${isSelected ? "border-primary neon-glow-sm gold-gradient" : "border-border hover:border-primary/50"}`}
+                title={prov.name}
+              >
+                <div
+                  className="h-12 w-12 flex items-center justify-center text-white font-bold text-xs overflow-hidden bg-muted"
+                  style={{ borderRadius: IRREGULAR_SHAPE }}
+                >
+                  {imgUrl ? (
+                    <img
+                      src={imgUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      style={{ borderRadius: IRREGULAR_SHAPE }}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground" style={{ borderRadius: IRREGULAR_SHAPE }}>{initial}</span>
+                  )}
+                </div>
+                <span className="text-xs max-w-14 truncate text-center">{prov.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Category tabs */}
+      {/* Category tabs (below provider) */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         <Button
           variant={categoryParam === "all" ? "default" : "outline"}
@@ -89,32 +120,6 @@ const GamesPage = () => {
           </Button>
         ))}
       </div>
-
-      {/* Provider filter */}
-      {providers.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <span className="text-xs text-muted-foreground self-center mr-1 flex-shrink-0">Provider:</span>
-          <Button
-            variant={providerParam === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilters({ provider: "all", page: 1 })}
-            className={providerParam === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
-          >
-            All
-          </Button>
-          {providers.map((prov: { id: number; name: string; code: string }) => (
-            <Button
-              key={prov.id}
-              variant={providerParam === String(prov.id) ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilters({ provider: String(prov.id), page: 1 })}
-              className={`whitespace-nowrap ${providerParam === String(prov.id) ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}`}
-            >
-              {prov.name}
-            </Button>
-          ))}
-        </div>
-      )}
 
       {/* View toggle */}
       <div className="flex items-center justify-end gap-1">
@@ -140,7 +145,7 @@ const GamesPage = () => {
       {/* Games grid/list */}
       {!gamesLoading && !gamesError && viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {filtered.map((game: Game) => (
+          {results.map((game: Game) => (
             <Link key={game.id} to={`/games/${game.id}`}>
               <GameCard image={getGameImageUrl(game)} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
             </Link>
@@ -148,7 +153,7 @@ const GamesPage = () => {
         </div>
       ) : !gamesLoading && !gamesError ? (
         <div className="space-y-2">
-          {filtered.map((game: Game) => (
+          {results.map((game: Game) => (
             <Link key={game.id} to={`/games/${game.id}`}>
               <div className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/50 hover:neon-glow-sm transition-all">
                 <div className="h-12 w-16 rounded overflow-hidden flex-shrink-0">
@@ -167,7 +172,7 @@ const GamesPage = () => {
         </div>
       ) : null}
 
-      {!gamesLoading && !gamesError && filtered.length === 0 && (
+      {!gamesLoading && !gamesError && results.length === 0 && (
         <p className="text-center text-muted-foreground py-12">No games found</p>
       )}
 
