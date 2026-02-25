@@ -25,6 +25,10 @@ const PowerhouseProviders = () => {
   const [editingProvider, setEditingProvider] = useState<Record<string, unknown> | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(null);
+  const [apiEndpoint, setApiEndpoint] = useState("");
+  const [apiSecret, setApiSecret] = useState("");
+  const [apiToken, setApiToken] = useState("");
+  const [showApiSecrets, setShowApiSecrets] = useState(false);
 
   // Direct Import modal (game API called from browser; backend only gives URL and persists import)
   const [importOpen, setImportOpen] = useState(false);
@@ -49,6 +53,9 @@ const PowerhouseProviders = () => {
     setEditingProvider(null);
     setImagePreviewUrl(null);
     setBannerPreviewUrl(null);
+    setApiEndpoint("");
+    setApiSecret("");
+    setApiToken("");
   };
 
   useEffect(() => {
@@ -78,6 +85,9 @@ const PowerhouseProviders = () => {
     setIsActive(Boolean(row.is_active));
     setImageFile(null);
     setBannerFile(null);
+    setApiEndpoint(String(row.api_endpoint ?? ""));
+    setApiSecret(String(row.api_secret ?? ""));
+    setApiToken(String(row.api_token ?? ""));
     setEditOpen(true);
   };
 
@@ -206,16 +216,29 @@ const PowerhouseProviders = () => {
     }
     setSaving(true);
     try {
+      const apiEndpointTrim = apiEndpoint.trim();
+      const apiSecretTrim = apiSecret.trim();
+      const apiTokenTrim = apiToken.trim();
       if (imageFile || bannerFile) {
         const formData = new FormData();
         formData.set("name", n);
         formData.set("code", c);
         formData.set("is_active", String(isActive));
+        if (apiEndpointTrim) formData.set("api_endpoint", apiEndpointTrim);
+        if (apiSecretTrim) formData.set("api_secret", apiSecretTrim);
+        if (apiTokenTrim) formData.set("api_token", apiTokenTrim);
         if (imageFile) formData.set("image", imageFile);
         if (bannerFile) formData.set("banner", bannerFile);
         await createProviderAdminForm(formData);
       } else {
-        await createProviderAdmin({ name: n, code: c, is_active: isActive });
+        await createProviderAdmin({
+          name: n,
+          code: c,
+          is_active: isActive,
+          ...(apiEndpointTrim && { api_endpoint: apiEndpointTrim }),
+          ...(apiSecretTrim && { api_secret: apiSecretTrim }),
+          ...(apiTokenTrim && { api_token: apiTokenTrim }),
+        });
       }
       queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
       queryClient.invalidateQueries({ queryKey: ["providers"] });
@@ -239,6 +262,9 @@ const PowerhouseProviders = () => {
       return;
     }
     const id = Number(editingProvider.id);
+    const apiEndpointTrim = apiEndpoint.trim();
+    const apiSecretTrim = apiSecret.trim();
+    const apiTokenTrim = apiToken.trim();
     setSaving(true);
     try {
       if (imageFile || bannerFile) {
@@ -246,11 +272,21 @@ const PowerhouseProviders = () => {
         formData.set("name", n);
         formData.set("code", c);
         formData.set("is_active", String(isActive));
+        formData.set("api_endpoint", apiEndpointTrim);
+        formData.set("api_secret", apiSecretTrim);
+        formData.set("api_token", apiTokenTrim);
         if (imageFile) formData.set("image", imageFile);
         if (bannerFile) formData.set("banner", bannerFile);
         await updateProviderAdminForm(id, formData);
       } else {
-        await updateProviderAdmin(id, { name: n, code: c, is_active: isActive });
+        await updateProviderAdmin(id, {
+          name: n,
+          code: c,
+          is_active: isActive,
+          api_endpoint: apiEndpointTrim,
+          api_secret: apiSecretTrim,
+          api_token: apiTokenTrim,
+        });
       }
       queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
       queryClient.invalidateQueries({ queryKey: ["providers"] });
@@ -288,6 +324,36 @@ const PowerhouseProviders = () => {
           <div className="space-y-3">
             <Input placeholder="Provider Name" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Provider Code" value={code} onChange={(e) => setCode(e.target.value)} />
+            <div className="space-y-2 pt-1 border-t border-border">
+              <p className="text-xs font-medium text-muted-foreground">API (launch)</p>
+              <Input
+                placeholder="Launch URL e.g. https://allapi.online/launch_game1_js"
+                value={apiEndpoint}
+                onChange={(e) => setApiEndpoint(e.target.value)}
+              />
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">API secret (optional)</label>
+                <Input
+                  type={showApiSecrets ? "text" : "password"}
+                  placeholder="API secret"
+                  value={apiSecret}
+                  onChange={(e) => setApiSecret(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">API token (optional)</label>
+                <Input
+                  type={showApiSecrets ? "text" : "password"}
+                  placeholder="API token"
+                  value={apiToken}
+                  onChange={(e) => setApiToken(e.target.value)}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={showApiSecrets} onChange={(e) => setShowApiSecrets(e.target.checked)} className="rounded border-border" />
+                Show secret and token
+              </label>
+            </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Provider image (optional)</label>
               <input
@@ -342,6 +408,36 @@ const PowerhouseProviders = () => {
           <div className="space-y-3">
             <Input placeholder="Provider Name" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Provider Code" value={code} onChange={(e) => setCode(e.target.value)} />
+            <div className="space-y-2 pt-1 border-t border-border">
+              <p className="text-xs font-medium text-muted-foreground">API (launch)</p>
+              <Input
+                placeholder="Launch URL e.g. https://allapi.online/launch_game1_js"
+                value={apiEndpoint}
+                onChange={(e) => setApiEndpoint(e.target.value)}
+              />
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">API secret (optional)</label>
+                <Input
+                  type={showApiSecrets ? "text" : "password"}
+                  placeholder="API secret"
+                  value={apiSecret}
+                  onChange={(e) => setApiSecret(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">API token (optional)</label>
+                <Input
+                  type={showApiSecrets ? "text" : "password"}
+                  placeholder="API token"
+                  value={apiToken}
+                  onChange={(e) => setApiToken(e.target.value)}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={showApiSecrets} onChange={(e) => setShowApiSecrets(e.target.checked)} className="rounded border-border" />
+                Show secret and token
+              </label>
+            </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Provider image (optional, leave empty to keep current)</label>
               <input
