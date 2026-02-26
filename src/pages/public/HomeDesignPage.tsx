@@ -6,6 +6,7 @@ import { AllGameCategories } from "@/components/home/GamesList";
 import { GameProviders } from "@/components/home/GameProviders";
 import { ComingSoon } from "@/components/home/ComingSoon";
 import { Testimonials } from "@/components/home/Testimonials";
+import { ActivePopups } from "@/components/home/ActivePopups";
 import { useHomePageData } from "@/hooks/useHomePageData";
 
 export default function HomeDesignPage() {
@@ -41,6 +42,7 @@ export default function HomeDesignPage() {
 
   return (
     <>
+      <ActivePopups />
       <HeroSection hero={data.hero} heroStats={data.heroStats} />
       <FeaturedGames games={data.featuredGames} />
       <PromoBannerGrid promos={data.promosGrid} />

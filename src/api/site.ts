@@ -54,3 +54,19 @@ export async function getLiveBettingSections(): Promise<LiveBettingSectionApi[]>
   const res = await apiGet("/public/live-betting/");
   return (Array.isArray(res) ? res : []) as LiveBettingSectionApi[];
 }
+
+export interface PopupApi {
+  id: number;
+  title: string;
+  content?: string;
+  image?: string | null;
+  cta_label: string;
+  cta_link: string;
+  is_active: boolean;
+  order: number;
+}
+
+export async function getActivePopups(): Promise<PopupApi[]> {
+  const res = await apiGet("/public/popups/");
+  return (Array.isArray(res) ? res : []) as PopupApi[];
+}

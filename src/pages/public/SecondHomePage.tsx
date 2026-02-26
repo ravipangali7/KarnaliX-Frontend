@@ -7,6 +7,7 @@ import {
   SecondHomeCategoryGames,
 } from "@/components/secondHome";
 import { GameProviders } from "@/components/home/GameProviders";
+import { ActivePopups } from "@/components/home/ActivePopups";
 import { PromoBannerGrid, PromoBanner } from "@/components/home/PromoBanner";
 import { ComingSoon } from "@/components/home/ComingSoon";
 import { Testimonials } from "@/components/home/Testimonials";
@@ -43,6 +44,7 @@ export default function SecondHomePage() {
 
   return (
     <div className="space-y-0 pb-8 bg-background">
+      <ActivePopups />
       <SecondHomeSlider slides={data.sliderSlides} />
 
       {/* Welcome + Deposit: after banner, before top games */}
