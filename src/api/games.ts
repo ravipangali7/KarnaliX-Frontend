@@ -1,4 +1,4 @@
-import { apiGet, getMediaUrl } from "@/lib/api";
+import { apiGet, apiPost, getMediaUrl } from "@/lib/api";
 import type { ComingSoonShape } from "@/data/homePageMockData";
 
 export interface GameCategory {
@@ -157,4 +157,10 @@ export async function getComingSoonGames(): Promise<ComingSoonShape[]> {
   } catch {
     return [];
   }
+}
+
+/** Enroll current user for a coming-soon game (requires auth). Idempotent. */
+export async function enrollComingSoon(gameId: number): Promise<{ detail: string; enrolled?: boolean }> {
+  const res = await apiPost<{ detail: string; enrolled?: boolean }>("/public/coming-soon-enroll/", { game_id: gameId });
+  return (res as { detail?: string; enrolled?: boolean }) ?? { detail: "Enrolled.", enrolled: true };
 }

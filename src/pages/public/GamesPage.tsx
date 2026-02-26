@@ -52,49 +52,51 @@ const GamesPage = () => {
         <p className="text-sm text-muted-foreground mt-1">Discover {totalCount} exciting games to play and win</p>
       </div>
 
-      {/* Provider filter (above category) - image with irregular shape */}
+      {/* Provider filter (above category) - irregular shape image, single row scroll on mobile */}
       {providers.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pb-1">
-          <span className="text-xs text-muted-foreground mr-1 flex-shrink-0">Provider:</span>
-          <Button
-            variant={providerParam === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilters({ provider: "all", page: 1 })}
-            className={providerParam === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
-          >
-            All
-          </Button>
-          {(providers as GameProvider[]).map((prov) => {
-            const isSelected = providerParam === String(prov.id);
-            const imgUrl = prov.image?.trim() ? getMediaUrl(prov.image.trim()) : undefined;
-            const initial = (prov.name ?? "?").slice(0, 2).toUpperCase();
-            return (
-              <button
-                key={prov.id}
-                type="button"
-                onClick={() => setFilters({ provider: String(prov.id), page: 1 })}
-                className={`flex flex-col items-center gap-1 shrink-0 transition-all rounded-lg border-2 ${isSelected ? "border-primary neon-glow-sm gold-gradient" : "border-border hover:border-primary/50"}`}
-                title={prov.name}
-              >
-                <div
-                  className="h-12 w-12 flex items-center justify-center text-white font-bold text-xs overflow-hidden bg-muted"
-                  style={{ borderRadius: IRREGULAR_SHAPE }}
+        <div className="flex items-center gap-2 pb-1 overflow-hidden">
+          <span className="text-xs text-muted-foreground flex-shrink-0">Provider:</span>
+          <div className="flex flex-1 min-w-0 overflow-x-auto scrollbar-hide gap-2 flex-nowrap">
+            <Button
+              variant={providerParam === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilters({ provider: "all", page: 1 })}
+              className={`flex-shrink-0 ${providerParam === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}`}
+            >
+              All
+            </Button>
+            {(providers as GameProvider[]).map((prov) => {
+              const isSelected = providerParam === String(prov.id);
+              const imgUrl = prov.image?.trim() ? getMediaUrl(prov.image.trim()) : undefined;
+              const initial = (prov.name ?? "?").slice(0, 2).toUpperCase();
+              return (
+                <button
+                  key={prov.id}
+                  type="button"
+                  onClick={() => setFilters({ provider: String(prov.id), page: 1 })}
+                  className={`flex flex-col items-center gap-1 shrink-0 transition-all p-1 ${isSelected ? "ring-2 ring-primary rounded-lg" : "hover:opacity-90 rounded-lg"}`}
+                  title={prov.name}
                 >
-                  {imgUrl ? (
-                    <img
-                      src={imgUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      style={{ borderRadius: IRREGULAR_SHAPE }}
-                    />
-                  ) : (
-                    <span className="text-muted-foreground" style={{ borderRadius: IRREGULAR_SHAPE }}>{initial}</span>
-                  )}
-                </div>
-                <span className="text-xs max-w-14 truncate text-center">{prov.name}</span>
-              </button>
-            );
-          })}
+                  <div
+                    className="h-12 w-12 flex items-center justify-center text-white font-bold text-xs overflow-hidden bg-muted/50"
+                    style={{ borderRadius: IRREGULAR_SHAPE }}
+                  >
+                    {imgUrl ? (
+                      <img
+                        src={imgUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        style={{ borderRadius: IRREGULAR_SHAPE }}
+                      />
+                    ) : (
+                      <span className="text-muted-foreground" style={{ borderRadius: IRREGULAR_SHAPE }}>{initial}</span>
+                    )}
+                  </div>
+                  <span className="text-xs max-w-20 truncate text-center">{prov.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

@@ -81,15 +81,30 @@ const ProviderPage = () => {
             )}
           </div>
         )}
-        <div className="flex flex-wrap items-baseline gap-2">
-          <h1 className="font-gaming font-bold text-2xl neon-text tracking-wide">
-            {providerLoading ? "…" : provider?.name ?? ""}
-          </h1>
-          {provider && (
-            <span className="text-sm text-muted-foreground">
-              {provider.games_count} game{provider.games_count !== 1 ? "s" : ""}
-            </span>
+        <div className="flex flex-wrap items-center gap-3">
+          {provider && (provider.image || provider.banner) && (
+            <div
+              className="h-12 w-12 md:h-14 md:w-14 overflow-hidden flex-shrink-0 bg-muted border border-border"
+              style={{ borderRadius: "60% 40% 50% 50% / 50% 60% 40% 50%" }}
+            >
+              <img
+                src={provider.image || provider.banner}
+                alt=""
+                className="h-full w-full object-cover"
+                style={{ borderRadius: "60% 40% 50% 50% / 50% 60% 40% 50%" }}
+              />
+            </div>
           )}
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h1 className="font-gaming font-bold text-2xl neon-text tracking-wide">
+              {providerLoading ? "…" : provider?.name ?? ""}
+            </h1>
+            {provider && (
+              <span className="text-sm text-muted-foreground">
+                {provider.games_count} game{provider.games_count !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

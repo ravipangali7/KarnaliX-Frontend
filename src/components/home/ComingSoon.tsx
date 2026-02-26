@@ -1,7 +1,11 @@
 import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { comingSoon as defaultComingSoon } from "@/data/homePageMockData";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { enrollComingSoon } from "@/api/games";
+import { toast } from "@/hooks/use-toast";
 import type { ComingSoonShape } from "@/data/homePageMockData";
 
 interface ComingSoonProps {
@@ -10,7 +14,28 @@ interface ComingSoonProps {
 
 export function ComingSoon({ comingSoon: comingSoonProp }: ComingSoonProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const comingSoon = comingSoonProp && comingSoonProp.length > 0 ? comingSoonProp : defaultComingSoon;
+
+  const handleNotifyMe = async (item: ComingSoonShape) => {
+    const gameId = item.id != null ? Number(item.id) : NaN;
+    if (!Number.isInteger(gameId) || gameId <= 0) {
+      toast({ title: "This game cannot be subscribed yet.", variant: "destructive" });
+      return;
+    }
+    if (!user) {
+      navigate("/login");
+      toast({ title: "Please log in to get notified when this game launches." });
+      return;
+    }
+    try {
+      await enrollComingSoon(gameId);
+      toast({ title: "You’re on the list! We’ll notify you when this game is available." });
+    } catch {
+      toast({ title: "Could not subscribe. Try again later.", variant: "destructive" });
+    }
+  };
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -56,7 +81,7 @@ export function ComingSoon({ comingSoon: comingSoonProp }: ComingSoonProps) {
               <div className="p-3">
                 <h3 className="font-semibold text-sm text-foreground">{item.name}</h3>
                 {item.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>}
-                <Button variant="outline" size="sm" className="mt-3 w-full">Notify Me</Button>
+                <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => handleNotifyMe(item)}>Notify Me</Button>
               </div>
             </div>
           ))}

@@ -527,6 +527,33 @@ export async function updateSliderSlideForm(id: number, formData: FormData) {
   return apiPatchForm(`${prefix("powerhouse")}/slider/${id}/`, formData);
 }
 
+// --- Popup ---
+export async function getPopups() {
+  const res = await apiGet(`${prefix("powerhouse")}/popup/`);
+  return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+export async function createPopup(body: { title: string; content?: string; image?: string; cta_label?: string; cta_link?: string; is_active?: boolean; order?: number }) {
+  return apiPost(`${prefix("powerhouse")}/popup/`, body);
+}
+export async function updatePopup(id: number, body: Partial<{ title: string; content: string; image: string; cta_label: string; cta_link: string; is_active: boolean; order: number }>) {
+  return apiPatch(`${prefix("powerhouse")}/popup/${id}/`, body);
+}
+export async function deletePopup(id: number) {
+  return apiDelete(`${prefix("powerhouse")}/popup/${id}/`);
+}
+export async function createPopupForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/popup/`, formData);
+}
+export async function updatePopupForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/popup/${id}/`, formData);
+}
+
+// --- Coming Soon Enrollments (powerhouse view only) ---
+export async function getComingSoonEnrollments() {
+  const res = await apiGet(`${prefix("powerhouse")}/coming-soon-enrollments/`);
+  return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+
 // --- Live Betting (second home) ---
 export async function getLiveBettingSectionsAdmin() {
   const res = await apiGet(`${prefix("powerhouse")}/live-betting-sections/`);

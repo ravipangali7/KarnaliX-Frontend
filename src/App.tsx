@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -17,6 +18,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import GamesPage from "@/pages/public/GamesPage";
 import GameDetailPage from "@/pages/public/GameDetailPage";
 import ProviderPage from "@/pages/public/ProviderPage";
+import ProvidersPage from "@/pages/public/ProvidersPage";
 import BonusPage from "@/pages/public/BonusPage";
 import WalletPage from "@/pages/public/WalletPage";
 import LoginPage from "@/pages/public/LoginPage";
@@ -63,6 +65,8 @@ import PowerhouseBonusRules from "@/pages/admin/PowerhouseBonusRules";
 import PowerhouseSuperSettings from "@/pages/admin/PowerhouseSuperSettings";
 import PowerhouseSiteSettings from "@/pages/admin/PowerhouseSiteSettings";
 import PowerhouseSlider from "@/pages/admin/PowerhouseSlider";
+import PowerhousePopup from "@/pages/admin/PowerhousePopup";
+import PowerhouseComingSoonEnrollments from "@/pages/admin/PowerhouseComingSoonEnrollments";
 import PowerhouseCMS from "@/pages/admin/PowerhouseCMS";
 import PowerhouseTestimonials from "@/pages/admin/PowerhouseTestimonials";
 
@@ -77,6 +81,14 @@ import { GamePlayLayout } from "@/components/layout/GamePlayLayout";
 import GamePlayPage from "@/pages/public/GamePlayPage";
 
 const queryClient = new QueryClient();
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 function HomePageSwitch() {
   if (HOME_PAGE_VARIANT === "second") {
@@ -101,12 +113,14 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
             {/* Public Website */}
             <Route path="/" element={<HomePageSwitch />} />
             <Route element={<PublicLayout />}>
               <Route path="/games" element={<GamesPage />} />
               <Route path="/games/:id" element={<GameDetailPage />} />
+              <Route path="/providers" element={<ProvidersPage />} />
               <Route path="/providers/:id" element={<ProviderPage />} />
             <Route path="/bonus" element={<BonusPage />} />
             <Route path="/wallet" element={<WalletPage />} />
@@ -192,6 +206,8 @@ const App = () => (
               <Route path="/powerhouse/providers" element={<PowerhouseProviders />} />
               <Route path="/powerhouse/games" element={<PowerhouseGames />} />
               <Route path="/powerhouse/slider" element={<PowerhouseSlider />} />
+              <Route path="/powerhouse/popup" element={<PowerhousePopup />} />
+              <Route path="/powerhouse/coming-soon-enrollments" element={<PowerhouseComingSoonEnrollments />} />
               <Route path="/powerhouse/bonus-rules" element={<PowerhouseBonusRules />} />
               <Route path="/powerhouse/game-log" element={<AdminGameLog />} />
               <Route path="/powerhouse/game-log/:id" element={<AdminGameLogDetail />} />
