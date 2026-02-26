@@ -16,12 +16,12 @@ export function GameProviders({ providers: providersProp }: GameProvidersProps) 
         Trusted <span className="gradient-text-gold">Game Providers</span>
       </h2>
       <p className="text-sm text-muted-foreground mb-6">Play games from the best providers in the industry</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
+      <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 flex-nowrap -mx-4 px-4">
         {providers.map((p) => (
           <Link
             key={p.id ?? p.name}
-            to={p.single_game_id != null ? `/games/${p.single_game_id}/play` : p.id != null ? `/providers/${p.id}` : `/games`}
-            className="glass rounded-xl p-4 border border-white/10 flex flex-col items-center gap-2 hover:scale-[1.02] hover:border-primary/30 transition-all"
+            to={p.id != null ? `/providers/${p.id}` : `/games`}
+            className="glass rounded-xl p-4 border border-white/10 flex flex-col items-center gap-2 hover:scale-[1.02] hover:border-primary/30 transition-all shrink-0 min-w-[120px]"
           >
             {/* Circular irregular shape: organic blob via border-radius */}
             <div

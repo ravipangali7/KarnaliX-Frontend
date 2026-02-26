@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { DataTable } from "@/components/shared/DataTable";
+import { Button } from "@/components/ui/button";
 import { getComingSoonEnrollments } from "@/api/admin";
 
 type EnrollmentRow = {
@@ -26,6 +28,17 @@ const PowerhouseComingSoonEnrollments = () => {
       header: "Enrolled",
       accessor: (row: EnrollmentRow & { id: string }) =>
         row.created_at ? new Date(row.created_at).toLocaleString() : "—",
+    },
+    {
+      header: "User detail",
+      accessor: (row: EnrollmentRow & { id: string }) =>
+        row.user != null ? (
+          <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+            <Link to={`/powerhouse/players/${row.user}/report`}>View</Link>
+          </Button>
+        ) : (
+          "—"
+        ),
     },
   ];
 

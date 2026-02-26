@@ -1,18 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
 import { Home, Gamepad2, Building2, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
 
 export const MobileNav = () => {
   const location = useLocation();
-  const { user } = useAuth();
-  const profilePath = user?.role === "player" ? "/player/profile" : "/login";
 
   const items = [
     { label: "Home", path: "/", icon: Home },
     { label: "Games", path: "/games", icon: Gamepad2 },
     { label: "Provider", path: "/providers", icon: Building2 },
-    { label: "Profile", path: profilePath, icon: User },
+    { label: "Profile", path: "/player", icon: User },
   ];
 
   return (
@@ -22,7 +19,9 @@ export const MobileNav = () => {
           const isActive =
             item.path === "/providers"
               ? location.pathname.startsWith("/providers")
-              : location.pathname === item.path;
+              : item.path === "/player"
+                ? location.pathname.startsWith("/player")
+                : location.pathname === item.path;
           const Icon = item.icon;
           return (
             <Link
