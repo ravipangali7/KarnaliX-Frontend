@@ -44,10 +44,10 @@ const ProvidersPage = () => {
             <Link
               key={prov.id}
               to={`/providers/${prov.id}`}
-              className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-muted/30 transition-all group"
+              className="flex flex-col items-center gap-3 p-4 rounded-xl transition-all group focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
             >
               <div
-                className="h-20 w-20 flex items-center justify-center text-white font-bold text-lg overflow-hidden bg-muted/50"
+                className="h-20 w-20 flex items-center justify-center text-white font-bold text-lg overflow-hidden"
                 style={{ borderRadius: IRREGULAR_SHAPE }}
               >
                 {imgUrl ? (

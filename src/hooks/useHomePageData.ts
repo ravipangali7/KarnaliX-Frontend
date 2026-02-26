@@ -241,11 +241,13 @@ export function useHomePageData(): {
   const providersMapped: ProviderShape[] =
     providers.length > 0
       ? (providers as GameProvider[]).map((p, i) => ({
+          id: p.id,
           name: p.name,
           logo: (p.code ?? p.name.slice(0, 2).toUpperCase()).slice(0, 2),
           logoImage: p.image?.trim() ? getMediaUrl(p.image.trim()) : undefined,
           games: providerGamesCount[p.id] ?? 0,
           color: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
+          single_game_id: p.single_game_id ?? undefined,
         }))
       : defaultProviders;
 

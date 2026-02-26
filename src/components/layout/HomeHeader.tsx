@@ -1,10 +1,32 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Menu, X, Bell, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { liveOddsTicker } from "@/data/homePageMockData";
+import { getSiteSetting, getLiveBettingSections } from "@/api/site";
+import { getMediaUrl } from "@/lib/api";
+import { liveOddsTicker as defaultLiveOddsTicker } from "@/data/homePageMockData";
 import { cn } from "@/lib/utils";
+
+type TickerRow = { home: string; away: string; odds1: string; odds2: string; live?: boolean };
+
+function mapLiveBettingToTickerRows(sections: { events?: { team1: string; team2: string; odds?: number[]; is_live?: boolean }[] }[]): TickerRow[] {
+  const rows: TickerRow[] = [];
+  for (const section of sections) {
+    for (const ev of section.events ?? []) {
+      const odds = ev.odds ?? [];
+      rows.push({
+        home: ev.team1,
+        away: ev.team2,
+        odds1: odds[0] != null ? String(odds[0]) : "",
+        odds2: odds[1] != null ? String(odds[1]) : "",
+        live: ev.is_live,
+      });
+    }
+  }
+  return rows;
+}
 
 const navItems = [
   { label: "Home", path: "/" },
@@ -31,6 +53,18 @@ export const HomeHeader = () => {
   const messagesPath = isLoggedIn ? `${dashboardPath}/messages` : "/login";
   const walletBalance = user?.total_balance != null ? `₹${Number(user.total_balance).toLocaleString()}` : "₹0.00";
 
+  const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  const { data: liveBettingSections = [] } = useQuery({ queryKey: ["liveBettingSections"], queryFn: getLiveBettingSections });
+  const tickerRows: TickerRow[] = useMemo(() => {
+    const fromApi = mapLiveBettingToTickerRows(liveBettingSections);
+    return fromApi.length > 0 ? fromApi : defaultLiveOddsTicker;
+  }, [liveBettingSections]);
+
+  const logoUrl = (siteSetting as { logo?: string } | undefined)?.logo?.trim()
+    ? getMediaUrl((siteSetting as { logo: string }).logo.trim())
+    : "/karnali-logo.png";
+  const siteName = (siteSetting as { name?: string } | undefined)?.name?.trim() || "KarnaliX";
+
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -42,10 +76,8 @@ export const HomeHeader = () => {
       <div className="container flex flex-col">
         <div className="flex items-center justify-between h-14 px-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              <span className="font-gaming font-bold text-white text-xs">KX</span>
-            </div>
-            <span className="font-gaming font-bold text-lg gradient-text tracking-tight hidden sm:inline">KarnaliX</span>
+            <img src={logoUrl} alt={siteName} className="h-8 rounded-lg object-contain" />
+            {/* <span className="font-gaming font-bold text-lg gradient-text tracking-tight hidden sm:inline">{siteName}</span> */}
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
@@ -131,7 +163,7 @@ export const HomeHeader = () => {
         {/* Live odds ticker */}
         <div className="h-9 border-t border-white/10 overflow-hidden bg-card/40">
           <div className="flex animate-ticker w-max py-1.5">
-            {[...liveOddsTicker, ...liveOddsTicker].map((row, i) => (
+            {[...tickerRows, ...tickerRows].map((row, i) => (
               <div key={i} className="flex items-center gap-4 px-6 shrink-0 text-xs text-muted-foreground">
                 {row.live && (
                   <span className="flex items-center gap-1 text-green-400 font-medium">

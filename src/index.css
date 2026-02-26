@@ -13,6 +13,20 @@ body {
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Utility: hide scrollbar on an element while keeping scroll behavior (use with overflow-auto/overflow-x-auto) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
 }
 
 @layer base {
@@ -291,13 +305,6 @@ body::-webkit-scrollbar {
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
   }
   .text-glow {
     text-shadow: 0 0 10px hsl(220 90% 56% / 0.5), 0 0 20px hsl(270 85% 60% / 0.3);

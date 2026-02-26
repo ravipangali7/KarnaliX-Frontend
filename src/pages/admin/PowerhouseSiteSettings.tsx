@@ -6,10 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSettingsAdmin, updateSiteSettings, updateSiteSettingsForm, getLiveBettingSectionsAdmin, createLiveBettingSection, updateLiveBettingSection, deleteLiveBettingSection, createLiveBettingEvent, updateLiveBettingEvent, deleteLiveBettingEvent } from "@/api/admin";
+import {
+  getSiteSettingsAdmin,
+  updateSiteSettings,
+  updateSiteSettingsForm,
+  getLiveBettingSectionsAdmin,
+  createLiveBettingSection,
+  updateLiveBettingSection,
+  deleteLiveBettingSection,
+  createLiveBettingEvent,
+  updateLiveBettingEvent,
+  deleteLiveBettingEvent,
+} from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { getMediaUrl } from "@/lib/api";
-import { ChevronUp, ChevronDown, Trash2, Plus, ChevronRight, Tag, Box, Gamepad2, Gift, FileText, Star, Settings } from "lucide-react";
+import { ChevronUp, ChevronDown, Trash2, Plus, ChevronRight } from "lucide-react";
 
 export interface LiveBettingEventAdmin {
   id: number;
@@ -41,29 +52,42 @@ export interface PromoBannerSlide {
 
 const PowerhouseSiteSettings = () => {
   const queryClient = useQueryClient();
-  const { data: siteSettings } = useQuery({ queryKey: ["admin-site-settings"], queryFn: getSiteSettingsAdmin });
+  const { data: siteSettings } = useQuery({
+    queryKey: ["admin-site-settings"],
+    queryFn: getSiteSettingsAdmin,
+  });
   const [name, setName] = useState("");
   const [logo, setLogo] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [favicon, setFavicon] = useState("");
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [faviconPreviewUrl, setFaviconPreviewUrl] = useState<string | null>(null);
   const [phone1, setPhone1] = useState("");
   const [phone2, setPhone2] = useState("");
   const [email1, setEmail1] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [heroTitle, setHeroTitle] = useState("");
   const [heroSubtitle, setHeroSubtitle] = useState("");
+  const [activePlayers, setActivePlayers] = useState("");
+  const [gamesAvailable, setGamesAvailable] = useState("");
+  const [totalWinnings, setTotalWinnings] = useState("");
+  const [instantPayouts, setInstantPayouts] = useState("");
   const [footerDescription, setFooterDescription] = useState("");
   const [promoBanners, setPromoBanners] = useState<PromoBannerSlide[]>([]);
   const [saving, setSaving] = useState(false);
-  const { data: liveBettingSectionsApi = [], refetch: refetchLiveBetting } = useQuery({
+
+  const { data: liveBettingSectionsApi = [] } = useQuery({
     queryKey: ["admin-live-betting-sections"],
     queryFn: getLiveBettingSectionsAdmin,
   });
-  const liveBettingSections = (liveBettingSectionsApi as LiveBettingSectionAdmin[]).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const liveBettingSections = (liveBettingSectionsApi as LiveBettingSectionAdmin[]).sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+  );
   const [liveBettingSaving, setLiveBettingSaving] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [addingEventSectionId, setAddingEventSectionId] = useState<number | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!logoFile) {
@@ -76,26 +100,62 @@ const PowerhouseSiteSettings = () => {
   }, [logoFile]);
 
   useEffect(() => {
+    if (!faviconFile) {
+      setFaviconPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(faviconFile);
+    setFaviconPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [faviconFile]);
+
+  useEffect(() => {
     const s = (siteSettings ?? {}) as Record<string, unknown>;
     const phones = (s.phones as string[]) ?? [];
     const emails = (s.emails as string[]) ?? [];
     setName(String(s.name ?? ""));
     setLogo(String(s.logo ?? ""));
+    setFavicon(String(s.favicon ?? ""));
     setPhone1(phones[0] ?? "");
     setPhone2(phones[1] ?? "");
     setEmail1(emails[0] ?? "");
     setWhatsappNumber(String(s.whatsapp_number ?? ""));
     setHeroTitle(String(s.hero_title ?? ""));
     setHeroSubtitle(String(s.hero_subtitle ?? ""));
+    setActivePlayers(s.active_players != null ? String(s.active_players) : "");
+    setGamesAvailable(s.games_available != null ? String(s.games_available) : "");
+    setTotalWinnings(s.total_winnings != null ? String(s.total_winnings) : "");
+    setInstantPayouts(s.instant_payouts != null ? String(s.instant_payouts) : "");
     setFooterDescription(String(s.footer_description ?? ""));
     const banners = s.promo_banners as PromoBannerSlide[] | undefined;
     setPromoBanners(Array.isArray(banners) ? banners.map((b) => ({ ...b })) : []);
   }, [siteSettings]);
 
+  const buildPayload = () => {
+    const a = activePlayers.trim();
+    const g = gamesAvailable.trim();
+    const t = totalWinnings.trim();
+    const i = instantPayouts.trim();
+    return {
+      name: name.trim(),
+      phones: [phone1.trim(), phone2.trim()].filter(Boolean),
+      emails: [email1.trim()].filter(Boolean),
+      whatsapp_number: whatsappNumber.trim(),
+      hero_title: heroTitle.trim(),
+      hero_subtitle: heroSubtitle.trim(),
+      active_players: a ? parseInt(a, 10) : 0,
+      games_available: g ? parseInt(g, 10) : 0,
+      total_winnings: t ? t : "0",
+      instant_payouts: i ? parseInt(i, 10) : 0,
+      footer_description: footerDescription.trim(),
+      promo_banners: promoBanners,
+    };
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      if (logoFile) {
+      if (logoFile || faviconFile) {
         const formData = new FormData();
         formData.set("name", name.trim());
         formData.set("phone1", phone1.trim());
@@ -106,20 +166,15 @@ const PowerhouseSiteSettings = () => {
         formData.set("hero_subtitle", heroSubtitle.trim());
         formData.set("footer_description", footerDescription.trim());
         formData.set("promo_banners", JSON.stringify(promoBanners));
-        formData.set("logo", logoFile);
+        formData.set("active_players", activePlayers.trim());
+        formData.set("games_available", gamesAvailable.trim());
+        formData.set("total_winnings", totalWinnings.trim());
+        formData.set("instant_payouts", instantPayouts.trim());
+        if (logoFile) formData.set("logo", logoFile);
+        if (faviconFile) formData.set("favicon", faviconFile);
         await updateSiteSettingsForm(formData);
       } else {
-        await updateSiteSettings({
-          name: name.trim(),
-          logo: logo.trim() || null,
-          phones: [phone1.trim(), phone2.trim()].filter(Boolean),
-          emails: [email1.trim()].filter(Boolean),
-          whatsapp_number: whatsappNumber.trim(),
-          hero_title: heroTitle.trim(),
-          hero_subtitle: heroSubtitle.trim(),
-          footer_description: footerDescription.trim(),
-          promo_banners: promoBanners,
-        });
+        await updateSiteSettings(buildPayload());
       }
       queryClient.invalidateQueries({ queryKey: ["admin-site-settings"] });
       queryClient.invalidateQueries({ queryKey: ["siteSetting"] });
@@ -140,8 +195,7 @@ const PowerhouseSiteSettings = () => {
       queryClient.invalidateQueries({ queryKey: ["liveBettingSections"] });
       toast({ title: "Section added." });
     } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to add section";
-      toast({ title: msg, variant: "destructive" });
+      toast({ title: (e as { detail?: string })?.detail ?? "Failed", variant: "destructive" });
     } finally {
       setLiveBettingSaving(false);
     }
@@ -156,8 +210,7 @@ const PowerhouseSiteSettings = () => {
       setEditingSectionId(null);
       toast({ title: "Section updated." });
     } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to update";
-      toast({ title: msg, variant: "destructive" });
+      toast({ title: (e as { detail?: string })?.detail ?? "Failed", variant: "destructive" });
     } finally {
       setLiveBettingSaving(false);
     }
@@ -174,14 +227,24 @@ const PowerhouseSiteSettings = () => {
       setAddingEventSectionId(null);
       toast({ title: "Section deleted." });
     } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to delete";
-      toast({ title: msg, variant: "destructive" });
+      toast({ title: (e as { detail?: string })?.detail ?? "Failed", variant: "destructive" });
     } finally {
       setLiveBettingSaving(false);
     }
   };
 
-  const handleLiveBettingAddEvent = async (sectionId: number, data: { team1: string; team2: string; sport?: string; event_date?: string; event_time?: string; odds?: number[]; is_live?: boolean }) => {
+  const handleLiveBettingAddEvent = async (
+    sectionId: number,
+    data: {
+      team1: string;
+      team2: string;
+      sport?: string;
+      event_date?: string;
+      event_time?: string;
+      odds?: number[];
+      is_live?: boolean;
+    }
+  ) => {
     setLiveBettingSaving(true);
     try {
       await createLiveBettingEvent({ section: sectionId, ...data });
@@ -190,8 +253,7 @@ const PowerhouseSiteSettings = () => {
       setAddingEventSectionId(null);
       toast({ title: "Event added." });
     } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to add event";
-      toast({ title: msg, variant: "destructive" });
+      toast({ title: (e as { detail?: string })?.detail ?? "Failed", variant: "destructive" });
     } finally {
       setLiveBettingSaving(false);
     }
@@ -206,8 +268,7 @@ const PowerhouseSiteSettings = () => {
       setEditingEventId(null);
       toast({ title: "Event updated." });
     } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to update";
-      toast({ title: msg, variant: "destructive" });
+      toast({ title: (e as { detail?: string })?.detail ?? "Failed", variant: "destructive" });
     } finally {
       setLiveBettingSaving(false);
     }
@@ -223,132 +284,190 @@ const PowerhouseSiteSettings = () => {
       setEditingEventId(null);
       toast({ title: "Event deleted." });
     } catch (e) {
-      const msg = (e as { detail?: string })?.detail ?? "Failed to delete";
-      toast({ title: msg, variant: "destructive" });
+      toast({ title: (e as { detail?: string })?.detail ?? "Failed", variant: "destructive" });
     } finally {
       setLiveBettingSaving(false);
     }
   };
 
-  const quickLinks = [
-    { label: "Categories", path: "/powerhouse/categories", icon: Tag },
-    { label: "Providers", path: "/powerhouse/providers", icon: Box },
-    { label: "Games", path: "/powerhouse/games", icon: Gamepad2 },
-    { label: "Bonus Rules", path: "/powerhouse/bonus-rules", icon: Gift },
-    { label: "CMS Pages", path: "/powerhouse/cms", icon: FileText },
-    { label: "Testimonials", path: "/powerhouse/testimonials", icon: Star },
-    { label: "Super Settings", path: "/powerhouse/super-settings", icon: Settings },
-  ];
-
   return (
-    <div className="space-y-4 max-w-lg">
+    <div className="w-full max-w-5xl mx-auto space-y-6 pb-10">
+      <div className="flex flex-col gap-1">
+        <h1 className="font-display font-bold text-2xl tracking-tight">Site Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Branding, contact, hero, stats, footer and promo banners. Slider slides:{" "}
+          <Link to="/powerhouse/slider" className="text-primary underline">Slider</Link>. CMS:{" "}
+          <Link to="/powerhouse/cms" className="text-primary underline">CMS Pages</Link>.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Branding */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-display">Branding</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Site name</label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. KarnaliX" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Logo</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
+                onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+              />
+              {(logoPreviewUrl || (logo && logo.trim())) && (
+                <div className="mt-2 rounded-lg border overflow-hidden bg-muted/30 w-24 h-24">
+                  <img src={logoPreviewUrl ?? getMediaUrl(logo.trim())} alt="Logo" className="w-full h-full object-contain" />
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Favicon</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
+                onChange={(e) => setFaviconFile(e.target.files?.[0] ?? null)}
+              />
+              {(faviconPreviewUrl || (favicon && favicon.trim())) && (
+                <div className="mt-2 rounded-lg border overflow-hidden bg-muted/30 w-12 h-12">
+                  <img src={faviconPreviewUrl ?? getMediaUrl(favicon.trim())} alt="Favicon" className="w-full h-full object-contain" />
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-display">Contact</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Phone 1</label>
+              <Input value={phone1} onChange={(e) => setPhone1(e.target.value)} placeholder="+977 ..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Phone 2</label>
+              <Input value={phone2} onChange={(e) => setPhone2(e.target.value)} placeholder="Optional" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Email</label>
+              <Input type="email" value={email1} onChange={(e) => setEmail1(e.target.value)} placeholder="support@..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">WhatsApp number</label>
+              <Input value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="+977 ..." />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Hero */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-display">Hero section</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Hero title</label>
+              <Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Main headline" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Hero subtitle</label>
+              <Input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} placeholder="Supporting line" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats (home / hero stats) */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-display">Stats (home page)</CardTitle>
+            <p className="text-xs text-muted-foreground">Shown on hero or home. Leave empty to use defaults.</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Active players</label>
+              <Input type="number" min={0} value={activePlayers} onChange={(e) => setActivePlayers(e.target.value)} placeholder="e.g. 50000" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Games available</label>
+              <Input type="number" min={0} value={gamesAvailable} onChange={(e) => setGamesAvailable(e.target.value)} placeholder="e.g. 500" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Total winnings (₹)</label>
+              <Input value={totalWinnings} onChange={(e) => setTotalWinnings(e.target.value)} placeholder="e.g. 10000000" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Instant payouts</label>
+              <Input value={instantPayouts} onChange={(e) => setInstantPayouts(e.target.value)} placeholder="e.g. 24/7" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Footer */}
       <Card>
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-display">Manage content</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Footer</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-2">
-          <p className="text-xs text-muted-foreground mb-3">Quick links to listing and manage each section.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {quickLinks.map((item) => (
-              <Link key={item.path} to={item.path}>
-                <Button type="button" variant="outline" className="w-full justify-start gap-2 h-9 text-sm">
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
-                  {item.label}
-                </Button>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-      <h2 className="font-display font-bold text-xl">Site Settings</h2>
-      <Card>
-        <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-display">General</CardTitle></CardHeader>
-        <CardContent className="p-4 pt-2 space-y-3">
-          <div><label className="text-xs text-muted-foreground">Site Name</label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Logo (upload image)</label>
-            <input
-              type="file"
-              accept="image/*"
-              className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
-              onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
-            />
-            {(logoPreviewUrl || (logo && logo.trim())) && (
-              <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-20 h-20">
-                <img
-                  src={logoPreviewUrl ?? getMediaUrl(logo.trim())}
-                  alt="Logo"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
-          </div>
+        <CardContent>
+          <label className="text-sm font-medium mb-1.5 block">Footer description / tagline</label>
+          <Textarea value={footerDescription} onChange={(e) => setFooterDescription(e.target.value)} rows={2} placeholder="Short tagline under logo" />
         </CardContent>
       </Card>
 
+      {/* Promo banners (SiteSetting only; slider slides are on /powerhouse/slider) */}
       <Card>
-        <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-display">Contact</CardTitle></CardHeader>
-        <CardContent className="p-4 pt-2 space-y-3">
-          <div><label className="text-xs text-muted-foreground">Phone 1</label><Input value={phone1} onChange={(e) => setPhone1(e.target.value)} /></div>
-          <div><label className="text-xs text-muted-foreground">Phone 2</label><Input value={phone2} onChange={(e) => setPhone2(e.target.value)} /></div>
-          <div><label className="text-xs text-muted-foreground">Email</label><Input value={email1} onChange={(e) => setEmail1(e.target.value)} /></div>
-          <div><label className="text-xs text-muted-foreground">WhatsApp</label><Input value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} /></div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-display">Hero Section</CardTitle></CardHeader>
-        <CardContent className="p-4 pt-2 space-y-3">
-          <div><label className="text-xs text-muted-foreground">Hero Title</label><Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} /></div>
-          <div><label className="text-xs text-muted-foreground">Hero Subtitle</label><Input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} /></div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-display">Slider / Promo Banners</CardTitle>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-base font-display">Promo banners</CardTitle>
           <Button type="button" size="sm" variant="outline" onClick={() => setPromoBanners((p) => [...p, { title: "", subtitle: "", image: "", cta_label: "Join Now", cta_link: "/register" }])}>
-            <Plus className="h-4 w-4 mr-1" /> Add slide
+            <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
         </CardHeader>
-        <CardContent className="p-4 pt-2 space-y-4">
-          {promoBanners.length === 0 && <p className="text-xs text-muted-foreground">No slides. Add a slide to show on the second home page slider.</p>}
+        <CardContent className="space-y-4">
+          {promoBanners.length === 0 && <p className="text-sm text-muted-foreground">No promo slides. Add one to show on the home layout.</p>}
           {promoBanners.map((slide, i) => (
-            <div key={i} className="rounded-lg border border-border p-3 space-y-2">
+            <div key={i} className="rounded-lg border p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Slide {i + 1}</span>
+                <span className="text-sm font-medium text-muted-foreground">Slide {i + 1}</span>
                 <div className="flex gap-1">
                   <Button type="button" size="icon" variant="ghost" className="h-8 w-8" disabled={i === 0} onClick={() => setPromoBanners((p) => { const n = [...p]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; return n; })}><ChevronUp className="h-4 w-4" /></Button>
                   <Button type="button" size="icon" variant="ghost" className="h-8 w-8" disabled={i === promoBanners.length - 1} onClick={() => setPromoBanners((p) => { const n = [...p]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; return n; })}><ChevronDown className="h-4 w-4" /></Button>
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setPromoBanners((p) => p.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setPromoBanners((p) => p.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </div>
-              <div><label className="text-xs text-muted-foreground">Title</label><Input value={slide.title ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], title: e.target.value }; return n; })} placeholder="e.g. CRICKET CHAMPIONSHIP" /></div>
-              <div><label className="text-xs text-muted-foreground">Subtitle</label><Input value={slide.subtitle ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], subtitle: e.target.value }; return n; })} placeholder="Join now and enjoy..." /></div>
-              <div><label className="text-xs text-muted-foreground">Image (path or URL)</label><Input value={slide.image ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], image: e.target.value }; return n; })} placeholder="Optional" /></div>
-              <div><label className="text-xs text-muted-foreground">CTA Label</label><Input value={slide.cta_label ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], cta_label: e.target.value }; return n; })} placeholder="Join Now" /></div>
-              <div><label className="text-xs text-muted-foreground">CTA Link</label><Input value={slide.cta_link ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], cta_link: e.target.value }; return n; })} placeholder="/register" /></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><label className="text-xs text-muted-foreground">Title</label><Input value={slide.title ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], title: e.target.value }; return n; })} placeholder="Title" /></div>
+                <div><label className="text-xs text-muted-foreground">Subtitle</label><Input value={slide.subtitle ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], subtitle: e.target.value }; return n; })} placeholder="Subtitle" /></div>
+                <div><label className="text-xs text-muted-foreground">Image URL</label><Input value={slide.image ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], image: e.target.value }; return n; })} placeholder="Optional" /></div>
+                <div><label className="text-xs text-muted-foreground">CTA label</label><Input value={slide.cta_label ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], cta_label: e.target.value }; return n; })} placeholder="Join Now" /></div>
+                <div className="sm:col-span-2"><label className="text-xs text-muted-foreground">CTA link</label><Input value={slide.cta_link ?? ""} onChange={(e) => setPromoBanners((p) => { const n = [...p]; n[i] = { ...n[i], cta_link: e.target.value }; return n; })} placeholder="/register" /></div>
+              </div>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      <p className="text-sm text-muted-foreground">
-        Manage second home slider slides on the <Link to="/powerhouse/slider" className="text-primary underline">Slider</Link> page.
-      </p>
-
+      {/* Live Betting (header ticker + second home) – only managed here */}
       <Card>
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-display">Live Betting (second home)</CardTitle>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-base font-display">Live betting / ticker</CardTitle>
           <Button type="button" size="sm" variant="outline" onClick={handleLiveBettingAddSection} disabled={liveBettingSaving}>
             <Plus className="h-4 w-4 mr-1" /> Add section
           </Button>
         </CardHeader>
-        <CardContent className="p-4 pt-2 space-y-4">
-          <p className="text-xs text-muted-foreground">Sections and events shown in the Live Betting block on the second home page. When empty, mock data is shown.</p>
-          {liveBettingSections.length === 0 && <p className="text-xs text-muted-foreground">No sections. Add a section (e.g. Cricket, Football) then add events.</p>}
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">Events appear in the header ticker and on the second home page. When empty, mock data is shown.</p>
+          {liveBettingSections.length === 0 && <p className="text-sm text-muted-foreground">No sections. Add a section (e.g. Cricket), then add events (team1 vs team2, odds).</p>}
           {liveBettingSections.map((sec) => (
-            <div key={sec.id} className="rounded-lg border border-border p-3 space-y-2">
+            <div key={sec.id} className="rounded-lg border p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 {editingSectionId === sec.id ? (
                   <div className="flex gap-2 flex-1">
@@ -358,55 +477,61 @@ const PowerhouseSiteSettings = () => {
                   </div>
                 ) : (
                   <>
-                    <span className="text-sm font-medium flex items-center gap-1">
-                      <ChevronRight className="h-4 w-4" /> {sec.title || "(No title)"}
-                    </span>
+                    <span className="text-sm font-medium flex items-center gap-1"><ChevronRight className="h-4 w-4" /> {sec.title || "(No title)"}</span>
                     <div className="flex gap-1">
                       <Button size="sm" variant="ghost" onClick={() => setEditingSectionId(sec.id)}>Edit</Button>
-                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleLiveBettingDeleteSection(sec.id)} disabled={liveBettingSaving}>Delete</Button>
+                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleLiveBettingDeleteSection(sec.id)} disabled={liveBettingSaving}>Delete</Button>
                       <Button size="sm" variant="outline" onClick={() => setAddingEventSectionId(addingEventSectionId === sec.id ? null : sec.id)}><Plus className="h-3 w-3 mr-1" /> Event</Button>
                     </div>
                   </>
                 )}
               </div>
               {addingEventSectionId === sec.id && (
-                <div className="rounded bg-muted/50 p-2 space-y-2 text-sm">
+                <div className="rounded bg-muted/50 p-3 space-y-2 text-sm">
                   <div className="grid grid-cols-2 gap-2">
                     <Input id={`lb-ev-team1-${sec.id}`} placeholder="Team 1" />
                     <Input id={`lb-ev-team2-${sec.id}`} placeholder="Team 2" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <Input id={`lb-ev-sport-${sec.id}`} placeholder="Sport (optional)" />
-                    <Input id={`lb-ev-date-${sec.id}`} placeholder="Date e.g. 19 Mar 2026" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input id={`lb-ev-time-${sec.id}`} placeholder="Time e.g. 23:00" />
                     <Input id={`lb-ev-odds-${sec.id}`} placeholder="Odds e.g. 1.92,1.92,2.1" />
                   </div>
                   <div className="flex gap-2 items-center">
                     <label className="flex items-center gap-1 text-xs"><input type="checkbox" id={`lb-ev-live-${sec.id}`} /> Live</label>
-                    <Button size="sm" onClick={() => { const t1 = (document.getElementById(`lb-ev-team1-${sec.id}`) as HTMLInputElement)?.value?.trim(); const t2 = (document.getElementById(`lb-ev-team2-${sec.id}`) as HTMLInputElement)?.value?.trim(); if (!t1 || !t2) { toast({ title: "Team 1 and Team 2 required", variant: "destructive" }); return; } const oddsStr = (document.getElementById(`lb-ev-odds-${sec.id}`) as HTMLInputElement)?.value?.trim(); const odds = oddsStr ? oddsStr.split(",").map((n) => parseFloat(n.trim())).filter((n) => !Number.isNaN(n)) : []; handleLiveBettingAddEvent(sec.id, { team1: t1, team2: t2, sport: (document.getElementById(`lb-ev-sport-${sec.id}`) as HTMLInputElement)?.value?.trim() || undefined, event_date: (document.getElementById(`lb-ev-date-${sec.id}`) as HTMLInputElement)?.value?.trim() || undefined, event_time: (document.getElementById(`lb-ev-time-${sec.id}`) as HTMLInputElement)?.value?.trim() || undefined, odds: odds.length ? odds : undefined, is_live: (document.getElementById(`lb-ev-live-${sec.id}`) as HTMLInputElement)?.checked }); }}>Add event</Button>
+                    <Button size="sm" onClick={() => {
+                      const t1 = (document.getElementById(`lb-ev-team1-${sec.id}`) as HTMLInputElement)?.value?.trim();
+                      const t2 = (document.getElementById(`lb-ev-team2-${sec.id}`) as HTMLInputElement)?.value?.trim();
+                      if (!t1 || !t2) { toast({ title: "Team 1 and Team 2 required", variant: "destructive" }); return; }
+                      const oddsStr = (document.getElementById(`lb-ev-odds-${sec.id}`) as HTMLInputElement)?.value?.trim();
+                      const odds = oddsStr ? oddsStr.split(",").map((n) => parseFloat(n.trim())).filter((n) => !Number.isNaN(n)) : [];
+                      handleLiveBettingAddEvent(sec.id, { team1: t1, team2: t2, odds: odds.length ? odds : undefined, is_live: (document.getElementById(`lb-ev-live-${sec.id}`) as HTMLInputElement)?.checked });
+                    }}>Add event</Button>
                     <Button size="sm" variant="outline" onClick={() => setAddingEventSectionId(null)}>Cancel</Button>
                   </div>
                 </div>
               )}
-              <ul className="text-xs space-y-1 pl-4">
+              <ul className="text-sm space-y-1 pl-2">
                 {(sec.events ?? []).map((ev) => (
-                  <li key={ev.id} className="flex items-center justify-between gap-2 py-1 border-b border-border/50 last:border-0">
+                  <li key={ev.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-border/50 last:border-0">
                     {editingEventId === ev.id ? (
                       <div className="flex flex-wrap gap-2 items-center flex-1">
-                        <Input id={`lb-ed-team1-${ev.id}`} defaultValue={ev.team1} placeholder="Team 1" className="w-24" />
-                        <Input id={`lb-ed-team2-${ev.id}`} defaultValue={ev.team2} placeholder="Team 2" className="w-24" />
-                        <Input id={`lb-ed-odds-${ev.id}`} defaultValue={ev.odds?.join(", ")} placeholder="Odds" className="w-28" />
-                        <Button size="sm" onClick={() => { const t1 = (document.getElementById(`lb-ed-team1-${ev.id}`) as HTMLInputElement)?.value; const t2 = (document.getElementById(`lb-ed-team2-${ev.id}`) as HTMLInputElement)?.value; const o = (document.getElementById(`lb-ed-odds-${ev.id}`) as HTMLInputElement)?.value; handleLiveBettingUpdateEvent(ev.id, { team1: t1, team2: t2, odds: o ? o.split(",").map((n) => parseFloat(n.trim())).filter((n) => !Number.isNaN(n)) : [] }); }}>Save</Button>
+                        <Input id={`lb-ed-team1-${ev.id}`} defaultValue={ev.team1} placeholder="Team 1" className="w-28" />
+                        <Input id={`lb-ed-team2-${ev.id}`} defaultValue={ev.team2} placeholder="Team 2" className="w-28" />
+                        <Input id={`lb-ed-odds-${ev.id}`} defaultValue={ev.odds?.join(", ")} placeholder="Odds" className="w-32" />
+                        <Button size="sm" onClick={() => {
+                          const t1 = (document.getElementById(`lb-ed-team1-${ev.id}`) as HTMLInputElement)?.value;
+                          const t2 = (document.getElementById(`lb-ed-team2-${ev.id}`) as HTMLInputElement)?.value;
+                          const o = (document.getElementById(`lb-ed-odds-${ev.id}`) as HTMLInputElement)?.value;
+                          handleLiveBettingUpdateEvent(ev.id, { team1: t1, team2: t2, odds: o ? o.split(",").map((n) => parseFloat(n.trim())).filter((n) => !Number.isNaN(n)) : [] });
+                        }}>Save</Button>
                         <Button size="sm" variant="outline" onClick={() => setEditingEventId(null)}>Cancel</Button>
                       </div>
                     ) : (
                       <>
-                        <span>{ev.team1} vs {ev.team2} {ev.event_date && `(${ev.event_date} ${ev.event_time ?? ""})`} {ev.is_live && "(Live)"}</span>
+                        <span>{ev.team1} vs {ev.team2} {ev.is_live && "(Live)"}</span>
                         <div className="flex gap-1">
-                          <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setEditingEventId(ev.id)}>Edit</Button>
-                          <Button size="sm" variant="ghost" className="h-6 text-xs text-destructive" onClick={() => handleLiveBettingDeleteEvent(ev.id)}>Delete</Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingEventId(ev.id)}>Edit</Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => handleLiveBettingDeleteEvent(ev.id)}>Delete</Button>
                         </div>
                       </>
                     )}
@@ -418,14 +543,9 @@ const PowerhouseSiteSettings = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-display">Footer</CardTitle></CardHeader>
-        <CardContent className="p-4 pt-2 space-y-3">
-          <div><label className="text-xs text-muted-foreground">Footer Description</label><Textarea value={footerDescription} onChange={(e) => setFooterDescription(e.target.value)} rows={2} /></div>
-        </CardContent>
-      </Card>
-
-      <Button className="gold-gradient text-primary-foreground font-display w-full" onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save Settings"}</Button>
+      <Button className="w-full max-w-xs font-display" size="lg" onClick={handleSave} disabled={saving}>
+        {saving ? "Saving…" : "Save all settings"}
+      </Button>
     </div>
   );
 };

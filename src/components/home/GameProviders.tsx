@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { providers as defaultProviders } from "@/data/homePageMockData";
-import { cn } from "@/lib/utils";
 import type { ProviderShape } from "@/data/homePageMockData";
 
 interface GameProvidersProps {
@@ -21,14 +20,11 @@ export function GameProviders({ providers: providersProp }: GameProvidersProps) 
           <Link
             key={p.id ?? p.name}
             to={p.id != null ? `/providers/${p.id}` : `/games`}
-            className="glass rounded-xl p-4 border border-white/10 flex flex-col items-center gap-2 hover:scale-[1.02] hover:border-primary/30 transition-all shrink-0 min-w-[120px]"
+            className="p-4 flex flex-col items-center gap-2 hover:scale-[1.02] transition-all shrink-0 min-w-[120px] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
           >
             {/* Circular irregular shape: organic blob via border-radius */}
             <div
-              className={cn(
-                "h-14 w-14 bg-gradient-to-br flex items-center justify-center text-white font-bold text-sm overflow-hidden",
-                p.color
-              )}
+              className="h-14 w-14 flex items-center justify-center text-white font-bold text-sm overflow-hidden"
               style={{
                 borderRadius: "60% 40% 50% 50% / 50% 60% 40% 50%",
               }}

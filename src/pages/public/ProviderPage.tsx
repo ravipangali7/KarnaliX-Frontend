@@ -84,7 +84,7 @@ const ProviderPage = () => {
         <div className="flex flex-wrap items-center gap-3">
           {provider && (provider.image || provider.banner) && (
             <div
-              className="h-12 w-12 md:h-14 md:w-14 overflow-hidden flex-shrink-0 bg-muted border border-border"
+              className="h-12 w-12 md:h-14 md:w-14 overflow-hidden flex-shrink-0"
               style={{ borderRadius: "60% 40% 50% 50% / 50% 60% 40% 50%" }}
             >
               <img

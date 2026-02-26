@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting, getCmsFooterPages } from "@/api/site";
+import { getMediaUrl } from "@/lib/api";
 import { footerContact as defaultFooterContact, footerLinks as defaultFooterLinks, paymentMethods as defaultPaymentMethods } from "@/data/homePageMockData";
 
 export const HomeFooter = () => {
   const { data: siteSetting = {} } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: cmsPages = [] } = useQuery({ queryKey: ["cmsFooter"], queryFn: getCmsFooterPages });
 
-  const s = siteSetting as { phones?: string[]; emails?: string[]; whatsapp_number?: string; footer_description?: string };
+  const s = siteSetting as { logo?: string; name?: string; phones?: string[]; emails?: string[]; whatsapp_number?: string; footer_description?: string };
+  const logoUrl = s?.logo?.trim() ? getMediaUrl(s.logo.trim()) : "/karnali-logo.png";
+  const siteName = s?.name?.trim() || "KarnaliX";
   const phone = Array.isArray(s?.phones) && s.phones.length > 0 ? String(s.phones[0]) : defaultFooterContact.phone;
   const email = Array.isArray(s?.emails) && s.emails.length > 0 ? String(s.emails[0]) : defaultFooterContact.email;
   const whatsapp = (s?.whatsapp_number as string)?.trim() || defaultFooterContact.whatsapp;
@@ -27,10 +30,8 @@ export const HomeFooter = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <span className="font-gaming font-bold text-white text-xs">KX</span>
-              </div>
-              <span className="font-gaming font-bold text-lg gradient-text">KarnaliX</span>
+              <img src={logoUrl} alt={siteName} className="h-8 rounded-lg object-contain" />
+              {/* <span className="font-gaming font-bold text-lg gradient-text">{siteName}</span> */}
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">{tagline}</p>
             <div className="mt-3 text-xs text-muted-foreground space-y-1">
@@ -98,7 +99,7 @@ export const HomeFooter = () => {
         </div>
 
         <div className="border-t border-white/10 mt-4 pt-4 text-center text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} KarnaliX. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {siteName}. All rights reserved.</p>
           <p className="mt-1">18+ only. Play responsibly.</p>
         </div>
       </div>

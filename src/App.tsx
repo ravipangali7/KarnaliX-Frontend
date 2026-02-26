@@ -1,9 +1,11 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { getSiteSetting } from "@/api/site";
+import { getMediaUrl } from "@/lib/api";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -77,7 +79,6 @@ import SecondHomePage from "@/pages/public/SecondHomePage";
 import HomeDesignPage from "@/pages/public/HomeDesignPage";
 import { SecondPublicLayout } from "@/components/layout/SecondPublicLayout";
 import { HomeDesignLayout } from "@/components/layout/HomeDesignLayout";
-import { GamePlayLayout } from "@/components/layout/GamePlayLayout";
 import GamePlayPage from "@/pages/public/GamePlayPage";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,22 @@ function ScrollToTop() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+  return null;
+}
+
+function SiteFavicon() {
+  const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  useEffect(() => {
+    const favicon = (siteSetting as { favicon?: string } | undefined)?.favicon;
+    const href = favicon?.trim() ? getMediaUrl(favicon.trim()) : "/karnali-logo.png";
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = href;
+  }, [siteSetting]);
   return null;
 }
 
@@ -114,6 +131,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
+            <SiteFavicon />
             <Routes>
             {/* Public Website */}
             <Route path="/" element={<HomePageSwitch />} />
@@ -126,8 +144,8 @@ const App = () => (
             <Route path="/wallet" element={<WalletPage />} />
             </Route>
 
-            {/* In-app game play (header + iframe + footer), player only */}
-            <Route path="/games/:id/play" element={<ProtectedRoute allowedRole="player"><GamePlayLayout><GamePlayPage /></GamePlayLayout></ProtectedRoute>} />
+            {/* In-app game play (full-screen iframe + back button only), player only */}
+            <Route path="/games/:id/play" element={<ProtectedRoute allowedRole="player"><GamePlayPage /></ProtectedRoute>} />
 
             {/* Auth (no layout) */}
             <Route path="/login" element={<LoginPage />} />

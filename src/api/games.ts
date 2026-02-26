@@ -98,13 +98,15 @@ export async function getGames(
   categoryId?: number,
   providerId?: number,
   page?: number,
-  pageSize: number = 24
+  pageSize: number = 24,
+  search?: string
 ): Promise<GamesPaginatedResponse> {
   const params = new URLSearchParams();
   if (categoryId != null) params.set("category_id", String(categoryId));
   if (providerId != null) params.set("provider_id", String(providerId));
   if (page != null) params.set("page", String(page));
   params.set("page_size", String(pageSize));
+  if (search != null && search.trim() !== "") params.set("search", search.trim());
   const q = params.toString() ? `?${params.toString()}` : "";
   const res = await apiGet<GamesPaginatedResponse>(`/public/games/${q}`);
   const raw = res as unknown as { results?: Game[]; count?: number; next?: string | null; previous?: string | null };

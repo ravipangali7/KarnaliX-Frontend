@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { GameCard } from "@/components/shared/GameCard";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { getGames, getCategories, getProviders, getGameImageUrl } from "@/api/games";
 import type { Game, GameProvider } from "@/api/games";
 import { getMediaUrl } from "@/lib/api";
-import { Grid3X3, List } from "lucide-react";
+import { Grid3X3, List, Search } from "lucide-react";
 
 const IRREGULAR_SHAPE = "60% 40% 50% 50% / 50% 60% 40% 50%";
 
@@ -18,25 +19,39 @@ const GamesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get("category") ?? "all";
   const providerParam = searchParams.get("provider") ?? "all";
+  const searchParam = searchParams.get("search") ?? "";
   const pageParam = searchParams.get("page");
   const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchInput, setSearchInput] = useState(searchParam);
+  useEffect(() => {
+    setSearchInput(searchParam);
+  }, [searchParam]);
 
   const categoryId = categoryParam === "all" ? undefined : Number(categoryParam) || undefined;
   const providerId = providerParam === "all" ? undefined : Number(providerParam) || undefined;
+  const searchQuery = searchParam.trim() || undefined;
 
-  const setFilters = (updates: { category?: string; provider?: string; page?: number }) => {
+  const setFilters = (updates: { category?: string; provider?: string; search?: string; page?: number }) => {
     const next = new URLSearchParams(searchParams);
     if (updates.category !== undefined) next.set("category", updates.category);
     if (updates.provider !== undefined) next.set("provider", updates.provider);
+    if (updates.search !== undefined) {
+      if (updates.search) next.set("search", updates.search); else next.delete("search");
+    }
     if (updates.page !== undefined) next.set("page", String(updates.page));
     setSearchParams(next);
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilters({ search: searchInput.trim(), page: 1 });
+  };
+
   const { data: gamesData, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
-    queryKey: ["games", categoryId, providerId, currentPage],
-    queryFn: () => getGames(categoryId, providerId, currentPage, PAGE_SIZE),
+    queryKey: ["games", categoryId, providerId, currentPage, searchQuery],
+    queryFn: () => getGames(categoryId, providerId, currentPage, PAGE_SIZE, searchQuery),
   });
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
   const { data: providers = [] } = useQuery({ queryKey: ["providers"], queryFn: getProviders });
@@ -52,7 +67,25 @@ const GamesPage = () => {
         <p className="text-sm text-muted-foreground mt-1">Discover {totalCount} exciting games to play and win</p>
       </div>
 
-      {/* Provider filter (above category) - irregular shape image, single row scroll on mobile */}
+      {/* Search - uses backend API with pagination */}
+      <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search games by name or provider..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="pl-9 h-10"
+            aria-label="Search games"
+          />
+        </div>
+        <Button type="submit" size="sm" className="h-10 shrink-0">
+          Search
+        </Button>
+      </form>
+
+      {/* Provider row: All = filter here; each provider = link to provider detail page */}
       {providers.length > 0 && (
         <div className="flex items-center gap-2 pb-1 overflow-hidden">
           <span className="text-xs text-muted-foreground flex-shrink-0">Provider:</span>
@@ -66,19 +99,17 @@ const GamesPage = () => {
               All
             </Button>
             {(providers as GameProvider[]).map((prov) => {
-              const isSelected = providerParam === String(prov.id);
               const imgUrl = prov.image?.trim() ? getMediaUrl(prov.image.trim()) : undefined;
               const initial = (prov.name ?? "?").slice(0, 2).toUpperCase();
               return (
-                <button
+                <Link
                   key={prov.id}
-                  type="button"
-                  onClick={() => setFilters({ provider: String(prov.id), page: 1 })}
-                  className={`flex flex-col items-center gap-1 shrink-0 transition-all p-1 ${isSelected ? "ring-2 ring-primary rounded-lg" : "hover:opacity-90 rounded-lg"}`}
-                  title={prov.name}
+                  to={`/providers/${prov.id}`}
+                  className="flex flex-col items-center gap-1 shrink-0 transition-all p-1 hover:opacity-90 rounded-lg focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                  title={`View ${prov.name} games`}
                 >
                   <div
-                    className="h-12 w-12 flex items-center justify-center text-white font-bold text-xs overflow-hidden bg-muted/50"
+                    className="h-12 w-12 flex items-center justify-center text-white font-bold text-xs overflow-hidden"
                     style={{ borderRadius: IRREGULAR_SHAPE }}
                   >
                     {imgUrl ? (
@@ -93,7 +124,7 @@ const GamesPage = () => {
                     )}
                   </div>
                   <span className="text-xs max-w-20 truncate text-center">{prov.name}</span>
-                </button>
+                </Link>
               );
             })}
           </div>
