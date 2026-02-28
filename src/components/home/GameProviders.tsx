@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { providers as defaultProviders } from "@/data/homePageMockData";
 import type { ProviderShape } from "@/data/homePageMockData";
+import { svgToImgSrc } from "@/lib/svg";
 
 interface GameProvidersProps {
   providers?: ProviderShape[] | null;
@@ -14,7 +15,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, sectionS
   return (
     <section className="container px-4 py-10">
       <h2 className="text-xl font-bold text-foreground mb-2 flex items-center gap-2">
-        {sectionSvg && <img src={sectionSvg} alt="" className="h-6 w-6 object-contain" />}
+        {sectionSvg && <img src={svgToImgSrc(sectionSvg)} alt="" className="h-6 w-6 object-contain" />}
         {sectionTitle ? sectionTitle : <>Trusted <span className="gradient-text-gold">Game Providers</span></>}
       </h2>
       <p className="text-sm text-muted-foreground mb-6">Play games from the best providers in the industry</p>

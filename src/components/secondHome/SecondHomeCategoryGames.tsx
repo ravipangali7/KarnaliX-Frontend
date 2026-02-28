@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import type { GameCardShape } from "@/data/homePageMockData";
 import type { GameCategory } from "@/api/games";
+import { svgToImgSrc } from "@/lib/svg";
 
 interface SecondHomeCategoryGamesProps {
   categories: GameCategory[];
@@ -21,7 +22,7 @@ export function SecondHomeCategoryGames({ categories, gamesByCategory, sectionTi
           <section key={cat.id} className="container px-4 py-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-                {sectionSvg && <img src={sectionSvg} alt="" className="h-5 w-5 object-contain" />}
+                {sectionSvg && <img src={svgToImgSrc(sectionSvg)} alt="" className="h-5 w-5 object-contain" />}
                 {cat.name}
               </h2>
               <Link to={`/games?category=${cat.id}`} className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">

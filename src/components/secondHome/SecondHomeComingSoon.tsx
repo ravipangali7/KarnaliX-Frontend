@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { enrollComingSoon } from "@/api/games";
 import { toast } from "@/hooks/use-toast";
 import type { ComingSoonShape } from "@/data/homePageMockData";
+import { svgToImgSrc } from "@/lib/svg";
 
 interface SecondHomeComingSoonProps {
   comingSoon?: ComingSoonShape[] | null;
@@ -51,7 +52,7 @@ export function SecondHomeComingSoon({ comingSoon: comingSoonProp, sectionTitle,
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          {sectionSvg ? <img src={sectionSvg} alt="" className="h-5 w-5 object-contain" /> : <Zap className="h-5 w-5 text-amber-400" />}
+          {sectionSvg ? <img src={svgToImgSrc(sectionSvg)} alt="" className="h-5 w-5 object-contain" /> : <Zap className="h-5 w-5 text-amber-400" />}
           <h2 className="font-display font-bold text-lg text-foreground">{sectionTitle || "Coming Soon"}</h2>
           <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 border border-amber-500/30 text-amber-400">
             New

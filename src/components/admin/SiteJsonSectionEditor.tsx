@@ -1,6 +1,6 @@
 /**
  * Reusable building blocks for editing site setting JSON section configs in powerhouse.
- * Each section has: section_title, section_svg (URL), and section-specific selectors.
+ * Each section has: section_title, section_svg (SVG code or legacy URL), and section-specific selectors.
  */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ interface BaseItem {
 }
 
 // -----------------------------------------------------------------------
-// SectionTitleSvg – shared title + svg_url inputs
+// SectionTitleSvg – shared title + svg code inputs
 // -----------------------------------------------------------------------
 interface SectionTitleSvgProps {
   sectionTitle: string;
@@ -25,6 +25,14 @@ interface SectionTitleSvgProps {
 }
 
 export function SectionTitleSvg({ sectionTitle, sectionSvg, onTitleChange, onSvgChange }: SectionTitleSvgProps) {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    onSvgChange(text);
+    e.target.value = "";
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
       <div>
@@ -32,8 +40,20 @@ export function SectionTitleSvg({ sectionTitle, sectionSvg, onTitleChange, onSvg
         <Input value={sectionTitle} onChange={(e) => onTitleChange(e.target.value)} placeholder="e.g. Top Games" />
       </div>
       <div>
-        <label className="text-xs text-muted-foreground block mb-1">Section SVG / icon URL</label>
-        <Input value={sectionSvg} onChange={(e) => onSvgChange(e.target.value)} placeholder="https://... or /media/..." />
+        <label className="text-xs text-muted-foreground block mb-1">Section SVG (paste code or upload file)</label>
+        <textarea
+          value={sectionSvg}
+          onChange={(e) => onSvgChange(e.target.value)}
+          placeholder="Paste SVG code here, e.g. <svg ...>...</svg>"
+          rows={3}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+        />
+        <input
+          type="file"
+          accept=".svg,image/svg+xml"
+          className="mt-1 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-muted file:text-xs"
+          onChange={handleFileChange}
+        />
       </div>
     </div>
   );

@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { getCategoriesAdmin, createCategoryAdmin, createCategoryAdminForm, updateCategoryAdmin, updateCategoryAdminForm } from "@/api/admin";
+import { getCategoriesAdmin, createCategoryAdminForm, updateCategoryAdminForm } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "@/hooks/use-toast";
 import { getMediaUrl } from "@/lib/api";
+import { svgToImgSrc } from "@/lib/svg";
 
 const PowerhouseCategories = () => {
   const queryClient = useQueryClient();
@@ -16,7 +17,6 @@ const PowerhouseCategories = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [svg, setSvg] = useState("");
-  const [svgFile, setSvgFile] = useState<File | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -25,7 +25,6 @@ const PowerhouseCategories = () => {
   const resetForm = () => {
     setName("");
     setSvg("");
-    setSvgFile(null);
     setIsActive(true);
     setEditingCategory(null);
   };
@@ -33,10 +32,29 @@ const PowerhouseCategories = () => {
   const openEdit = (row: Record<string, unknown>) => {
     setEditingCategory(row);
     setName(String(row.name ?? ""));
-    setSvg(String(row.svg ?? ""));
-    setSvgFile(null);
+    setSvg("");
     setIsActive(Boolean(row.is_active));
     setEditOpen(true);
+  };
+
+  const handleSvgFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    setSvg(text);
+    e.target.value = "";
+  };
+
+  const buildFormData = (n: string) => {
+    const formData = new FormData();
+    formData.set("name", n);
+    formData.set("is_active", String(isActive));
+    const code = svg.trim();
+    if (code) {
+      const blob = new Blob([code], { type: "image/svg+xml" });
+      formData.set("svg", blob, "icon.svg");
+    }
+    return formData;
   };
 
   const columns = [
@@ -45,10 +63,11 @@ const PowerhouseCategories = () => {
       accessor: (row: Record<string, unknown>) => {
         const svgVal = row.svg;
         if (svgVal && typeof svgVal === "string" && svgVal.trim()) {
-          const url = getMediaUrl(svgVal.trim());
-          const isEmoji = !svgVal.trim().startsWith("http") && !svgVal.trim().startsWith("/") && svgVal.length <= 4;
-          if (isEmoji) return <span className="text-lg">{svgVal.trim()}</span>;
-          return <img src={url} alt="" className="h-6 w-6 object-contain" />;
+          const trimmed = svgVal.trim();
+          if (trimmed.startsWith("<svg")) {
+            return <img src={svgToImgSrc(trimmed)} alt="" className="h-6 w-6 object-contain" />;
+          }
+          return <img src={getMediaUrl(trimmed)} alt="" className="h-6 w-6 object-contain" />;
         }
         return <span className="h-6 w-6 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground">—</span>;
       },
@@ -74,15 +93,7 @@ const PowerhouseCategories = () => {
     }
     setSaving(true);
     try {
-      if (svgFile) {
-        const formData = new FormData();
-        formData.set("name", n);
-        formData.set("is_active", String(isActive));
-        formData.set("svg", svgFile);
-        await createCategoryAdminForm(formData);
-      } else {
-        await createCategoryAdmin({ name: n, svg: svg.trim() || null, is_active: isActive });
-      }
+      await createCategoryAdminForm(buildFormData(n));
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
       toast({ title: "Category created successfully." });
       resetForm();
@@ -105,15 +116,7 @@ const PowerhouseCategories = () => {
     const id = Number(editingCategory.id);
     setSaving(true);
     try {
-      if (svgFile) {
-        const formData = new FormData();
-        formData.set("name", n);
-        formData.set("is_active", String(isActive));
-        formData.set("svg", svgFile);
-        await updateCategoryAdminForm(id, formData);
-      } else {
-        await updateCategoryAdmin(id, { name: n, svg: svg.trim() || null, is_active: isActive });
-      }
+      await updateCategoryAdminForm(id, buildFormData(n));
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
       toast({ title: "Category updated successfully." });
       resetForm();
@@ -141,16 +144,21 @@ const PowerhouseCategories = () => {
           <DialogHeader><DialogTitle className="font-display">Add Category</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <Input placeholder="Category Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input placeholder="Icon (emoji or text fallback)" value={svg} onChange={(e) => setSvg(e.target.value)} />
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Or upload SVG file</label>
+              <label className="text-xs text-muted-foreground block mb-1">SVG icon (paste code or upload .svg file)</label>
+              <textarea
+                value={svg}
+                onChange={(e) => setSvg(e.target.value)}
+                placeholder="Paste SVG code here, e.g. <svg ...>...</svg>"
+                rows={3}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+              />
               <input
                 type="file"
                 accept=".svg,image/svg+xml"
-                className="w-full text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-muted file:text-sm"
-                onChange={(e) => setSvgFile(e.target.files?.[0] ?? null)}
+                className="mt-1 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-muted file:text-xs"
+                onChange={handleSvgFileChange}
               />
-              {svgFile && <p className="text-xs text-muted-foreground mt-1">{svgFile.name}</p>}
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
@@ -174,24 +182,29 @@ const PowerhouseCategories = () => {
           <DialogHeader><DialogTitle className="font-display">Edit Category</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <Input placeholder="Category Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input placeholder="Icon (emoji or text fallback)" value={svg} onChange={(e) => setSvg(e.target.value)} />
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Or upload SVG file (leave empty to keep current)</label>
+              <label className="text-xs text-muted-foreground block mb-1">SVG icon (paste code or upload .svg file — leave empty to keep current)</label>
+              <textarea
+                value={svg}
+                onChange={(e) => setSvg(e.target.value)}
+                placeholder="Paste SVG code here, e.g. <svg ...>...</svg>"
+                rows={3}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+              />
               <input
                 type="file"
                 accept=".svg,image/svg+xml"
-                className="w-full text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-muted file:text-sm"
-                onChange={(e) => setSvgFile(e.target.files?.[0] ?? null)}
+                className="mt-1 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-muted file:text-xs"
+                onChange={handleSvgFileChange}
               />
-              {svgFile && <p className="text-xs text-muted-foreground mt-1">{svgFile.name}</p>}
-              {editingCategory?.svg && typeof editingCategory.svg === "string" && editingCategory.svg.trim() && !svgFile && (
+              {editingCategory?.svg && typeof editingCategory.svg === "string" && editingCategory.svg.trim() && !svg.trim() && (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Current:</span>
-                  {editingCategory.svg.trim().length <= 4 ? (
-                    <span className="text-lg">{editingCategory.svg.trim()}</span>
-                  ) : (
-                    <img src={getMediaUrl(editingCategory.svg.trim())} alt="" className="h-6 w-6 object-contain" />
-                  )}
+                  <img
+                    src={editingCategory.svg.trim().startsWith("<svg") ? svgToImgSrc(editingCategory.svg.trim()) : getMediaUrl(editingCategory.svg.trim())}
+                    alt=""
+                    className="h-6 w-6 object-contain"
+                  />
                 </div>
               )}
             </div>
