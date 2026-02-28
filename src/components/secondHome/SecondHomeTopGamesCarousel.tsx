@@ -1,14 +1,10 @@
-import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import type { GameCardShape } from "@/data/homePageMockData";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Star, Zap } from "lucide-react";
 import { svgToImgSrc } from "@/lib/svg";
 
-const CARD_WIDTH = 140;
-const VISIBLE = 8;
 const TOTAL = 16;
-const AUTO_SCROLL_MS = 4000;
 
 interface SecondHomeTopGamesCarouselProps {
   games: GameCardShape[];
@@ -17,26 +13,12 @@ interface SecondHomeTopGamesCarouselProps {
 }
 
 export function SecondHomeTopGamesCarousel({ games, sectionTitle, sectionSvg }: SecondHomeTopGamesCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
   const list = games.slice(0, TOTAL);
   if (list.length === 0) return null;
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || list.length <= VISIBLE) return;
-    let step = 0;
-    const maxSteps = Math.ceil(list.length / VISIBLE);
-    const run = () => {
-      step = (step + 1) % maxSteps;
-      el.scrollTo({ left: step * CARD_WIDTH * VISIBLE, behavior: "smooth" });
-    };
-    const id = setInterval(run, AUTO_SCROLL_MS);
-    return () => clearInterval(id);
-  }, [list.length]);
-
   return (
     <section className="container px-4 py-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-bold text-xl text-foreground flex items-center gap-2">
           {sectionSvg && <img src={svgToImgSrc(sectionSvg)} alt="" className="h-6 w-6 object-contain" />}
@@ -46,21 +28,84 @@ export function SecondHomeTopGamesCarousel({ games, sectionTitle, sectionSvg }: 
           View All <ChevronRight className="h-4 w-4" />
         </Link>
       </div>
+
+      {/* Horizontal scroll — big portrait cards with overlay details */}
       <div
-        ref={scrollRef}
-        className="flex gap-3 overflow-x-auto scroll-smooth scrollbar-hide snap-x snap-mandatory py-2 min-w-0"
-        style={{ WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory" }}
+        className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4"
+        style={{ WebkitOverflowScrolling: "touch" }}
       >
-        {list.map((game) => (
+        {list.map((game, idx) => (
           <Link
             key={game.id}
             to={`/games/${game.id}`}
-            className="flex-shrink-0 w-[140px] snap-start rounded-xl overflow-hidden border border-white/10 hover:border-primary/40 transition-all hover:scale-[1.02]"
-            style={{ width: CARD_WIDTH }}
+            className="relative flex-shrink-0 snap-start rounded-2xl overflow-hidden group"
+            style={{ width: "calc(45vw - 24px)", maxWidth: "200px", minWidth: "150px" }}
           >
-            <div className="aspect-[4/3] relative">
-              <GameImageWithFallback src={game.image} alt={game.name} className="w-full h-full object-cover" />
+            {/* Full-bleed portrait image */}
+            <div className="relative" style={{ paddingBottom: "140%" }}>
+              <GameImageWithFallback
+                src={game.image}
+                alt={game.name}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+
+              {/* Gradient overlay — stronger at bottom */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+              {/* Hot / New badges */}
+              <div className="absolute top-2 left-2 flex flex-col gap-1">
+                {game.isHot && (
+                  <span className="flex items-center gap-0.5 rounded-full bg-red-500/90 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
+                    <Zap className="h-2.5 w-2.5" /> HOT
+                  </span>
+                )}
+                {game.isNew && (
+                  <span className="rounded-full bg-primary/90 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
+                    NEW
+                  </span>
+                )}
+              </div>
+
+              {/* Rank number top-right */}
+              <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/60 border border-white/20 flex items-center justify-center">
+                <span className="text-[10px] font-bold text-white leading-none">#{idx + 1}</span>
+              </div>
+
+              {/* Bottom info overlay */}
+              <div className="absolute bottom-0 left-0 right-0 p-2.5 space-y-1">
+                {/* Rating */}
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-2.5 w-2.5 ${s <= Math.round(game.rating ?? 4) ? "text-amber-400 fill-amber-400" : "text-white/20"}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Game name */}
+                <p className="text-xs font-bold text-white leading-tight line-clamp-1 drop-shadow">
+                  {game.name}
+                </p>
+
+                {/* Provider + Category chips */}
+                <div className="flex items-center gap-1 flex-wrap">
+                  {game.provider && (
+                    <span className="rounded-full bg-white/10 border border-white/15 px-1.5 py-0.5 text-[9px] text-white/80 leading-none truncate max-w-[80px]">
+                      {game.provider}
+                    </span>
+                  )}
+                  {game.category && (
+                    <span className="rounded-full bg-primary/20 border border-primary/30 px-1.5 py-0.5 text-[9px] text-primary leading-none truncate max-w-[70px]">
+                      {game.category}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* Hover ring */}
+            <div className="absolute inset-0 rounded-2xl ring-0 group-hover:ring-2 group-hover:ring-primary/60 transition-all duration-200 pointer-events-none" />
           </Link>
         ))}
       </div>
