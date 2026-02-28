@@ -126,27 +126,29 @@ const ProviderPage = () => {
 
       {/* Category filters with SVG icon + name, horizontal scroll */}
       {categories.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2 scrollbar-hide w-full" style={{ WebkitOverflowScrolling: "touch" }}>
           {/* All chip */}
           <button
             onClick={() => setFilters({ category: "all", page: 1 })}
-            className={`flex flex-col items-center gap-1 flex-shrink-0 transition-all ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+            className={`flex flex-col items-center gap-1 transition-all ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+            style={{ flexShrink: 0, width: "64px" }}
           >
             <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border-2 transition-all ${categoryParam === "all" ? "border-primary neon-glow-sm bg-primary/10" : "border-white/10 bg-white/5"}`}>
               <LayoutGrid className={`h-6 w-6 ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} />
             </div>
-            <span className={`text-[10px] font-medium max-w-14 truncate text-center whitespace-nowrap ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`}>All</span>
+            <span className={`text-[10px] font-medium text-center whitespace-nowrap w-full truncate ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`}>All</span>
           </button>
           {(categories as ProviderDetailCategory[]).map((cat) => (
             <button
               key={cat.id}
               onClick={() => setFilters({ category: String(cat.id), page: 1 })}
-              className={`flex flex-col items-center gap-1 flex-shrink-0 transition-all ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+              className={`flex flex-col items-center gap-1 transition-all ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+              style={{ flexShrink: 0, width: "64px" }}
             >
               <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border-2 transition-all overflow-hidden ${categoryParam === String(cat.id) ? "border-primary neon-glow-sm bg-primary/10" : "border-white/10 bg-white/5"}`}>
                 <CategoryIcon svg={cat.svg} name={cat.name} />
               </div>
-              <span className={`text-[10px] font-medium max-w-14 truncate text-center whitespace-nowrap ${categoryParam === String(cat.id) ? "text-primary" : "text-muted-foreground"}`}>{cat.name}</span>
+              <span className={`text-[10px] font-medium text-center whitespace-nowrap w-full truncate ${categoryParam === String(cat.id) ? "text-primary" : "text-muted-foreground"}`}>{cat.name}</span>
             </button>
           ))}
         </div>
@@ -161,9 +163,9 @@ const ProviderPage = () => {
         </div>
       )}
       {!gamesLoading && !gamesError && (
-        <div className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide -mx-4 px-4" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide w-full" style={{ WebkitOverflowScrolling: "touch" }}>
           {results.map((game: Game) => (
-            <div key={game.id} className="snap-start flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]">
+            <div key={game.id} className="snap-start shrink-0" style={{ width: "150px" }}>
               <Link to={`/games/${game.id}`}>
                 <GameCard
                   image={getGameImageUrl(game)}
