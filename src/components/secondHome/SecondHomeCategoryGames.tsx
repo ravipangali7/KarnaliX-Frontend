@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Layers } from "lucide-react";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import type { GameCardShape } from "@/data/homePageMockData";
 import type { GameCategory } from "@/api/games";
 import { svgToImgSrc } from "@/lib/svg";
+import { getMediaUrl } from "@/lib/api";
 
 interface SecondHomeCategoryGamesProps {
   categories: GameCategory[];
@@ -12,7 +13,15 @@ interface SecondHomeCategoryGamesProps {
   sectionSvg?: string;
 }
 
-export function SecondHomeCategoryGames({ categories, gamesByCategory, sectionTitle, sectionSvg }: SecondHomeCategoryGamesProps) {
+function CatIcon({ svg, name }: { svg?: string; name: string }) {
+  if (svg?.trim()) {
+    const src = svg.trim().startsWith("<svg") ? svgToImgSrc(svg.trim()) : getMediaUrl(svg.trim());
+    return <img src={src} alt={name} className="h-5 w-5 object-contain flex-shrink-0" />;
+  }
+  return <Layers className="h-5 w-5 text-primary flex-shrink-0" />;
+}
+
+export function SecondHomeCategoryGames({ categories, gamesByCategory }: SecondHomeCategoryGamesProps) {
   return (
     <>
       {categories.map((cat) => {
@@ -22,7 +31,7 @@ export function SecondHomeCategoryGames({ categories, gamesByCategory, sectionTi
           <section key={cat.id} className="container px-4 py-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-                {sectionSvg && <img src={svgToImgSrc(sectionSvg)} alt="" className="h-5 w-5 object-contain" />}
+                <CatIcon svg={cat.svg} name={cat.name} />
                 {cat.name}
               </h2>
               <Link to={`/games?category=${cat.id}`} className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
