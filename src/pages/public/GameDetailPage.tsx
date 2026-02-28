@@ -32,7 +32,7 @@ const GameDetailPage = () => {
   const [betAmount, setBetAmount] = useState(100);
   const { data: game, isLoading, isError: gameError, refetch: refetchGame } = useQuery({ queryKey: ["game", id], queryFn: () => getGame(id!), enabled: !!id });
   const { data: gamesResp } = useQuery({ queryKey: ["games", "detail"], queryFn: () => getGames(undefined, undefined, 1, 100) });
-  const games = (gamesResp?.results ?? []) as Game[];
+  const games: Game[] = Array.isArray(gamesResp?.results) ? (gamesResp.results as Game[]) : [];
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: wallet } = useQuery({
     queryKey: ["playerWallet"],

@@ -58,9 +58,10 @@ const FirstHomePage = () => {
     queryKey: ["games", "first-home"],
     queryFn: () => getGames(undefined, undefined, 1, 100),
   });
-  const games = gamesResp?.results ?? [];
-  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError, refetch: refetchCategories } =
+  const games = Array.isArray(gamesResp?.results) ? gamesResp.results : [];
+  const { data: categoriesRaw = [], isLoading: categoriesLoading, isError: categoriesError, refetch: refetchCategories } =
     useQuery({ queryKey: ["categories"], queryFn: getCategories });
+  const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
   const { data: providers = [], isLoading: providersLoading } = useQuery({ queryKey: ["providers"], queryFn: getProviders });
   const { data: testimonials = [] } = useQuery({ queryKey: ["testimonials"], queryFn: getTestimonials });
 

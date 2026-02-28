@@ -138,11 +138,12 @@ export function useHomePageData(): {
     queryKey: ["games", "home-data"],
     queryFn: () => getGames(undefined, undefined, 1, 200),
   });
-  const games = gamesResp?.results ?? [];
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  const games: Game[] = Array.isArray(gamesResp?.results) ? (gamesResp.results as Game[]) : [];
+  const { data: categoriesRaw = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
   });
+  const categories = Array.isArray(categoriesRaw) ? (categoriesRaw as GameCategory[]) : [];
   const { data: providers = [], isLoading: providersLoading } = useQuery({
     queryKey: ["providers"],
     queryFn: getProviders,

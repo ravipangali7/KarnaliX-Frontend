@@ -31,8 +31,9 @@ const fadeUp = {
 const HomePage = () => {
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: gamesData, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({ queryKey: ["games", "home"], queryFn: () => getGames(undefined, undefined, 1, 100) });
-  const games = gamesData?.results ?? [];
-  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError, refetch: refetchCategories } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
+  const games = Array.isArray(gamesData?.results) ? gamesData.results : [];
+  const { data: categoriesRaw = [], isLoading: categoriesLoading, isError: categoriesError, refetch: refetchCategories } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
+  const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
   const { data: testimonials = [] } = useQuery({ queryKey: ["testimonials"], queryFn: getTestimonials });
   const heroTitle = (siteSetting as Record<string, string> | undefined)?.hero_title ?? "Play. Win. Dominate.";
   const heroSubtitle = (siteSetting as Record<string, string> | undefined)?.hero_subtitle ?? "Nepal's Premier Online Gaming Platform";

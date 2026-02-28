@@ -222,9 +222,9 @@ export function useSecondHomePageData(): {
     queryKey: ["bonusRules"],
     queryFn: getBonusRules,
   });
-  const games = (gamesResp?.results ?? []) as Game[];
-  const categoriesList = (categories ?? []) as GameCategory[];
-  const liveCategorySubcategories = (subcategoriesApi ?? []) as GameSubCategory[];
+  const games: Game[] = Array.isArray(gamesResp?.results) ? (gamesResp.results as Game[]) : [];
+  const categoriesList = Array.isArray(categories) ? (categories as GameCategory[]) : [];
+  const liveCategorySubcategories = Array.isArray(subcategoriesApi) ? (subcategoriesApi as GameSubCategory[]) : [];
 
   const isLoading = siteLoading || sliderLoading || liveBettingLoading || categoriesLoading || providersLoading || gamesLoading;
   const site = (siteSetting as Record<string, unknown>) ?? {};
