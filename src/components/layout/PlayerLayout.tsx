@@ -1,18 +1,10 @@
 import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { Home, MessageCircle, Wallet, Clock, User, Gamepad2, Shield, Key, CreditCard, BarChart3, LogOut, Users } from "lucide-react";
+import { Home, MessageCircle, Wallet, Clock, User, Gamepad2, Key, CreditCard, BarChart3, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPlayerUnreadMessageCount } from "@/api/player";
 import { Badge } from "@/components/ui/badge";
-
-const tabs = [
-  { label: "Home", path: "/player", icon: Home },
-  { label: "Messages", path: "/player/messages", icon: MessageCircle },
-  { label: "Wallet", path: "/player/wallet", icon: Wallet },
-  { label: "History", path: "/player/transactions", icon: Clock },
-  { label: "Profile", path: "/player/profile", icon: User },
-];
 
 const sidebarLinks = [
   { label: "Dashboard", path: "/player", icon: Home },
@@ -150,32 +142,6 @@ export const PlayerLayout = () => {
         </main>
       </div>
 
-      {/* Bottom tab bar (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border/50 nav-bottom-safe md:hidden">
-        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
-          {tabs.map((tab) => (
-            <Link
-              key={tab.path}
-              to={tab.path}
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all relative ${
-                isActive(tab.path)
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <span className="relative inline-block">
-                <tab.icon className={`h-5 w-5 ${isActive(tab.path) ? "scale-110 drop-shadow-[0_0_8px_hsl(220,90%,56%)]" : ""} transition-transform`} />
-                {tab.path === "/player/messages" && messageBadge > 0 && (
-                  <Badge variant="destructive" className="absolute -top-1.5 -right-2 min-w-4 h-4 p-0 text-[9px] justify-center">
-                    {messageBadge > 99 ? "99+" : messageBadge}
-                  </Badge>
-                )}
-              </span>
-              <span className="text-[10px] font-medium">{tab.label}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
     </div>
   );
 };

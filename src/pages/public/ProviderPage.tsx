@@ -4,7 +4,23 @@ import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/shared/GameCard";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { getProviderDetail, getGames, getGameImageUrl } from "@/api/games";
-import type { Game } from "@/api/games";
+import type { Game, ProviderDetailCategory } from "@/api/games";
+import { svgToImgSrc } from "@/lib/svg";
+import { LayoutGrid } from "lucide-react";
+
+function CategoryIcon({ svg, name }: { svg?: string | null; name: string }) {
+  if (!svg?.trim()) {
+    return (
+      <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+        <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+      </div>
+    );
+  }
+  const src = svg.trim().startsWith("<svg") ? svgToImgSrc(svg.trim()) : svg.trim();
+  return (
+    <img src={src} alt={name} className="h-10 w-10 rounded-xl object-contain flex-shrink-0 bg-white/5 border border-white/10 p-1" />
+  );
+}
 
 const PAGE_SIZE = 24;
 
@@ -108,32 +124,35 @@ const ProviderPage = () => {
         </div>
       </div>
 
-      {/* Category filters */}
+      {/* Category filters with SVG icon + name, horizontal scroll */}
       {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <Button
-            variant={categoryParam === "all" ? "default" : "outline"}
-            size="sm"
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4" style={{ WebkitOverflowScrolling: "touch" }}>
+          {/* All chip */}
+          <button
             onClick={() => setFilters({ category: "all", page: 1 })}
-            className={categoryParam === "all" ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}
+            className={`flex flex-col items-center gap-1 flex-shrink-0 transition-all ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
           >
-            All
-          </Button>
-          {categories.map((cat) => (
-            <Button
+            <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border-2 transition-all ${categoryParam === "all" ? "border-primary neon-glow-sm bg-primary/10" : "border-white/10 bg-white/5"}`}>
+              <LayoutGrid className={`h-6 w-6 ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <span className={`text-[10px] font-medium max-w-14 truncate text-center whitespace-nowrap ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`}>All</span>
+          </button>
+          {(categories as ProviderDetailCategory[]).map((cat) => (
+            <button
               key={cat.id}
-              variant={categoryParam === String(cat.id) ? "default" : "outline"}
-              size="sm"
               onClick={() => setFilters({ category: String(cat.id), page: 1 })}
-              className={`whitespace-nowrap ${categoryParam === String(cat.id) ? "gold-gradient text-primary-foreground neon-glow-sm" : ""}`}
+              className={`flex flex-col items-center gap-1 flex-shrink-0 transition-all ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
             >
-              {cat.name}
-            </Button>
+              <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border-2 transition-all overflow-hidden ${categoryParam === String(cat.id) ? "border-primary neon-glow-sm bg-primary/10" : "border-white/10 bg-white/5"}`}>
+                <CategoryIcon svg={cat.svg} name={cat.name} />
+              </div>
+              <span className={`text-[10px] font-medium max-w-14 truncate text-center whitespace-nowrap ${categoryParam === String(cat.id) ? "text-primary" : "text-muted-foreground"}`}>{cat.name}</span>
+            </button>
           ))}
         </div>
       )}
 
-      {/* Games grid */}
+      {/* Games horizontal scroll */}
       {gamesLoading && <p className="text-center text-muted-foreground py-8">Loading games…</p>}
       {gamesError && !gamesLoading && (
         <div className="text-center py-8 space-y-2">
@@ -142,17 +161,19 @@ const ProviderPage = () => {
         </div>
       )}
       {!gamesLoading && !gamesError && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide -mx-4 px-4" style={{ WebkitOverflowScrolling: "touch" }}>
           {results.map((game: Game) => (
-            <Link key={game.id} to={`/games/${game.id}`}>
-              <GameCard
-                image={getGameImageUrl(game)}
-                name={game.name}
-                category={game.category_name ?? ""}
-                minBet={Number(game.min_bet)}
-                maxBet={Number(game.max_bet)}
-              />
-            </Link>
+            <div key={game.id} className="snap-start flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]">
+              <Link to={`/games/${game.id}`}>
+                <GameCard
+                  image={getGameImageUrl(game)}
+                  name={game.name}
+                  category={game.category_name ?? ""}
+                  minBet={Number(game.min_bet)}
+                  maxBet={Number(game.max_bet)}
+                />
+              </Link>
+            </div>
           ))}
         </div>
       )}

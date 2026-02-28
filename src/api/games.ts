@@ -22,6 +22,7 @@ export interface GameProvider {
 export interface ProviderDetailCategory {
   id: number;
   name: string;
+  svg?: string | null;
 }
 
 export interface ProviderDetail extends GameProvider {

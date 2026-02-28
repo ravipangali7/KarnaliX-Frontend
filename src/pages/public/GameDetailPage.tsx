@@ -94,55 +94,25 @@ const GameDetailPage = () => {
   const whatsapp = (siteSetting as { whatsapp_number?: string })?.whatsapp_number ?? "";
 
   return (
-    <div className="container px-4 py-6 space-y-8">
+    <div className="container px-4 py-4 space-y-5">
       {/* Game Hero */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-3 relative rounded-2xl overflow-hidden aspect-[16/9] lg:aspect-[4/3]">
           <GameImageWithFallback src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover blur-md" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-          {/* Play game overlay - centered CTA */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-            <div className="pointer-events-auto">
-              {!user ? (
-                <Link to="/login">
-                  <Button className="gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 px-8 neon-glow tracking-widest" aria-label="Play game">
-                    Play game
-                  </Button>
-                </Link>
-              ) : !isPlayer ? (
-                <Button className="bg-muted text-muted-foreground font-gaming font-bold text-lg h-14 px-8" disabled aria-label="Only players can launch games">
-                  Only players can launch games
-                </Button>
-              ) : !canPlay ? (
-                <Link to="/wallet">
-                  <Button className="bg-muted text-muted-foreground font-gaming font-bold text-lg h-14 px-8" aria-label="Add funds to play">
-                    Add Funds to play
-                  </Button>
-                </Link>
-              ) : (
-                <Button
-                  className="gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 px-8 neon-glow tracking-widest animate-scale-pulse"
-                  aria-label="Play game"
-                  onClick={() => navigate(`/games/${g.id}/play`)}
-                >
-                  Play game
-                </Button>
-              )}
-            </div>
-          </div>
           {/* Live badge */}
-          <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-destructive/90 text-white text-[10px] font-gaming tracking-wider flex items-center gap-1 animate-pulse-neon">
+          <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full bg-destructive/90 text-white text-[10px] font-gaming tracking-wider flex items-center gap-1 animate-pulse-neon">
               <span className="h-1.5 w-1.5 rounded-full bg-white" /> LIVE
             </span>
-            <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-[10px] flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-[10px] flex items-center gap-1">
               <Users className="h-3 w-3" /> {livePlayers} playing
             </span>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 z-20 p-6 md:p-8">
-            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold gold-gradient text-primary-foreground mb-3">{g.category_name ?? ""}</span>
-            <h1 className="font-gaming font-bold text-3xl md:text-4xl text-white tracking-wide text-glow">{g.name}</h1>
-            <p className="text-sm text-white/60 mt-2 flex items-center gap-3">
+          <div className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6">
+            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold gold-gradient text-primary-foreground mb-2">{g.category_name ?? ""}</span>
+            <h1 className="font-gaming font-bold text-2xl md:text-3xl lg:text-4xl text-white tracking-wide text-glow">{g.name}</h1>
+            <p className="text-xs text-white/60 mt-1 flex items-center gap-2 flex-wrap">
               <span>Min: ₹{minBet}</span>
               <span>•</span>
               <span>Max: ₹{maxBet.toLocaleString()}</span>
@@ -152,22 +122,22 @@ const GameDetailPage = () => {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2 space-y-4">
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2 space-y-3">
           <Card className="gaming-card">
-            <CardContent className="p-5 space-y-5">
+            <CardContent className="p-4 space-y-4">
               {/* Balance */}
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-3 rounded-xl bg-muted/50 cyber-border">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2 rounded-xl bg-muted/50 cyber-border">
                   <p className="text-[10px] text-muted-foreground">Main</p>
-                  <p className="font-bold text-base">{isPlayer && wallet != null ? `₹${Number((wallet as { main_balance?: string }).main_balance || 0).toLocaleString()}` : "—"}</p>
+                  <p className="font-bold text-sm">{isPlayer && wallet != null ? `₹${Number((wallet as { main_balance?: string }).main_balance || 0).toLocaleString()}` : "—"}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-muted/50 cyber-border">
+                <div className="p-2 rounded-xl bg-muted/50 cyber-border">
                   <p className="text-[10px] text-muted-foreground">Bonus</p>
-                  <p className="font-bold text-base text-primary">{isPlayer && wallet != null ? `₹${Number((wallet as { bonus_balance?: string }).bonus_balance || 0).toLocaleString()}` : "—"}</p>
+                  <p className="font-bold text-sm text-primary">{isPlayer && wallet != null ? `₹${Number((wallet as { bonus_balance?: string }).bonus_balance || 0).toLocaleString()}` : "—"}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 neon-glow-sm">
+                <div className="p-2 rounded-xl bg-primary/5 border border-primary/20 neon-glow-sm">
                   <p className="text-[10px] text-muted-foreground">Total</p>
-                  <p className="font-bold text-base neon-text">
+                  <p className="font-bold text-sm neon-text">
                     {isPlayer && wallet != null
                       ? `₹${(Number((wallet as { main_balance?: string }).main_balance || 0) + Number((wallet as { bonus_balance?: string }).bonus_balance || 0)).toLocaleString()}`
                       : "—"}
@@ -183,29 +153,29 @@ const GameDetailPage = () => {
                     <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2">+ Add Fund</Button>
                   </Link>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" className="h-12 w-12 text-lg font-bold" onClick={() => setBetAmount(Math.max(minBet, betAmount - minBet))}>-</Button>
+                <div className="flex items-center gap-1.5">
+                  <Button variant="outline" size="icon" className="h-10 w-10 text-base font-bold shrink-0" onClick={() => setBetAmount(Math.max(minBet, betAmount - minBet))}>-</Button>
                   <input
                     type="number"
                     value={betAmount}
                     onChange={(e) => setBetAmount(Number(e.target.value))}
-                    className="flex-1 h-14 text-center text-2xl font-gaming font-bold rounded-xl border border-border bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    className="flex-1 h-12 text-center text-xl font-gaming font-bold rounded-xl border border-border bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                   />
-                  <Button variant="outline" size="icon" className="h-12 w-12 text-lg font-bold" onClick={() => setBetAmount(Math.min(maxBet, betAmount + minBet))}>+</Button>
+                  <Button variant="outline" size="icon" className="h-10 w-10 text-base font-bold shrink-0" onClick={() => setBetAmount(Math.min(maxBet, betAmount + minBet))}>+</Button>
                 </div>
-                <div className="flex gap-2 mt-3 flex-wrap">
+                <div className="flex gap-1.5 mt-2 flex-wrap">
                   {chips.map((chip) => (
                     <Button
                       key={chip}
                       variant="outline"
                       size="sm"
                       onClick={() => setBetAmount(chip)}
-                      className={`text-xs font-gaming ${betAmount === chip ? "border-primary text-primary neon-glow-sm bg-primary/5" : ""}`}
+                      className={`text-xs font-gaming h-7 px-2 ${betAmount === chip ? "border-primary text-primary neon-glow-sm bg-primary/5" : ""}`}
                     >
                       {chip >= 1000 ? `${chip / 1000}K` : chip}
                     </Button>
                   ))}
-                  <Button variant="outline" size="sm" onClick={() => setBetAmount(maxBet)} className="text-xs text-accent border-accent font-gaming">
+                  <Button variant="outline" size="sm" onClick={() => setBetAmount(maxBet)} className="text-xs text-accent border-accent font-gaming h-7 px-2">
                     MAX
                   </Button>
                 </div>
@@ -213,23 +183,23 @@ const GameDetailPage = () => {
 
               {!user ? (
                 <Link to="/login">
-                  <Button className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 neon-glow tracking-widest">
+                  <Button className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-base h-12 neon-glow tracking-widest">
                     🎮 Login to play
                   </Button>
                 </Link>
               ) : !isPlayer ? (
-                <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-lg h-14" disabled>
+                <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-base h-12" disabled>
                   Only players can launch games
                 </Button>
               ) : !canPlay ? (
                 <Link to="/wallet">
-                  <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-lg h-14">
+                  <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-base h-12">
                     Add Funds to play
                   </Button>
                 </Link>
               ) : (
                 <Button
-                  className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-lg h-14 neon-glow tracking-widest animate-scale-pulse"
+                  className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-base h-12 neon-glow tracking-widest animate-scale-pulse"
                   onClick={() => navigate(`/games/${g.id}/play`)}
                 >
                   🎮 START PLAYING
@@ -286,10 +256,10 @@ const GameDetailPage = () => {
 
       {/* Recent Winners */}
       <section>
-        <h2 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
-          <Crown className="h-5 w-5 text-warning" /> Recent Winners
+        <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2">
+          <Crown className="h-4 w-4 text-warning" /> Recent Winners
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
           {recentWinners.map((w, i) => (
             <Card key={i} className="gaming-card hover:neon-glow-sm transition-all">
               <CardContent className="p-3 flex items-center gap-3">
@@ -333,9 +303,9 @@ const GameDetailPage = () => {
       {/* Game Rules */}
       <section>
         <Card className="gaming-card">
-          <CardContent className="p-6">
-            <h2 className="font-display font-bold text-lg mb-3 flex items-center gap-2">
-              <Target className="h-5 w-5 text-accent" /> How to Play
+          <CardContent className="p-4">
+            <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2">
+              <Target className="h-4 w-4 text-accent" /> How to Play
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex gap-3">
@@ -366,13 +336,13 @@ const GameDetailPage = () => {
 
       {/* Most Played */}
       <section>
-        <h2 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
-          <span className="h-5 w-1 rounded-full gold-gradient inline-block" />
-          <Flame className="h-5 w-5 text-warning" /> Most Played
+        <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2">
+          <span className="h-4 w-1 rounded-full gold-gradient inline-block" />
+          <Flame className="h-4 w-4 text-warning" /> Most Played
         </h2>
-        <div className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 snap-x scrollbar-hide">
           {mostPlayed.map((x) => (
-            <div key={x.id} className="snap-start min-w-[150px] md:min-w-[190px]">
+            <div key={x.id} className="snap-start min-w-[120px] sm:min-w-[150px] md:min-w-[180px]">
               <Link to={`/games/${x.id}`}><GameCard image={getGameImageUrl(x)} name={x.name} category={x.category_name ?? ""} minBet={Number(x.min_bet)} maxBet={Number(x.max_bet)} /></Link>
             </div>
           ))}
@@ -382,13 +352,13 @@ const GameDetailPage = () => {
       {/* Related */}
       {related.length > 0 && (
         <section>
-          <h2 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
-            <span className="h-5 w-1 rounded-full gold-gradient inline-block" />
-            <Dice1 className="h-5 w-5 text-accent" /> Related Games
+          <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2">
+            <span className="h-4 w-1 rounded-full gold-gradient inline-block" />
+            <Dice1 className="h-4 w-4 text-accent" /> Related Games
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 snap-x scrollbar-hide">
             {related.map((x) => (
-              <div key={x.id} className="snap-start min-w-[150px] md:min-w-[190px]">
+              <div key={x.id} className="snap-start min-w-[120px] sm:min-w-[150px] md:min-w-[180px]">
                 <Link to={`/games/${x.id}`}><GameCard image={getGameImageUrl(x)} name={x.name} category={x.category_name ?? ""} minBet={Number(x.min_bet)} maxBet={Number(x.max_bet)} /></Link>
               </div>
             ))}
