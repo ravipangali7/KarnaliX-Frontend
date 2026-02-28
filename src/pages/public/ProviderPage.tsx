@@ -168,7 +168,7 @@ const ProviderPage = () => {
       {!gamesLoading && !gamesError && (
         <div
           className="scrollbar-hide pb-2"
-          style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden", gap: "12px", width: "100%", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory" }}
+          style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "space-evenly", overflowX: "auto", overflowY: "hidden", gap: "12px", width: "100%", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory" }}
         >
           {results.map((game: Game) => (
             <div key={game.id} style={{ flexShrink: 0, flexGrow: 0, width: "150px", minWidth: "150px", scrollSnapAlign: "start" }}>
