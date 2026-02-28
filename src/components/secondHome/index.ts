@@ -6,3 +6,7 @@ export { SecondHomeSidebar } from "./SecondHomeSidebar";
 export { SecondHomeTopGamesCarousel } from "./SecondHomeTopGamesCarousel";
 export { SecondHomeCategoryGames } from "./SecondHomeCategoryGames";
 export { SecondHomePopularGames } from "./SecondHomePopularGames";
+export { SecondHomeReferBonus } from "./SecondHomeReferBonus";
+export { SecondHomeBonusSection } from "./SecondHomeBonusSection";
+export { SecondHomeComingSoon } from "./SecondHomeComingSoon";
+export { SecondHomeFooter } from "./SecondHomeFooter";

@@ -8,9 +8,10 @@ import {
 } from "@/components/secondHome";
 import { GameProviders } from "@/components/home/GameProviders";
 import { ActivePopups } from "@/components/home/ActivePopups";
-import { PromoBannerGrid, PromoBanner } from "@/components/home/PromoBanner";
-import { ComingSoon } from "@/components/home/ComingSoon";
-import { Testimonials } from "@/components/home/Testimonials";
+import { SecondHomeReferBonus } from "@/components/secondHome/SecondHomeReferBonus";
+import { SecondHomeBonusSection } from "@/components/secondHome/SecondHomeBonusSection";
+import { SecondHomeComingSoon } from "@/components/secondHome/SecondHomeComingSoon";
+
 export default function SecondHomePage() {
   const { data, isLoading, isError, refetch } = useSecondHomePageData();
 
@@ -45,57 +46,41 @@ export default function SecondHomePage() {
   return (
     <div className="space-y-0 pb-8 bg-background">
       <ActivePopups />
+
       {/* 1. Banner */}
       <SecondHomeSlider slides={data.sliderSlides} />
 
       {/* 2. Live Casino Category — subcategories with icons, horizontal slider */}
       <SecondHomeLiveCategorySubcategories liveCategory={data.liveCategory} subcategories={data.liveCategorySubcategories} />
 
-      {/* 3. Top Games */}
+      {/* 3. Top Games (is_top_game) */}
       <SecondHomeTopGamesCarousel games={data.topGames} />
 
       {/* 4. Trusted Game Providers */}
       <GameProviders providers={data.providerCards} />
 
-      {/* 5. GameCategory-wise game cards */}
+      {/* 5–7. Category-wise game cards (Live Casino, Slots, Sports, etc.) */}
       <SecondHomeCategoryGames categories={data.categories} gamesByCategory={data.gamesByCategory} />
 
-      {/* 6. Popular Games */}
+      {/* 8. Popular Games (is_popular_game) */}
       <SecondHomePopularGames games={data.popularGames} />
 
-      {/* 7. Refer & Earn */}
+      {/* 9. Refer Bonus */}
       {data.promosGrid.length > 0 && (
-        <PromoBannerGrid promos={data.promosGrid} />
+        <SecondHomeReferBonus promos={data.promosGrid} />
       )}
 
-      {/* 8. Bonus — Welcome (first column) + Deposit (second column) */}
-      {data.welcomeDepositPromos.length > 0 && (
-        <section className="container px-4 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.welcomeDepositPromos.map((promo, i) => (
-              <PromoBanner key={i} promo={promo} />
-            ))}
-          </div>
-        </section>
-      )}
-      {data.tournamentPromo && (
-        <section className="container px-4 py-6">
-          <PromoBanner promo={data.tournamentPromo} fullWidth />
-        </section>
-      )}
-      {data.cashbackPromo && (
-        <section className="container px-4 py-6">
-          <PromoBanner promo={data.cashbackPromo} fullWidth />
-        </section>
-      )}
+      {/* 10. Welcome | Deposit Bonus */}
+      <SecondHomeBonusSection
+        welcomeDepositPromos={data.welcomeDepositPromos}
+        tournamentPromo={data.tournamentPromo}
+        cashbackPromo={data.cashbackPromo}
+      />
 
-      {/* 9. Coming Soon Games */}
-      <ComingSoon comingSoon={data.comingSoon} />
+      {/* 11. Coming Soon Games */}
+      <SecondHomeComingSoon comingSoon={data.comingSoon} />
 
-      {/* 10. Footer is in SecondPublicLayout */}
-
-      {/* Testimonials */}
-      <Testimonials testimonials={data.testimonials} />
+      {/* 12. Footer is in SecondPublicLayout */}
     </div>
   );
 }
