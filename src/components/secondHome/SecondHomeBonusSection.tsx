@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Gift, Wallet, Trophy, Percent, Sparkles, Users } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import type { PromoShape } from "@/data/homePageMockData";
 
 const variantConfig: Record<
@@ -38,11 +39,13 @@ const variantConfig: Record<
   },
 };
 
-/** Bonus card matching reference: horizontal gradient card, badge (gray), title + value (gold), Login to claim (frosted). Exported for use in Refer section. */
+/** Bonus card: when logged in show "Claim now", when guest show "Login to claim". */
 export function SecondHomeBonusCard({ promo, featured = false }: { promo: PromoShape; featured?: boolean }) {
+  const { user } = useAuth();
   const variant = promo.variant ?? "welcome";
   const cfg = variantConfig[variant] ?? variantConfig.welcome;
   const Icon = cfg.icon;
+  const ctaLabel = user ? "Claim now" : "Login to claim";
 
   return (
     <Link
@@ -67,11 +70,11 @@ export function SecondHomeBonusCard({ promo, featured = false }: { promo: PromoS
         </p>
       </div>
 
-      {/* Login to claim – frosted, theme text */}
+      {/* CTA: Claim now when logged in, Login to claim when guest */}
       <span
         className={`flex-shrink-0 px-4 py-2 rounded-lg bg-white/20 backdrop-blur border border-white/30 text-sm font-semibold ${cfg.buttonText}`}
       >
-        Login to claim
+        {ctaLabel}
       </span>
     </Link>
   );
