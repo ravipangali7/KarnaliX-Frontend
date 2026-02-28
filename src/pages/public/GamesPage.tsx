@@ -92,30 +92,33 @@ const GamesPage = () => {
         </Button>
       </form>
 
-      {/* Category row with SVG icon + name, horizontal scroll */}
-      <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2 scrollbar-hide w-full" style={{ WebkitOverflowScrolling: "touch" }}>
+      {/* Category row with SVG icon + name, single-row horizontal scroll */}
+      <div
+        className="scrollbar-hide pb-2"
+        style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden", gap: "12px", width: "100%", WebkitOverflowScrolling: "touch" }}
+      >
         {/* All Games chip */}
         <button
           onClick={() => setFilters({ category: "all", page: 1 })}
-          className={`flex flex-col items-center gap-1 transition-all ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
-          style={{ flexShrink: 0, width: "64px" }}
+          className={`transition-all ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0, flexGrow: 0, width: "64px", minWidth: "64px" }}
         >
           <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border-2 transition-all ${categoryParam === "all" ? "border-primary neon-glow-sm bg-primary/10" : "border-white/10 bg-white/5"}`}>
             <LayoutGrid className={`h-6 w-6 ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} />
           </div>
-          <span className={`text-[10px] font-medium text-center whitespace-nowrap w-full truncate ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`}>All</span>
+          <span className={`text-[10px] font-medium text-center ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>All</span>
         </button>
         {(categories as GameCategory[]).map((cat) => (
           <button
             key={cat.id}
             onClick={() => setFilters({ category: String(cat.id), page: 1 })}
-            className={`flex flex-col items-center gap-1 transition-all ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
-            style={{ flexShrink: 0, width: "64px" }}
+            className={`transition-all ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0, flexGrow: 0, width: "64px", minWidth: "64px" }}
           >
             <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border-2 transition-all overflow-hidden ${categoryParam === String(cat.id) ? "border-primary neon-glow-sm bg-primary/10" : "border-white/10 bg-white/5"}`}>
               <CategoryIcon svg={cat.svg} name={cat.name} />
             </div>
-            <span className={`text-[10px] font-medium text-center whitespace-nowrap w-full truncate ${categoryParam === String(cat.id) ? "text-primary" : "text-muted-foreground"}`}>{cat.name}</span>
+            <span className={`text-[10px] font-medium text-center ${categoryParam === String(cat.id) ? "text-primary" : "text-muted-foreground"}`} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>{cat.name}</span>
           </button>
         ))}
       </div>
@@ -131,11 +134,14 @@ const GamesPage = () => {
         </div>
       )}
 
-      {/* Games horizontal scroll */}
+      {/* Games — single-row horizontal scroll, never wraps */}
       {!gamesLoading && !gamesError && (
-        <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide w-full" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div
+          className="scrollbar-hide pb-2"
+          style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden", gap: "12px", width: "100%", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory" }}
+        >
           {results.map((game: Game) => (
-            <div key={game.id} className="snap-start shrink-0" style={{ width: "150px" }}>
+            <div key={game.id} style={{ flexShrink: 0, flexGrow: 0, width: "150px", minWidth: "150px", scrollSnapAlign: "start" }}>
               <Link to={`/games/${game.id}`}>
                 <GameCard image={getGameImageUrl(game)} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
               </Link>
