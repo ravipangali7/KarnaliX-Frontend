@@ -11,9 +11,11 @@ import { ActivePopups } from "@/components/home/ActivePopups";
 import { SecondHomeReferBonus } from "@/components/secondHome/SecondHomeReferBonus";
 import { SecondHomeBonusSection } from "@/components/secondHome/SecondHomeBonusSection";
 import { SecondHomeComingSoon } from "@/components/secondHome/SecondHomeComingSoon";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SecondHomePage() {
   const { data, isLoading, isError, refetch } = useSecondHomePageData();
+  const { user } = useAuth();
 
   if (isLoading) {
     return (
@@ -65,17 +67,19 @@ export default function SecondHomePage() {
       {/* 8. Popular Games (is_popular_game) */}
       <SecondHomePopularGames games={data.popularGames} />
 
-      {/* 9. Refer Bonus */}
-      {data.promosGrid.length > 0 && (
+      {/* 9. Refer Bonus — hidden when logged in */}
+      {!user && data.promosGrid.length > 0 && (
         <SecondHomeReferBonus promos={data.promosGrid} />
       )}
 
-      {/* 10. Welcome | Deposit Bonus */}
-      <SecondHomeBonusSection
-        welcomeDepositPromos={data.welcomeDepositPromos}
-        tournamentPromo={data.tournamentPromo}
-        cashbackPromo={data.cashbackPromo}
-      />
+      {/* 10. Welcome | Deposit Bonus — hidden when logged in */}
+      {!user && (
+        <SecondHomeBonusSection
+          welcomeDepositPromos={data.welcomeDepositPromos}
+          tournamentPromo={data.tournamentPromo}
+          cashbackPromo={data.cashbackPromo}
+        />
+      )}
 
       {/* 11. Coming Soon Games */}
       <SecondHomeComingSoon comingSoon={data.comingSoon} />

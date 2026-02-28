@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +29,9 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const user = await login(username, password);
-      const to = roleRedirect[user.role] || "/";
+      const nextParam = searchParams.get("next") ?? "";
+      const isSafeNext = nextParam.startsWith("/") && !nextParam.startsWith("//");
+      const to = isSafeNext ? nextParam : (roleRedirect[user.role] || "/");
       navigate(to, { replace: true });
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Invalid credentials.";

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Users, Share2, Gift } from "lucide-react";
 import type { PromoShape } from "@/data/homePageMockData";
 import { promosGrid as defaultPromos } from "@/data/homePageMockData";
@@ -24,10 +25,23 @@ export function SecondHomeReferBonus({ promos: promosProp }: SecondHomeReferBonu
       {/* Primary card – same design as reference (value in gold, Login to claim) */}
       <SecondHomeBonusCard promo={primary} />
 
-      {/* Steps row – layout unchanged */}
+      {/* Steps row */}
       <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] px-6 md:px-8 py-5 grid grid-cols-3 gap-4">
+        {/* Step 01: clickable – logs guest in then redirects to referral page */}
+        <Link
+          to="/login?next=/player/referral"
+          className="flex flex-col items-center text-center gap-2 group"
+        >
+          <div className="h-10 w-10 rounded-full bg-white/5 border border-emerald-500/40 group-hover:bg-emerald-500/10 flex items-center justify-center transition-colors">
+            <Share2 className="h-5 w-5 text-emerald-400" />
+          </div>
+          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">01</p>
+          <p className="text-xs text-foreground/80 group-hover:text-emerald-400 transition-colors">Share your link</p>
+          <p className="text-[10px] text-emerald-500/80">Login to get link</p>
+        </Link>
+
+        {/* Step 02 & 03: informational */}
         {[
-          { icon: Share2, label: "Share your link", step: "01" },
           { icon: Users, label: "Friend signs up", step: "02" },
           { icon: Gift, label: "You both earn", step: "03" },
         ].map(({ icon: Icon, label, step }) => (
