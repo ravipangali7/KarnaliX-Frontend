@@ -6,24 +6,199 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
-import { getGamesAdmin, getCategoriesAdmin, getProvidersAdmin, createGame, createGameForm, updateGame, updateGameForm } from "@/api/admin";
+import {
+  getGamesAdmin, getCategoriesAdmin, getProvidersAdmin, getSubcategoriesAdmin,
+  createGame, createGameForm, updateGame, updateGameForm,
+} from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "@/hooks/use-toast";
 import { getMediaUrl } from "@/lib/api";
+
+type GameRow = Record<string, unknown>;
+
+// ─── Single-field inline edit modal ─────────────────────────────────────────
+
+interface InlineEditState {
+  row: GameRow;
+  field: string;
+  label: string;
+  value: unknown;
+}
+
+function InlineEditModal({
+  state, onClose, categories, providers, subcategories,
+}: {
+  state: InlineEditState | null;
+  onClose: () => void;
+  categories: { id: number; name: string }[];
+  providers: { id: number; name: string; code: string }[];
+  subcategories: { id: number; name: string; game_category: number }[];
+}) {
+  const queryClient = useQueryClient();
+  const [value, setValue] = useState<unknown>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (state) setValue(state.value);
+  }, [state]);
+
+  if (!state) return null;
+
+  const handleSave = async () => {
+    const id = Number(state.row.id);
+    setSaving(true);
+    try {
+      await updateGame(id, { [state.field]: value === "" ? null : value });
+      queryClient.invalidateQueries({ queryKey: ["admin-games"] });
+      toast({ title: `${state.label} updated.` });
+      onClose();
+    } catch (e) {
+      const msg = (e as { detail?: string })?.detail ?? "Failed to update";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderField = () => {
+    const f = state.field;
+    if (["is_active", "is_coming_soon", "is_single_game", "is_top_game", "is_popular_game"].includes(f)) {
+      return (
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={Boolean(value)}
+            onChange={(e) => setValue(e.target.checked)}
+            className="rounded border-border h-4 w-4"
+          />
+          {state.label}
+        </label>
+      );
+    }
+    if (f === "category") {
+      return (
+        <select
+          className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+          value={String(value ?? "")}
+          onChange={(e) => setValue(e.target.value === "" ? null : Number(e.target.value))}
+        >
+          <option value="">Select Category</option>
+          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      );
+    }
+    if (f === "provider") {
+      return (
+        <select
+          className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+          value={String(value ?? "")}
+          onChange={(e) => setValue(e.target.value === "" ? null : Number(e.target.value))}
+        >
+          <option value="">Select Provider</option>
+          {providers.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
+        </select>
+      );
+    }
+    if (f === "subcategory") {
+      const catId = typeof state.row.category === "number" ? state.row.category : Number(state.row.category);
+      const filtered = catId ? subcategories.filter((s) => s.game_category === catId) : subcategories;
+      return (
+        <select
+          className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+          value={String(value ?? "")}
+          onChange={(e) => setValue(e.target.value === "" ? null : Number(e.target.value))}
+        >
+          <option value="">None</option>
+          {filtered.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      );
+    }
+    if (f === "coming_soon_launch_date") {
+      return (
+        <Input
+          type="date"
+          value={value ? String(value).slice(0, 10) : ""}
+          onChange={(e) => setValue(e.target.value || null)}
+        />
+      );
+    }
+    if (f === "min_bet" || f === "max_bet") {
+      return (
+        <Input
+          type="number"
+          value={String(value ?? "")}
+          onChange={(e) => setValue(e.target.value)}
+        />
+      );
+    }
+    if (f === "coming_soon_description") {
+      return (
+        <Textarea
+          value={String(value ?? "")}
+          onChange={(e) => setValue(e.target.value)}
+          rows={3}
+          className="resize-none"
+        />
+      );
+    }
+    return (
+      <Input
+        value={String(value ?? "")}
+        onChange={(e) => setValue(e.target.value)}
+      />
+    );
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-display text-base">
+            Edit — {String(state.row.name ?? state.row.id)}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">{state.label}</p>
+        </DialogHeader>
+        <div className="py-2">{renderField()}</div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="gold-gradient text-primary-foreground" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const PowerhouseGames = () => {
   const queryClient = useQueryClient();
   const { data: games = [] } = useQuery({ queryKey: ["admin-games"], queryFn: getGamesAdmin });
   const { data: categories = [] } = useQuery({ queryKey: ["admin-categories"], queryFn: getCategoriesAdmin });
   const { data: providers = [] } = useQuery({ queryKey: ["admin-providers"], queryFn: getProvidersAdmin });
+  const { data: subcategories = [] } = useQuery({ queryKey: ["admin-subcategories"], queryFn: () => getSubcategoriesAdmin() });
+
+  const cats = categories as { id: number; name: string }[];
+  const provs = providers as { id: number; name: string; code: string }[];
+  const subcats = subcategories as { id: number; name: string; game_category: number }[];
+
+  // ── Form state ──
   const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingGame, setEditingGame] = useState<GameRow | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
+
   const [name, setName] = useState("");
   const [gameUid, setGameUid] = useState("");
   const [categoryId, setCategoryId] = useState<number | "">("");
+  const [subcategoryId, setSubcategoryId] = useState<number | "">("");
   const [providerId, setProviderId] = useState<number | "">("");
   const [minBet, setMinBet] = useState("10");
   const [maxBet, setMaxBet] = useState("5000");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [isComingSoon, setIsComingSoon] = useState(false);
   const [isSingleGame, setIsSingleGame] = useState(false);
@@ -31,44 +206,30 @@ const PowerhouseGames = () => {
   const [isPopularGame, setIsPopularGame] = useState(false);
   const [comingSoonLaunchDate, setComingSoonLaunchDate] = useState("");
   const [comingSoonDescription, setComingSoonDescription] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingGame, setEditingGame] = useState<Record<string, unknown> | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!imageFile) {
-      setImagePreviewUrl(null);
-      return;
-    }
+    if (!imageFile) { setImagePreviewUrl(null); return; }
     const url = URL.createObjectURL(imageFile);
     setImagePreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
+  const filteredSubcats = categoryId !== "" ? subcats.filter((s) => s.game_category === categoryId) : subcats;
+
   const resetForm = () => {
-    setName("");
-    setGameUid("");
-    setCategoryId("");
-    setProviderId("");
-    setMinBet("10");
-    setMaxBet("5000");
-    setImageFile(null);
-    setIsActive(true);
-    setIsComingSoon(false);
-    setIsSingleGame(false);
-    setIsTopGame(false);
-    setIsPopularGame(false);
-    setComingSoonLaunchDate("");
-    setComingSoonDescription("");
-    setEditingGame(null);
+    setName(""); setGameUid(""); setCategoryId(""); setSubcategoryId(""); setProviderId("");
+    setMinBet("10"); setMaxBet("5000"); setImageFile(null);
+    setIsActive(true); setIsComingSoon(false); setIsSingleGame(false);
+    setIsTopGame(false); setIsPopularGame(false);
+    setComingSoonLaunchDate(""); setComingSoonDescription(""); setEditingGame(null);
   };
 
-  const openEdit = (row: Record<string, unknown>) => {
+  const openEdit = (row: GameRow) => {
     setEditingGame(row);
     setName(String(row.name ?? ""));
     setGameUid(String(row.game_uid ?? ""));
     setCategoryId(typeof row.category === "number" ? row.category : "");
+    setSubcategoryId(typeof row.subcategory === "number" ? row.subcategory : "");
     setProviderId(typeof row.provider === "number" ? row.provider : "");
     setMinBet(String(row.min_bet ?? "10"));
     setMaxBet(String(row.max_bet ?? "5000"));
@@ -84,79 +245,261 @@ const PowerhouseGames = () => {
     setEditOpen(true);
   };
 
+  // ── Cell click → inline edit ──
+  const EDITABLE_CELLS: Record<string, string> = {
+    name: "Name",
+    game_uid: "Game UID",
+    category: "Category",
+    subcategory: "Subcategory",
+    provider: "Provider",
+    min_bet: "Min Bet",
+    max_bet: "Max Bet",
+    is_active: "Active",
+    is_coming_soon: "Coming Soon",
+    is_single_game: "Single Game",
+    is_top_game: "Top Game",
+    is_popular_game: "Popular Game",
+    coming_soon_launch_date: "Launch Date",
+    coming_soon_description: "Coming Soon Description",
+  };
+
+  const handleCellClick = (row: GameRow, field: string) => {
+    if (!EDITABLE_CELLS[field]) return;
+    setInlineEdit({ row, field, label: EDITABLE_CELLS[field], value: row[field] ?? null });
+  };
+
+  // ── Column definitions with colorful styling ──
   const columns = [
-    { header: "Name", accessor: (row: Record<string, unknown>) => String(row.name ?? "") },
-    { header: "Category", accessor: (row: Record<string, unknown>) => String(row.category_name ?? "") },
-    { header: "Provider", accessor: (row: Record<string, unknown>) => String(row.provider_name ?? "") },
-    { header: "Min Bet", accessor: (row: Record<string, unknown>) => `₹${row.min_bet ?? ""}` },
-    { header: "Max Bet", accessor: (row: Record<string, unknown>) => `₹${Number(row.max_bet ?? 0).toLocaleString()}` },
+    {
+      header: "ID",
+      accessor: (row: GameRow) => <span className="text-xs text-muted-foreground">{String(row.id ?? "")}</span>,
+      sortKey: "id",
+    },
+    {
+      header: "Image",
+      accessor: (row: GameRow) => (
+        row.image || row.image_url
+          ? <img
+              src={row.image ? getMediaUrl(String(row.image)) : String(row.image_url)}
+              alt=""
+              className="w-8 h-8 rounded object-cover border border-border"
+            />
+          : <div className="w-8 h-8 rounded bg-muted border border-border" />
+      ),
+    },
+    {
+      header: "Name",
+      accessor: (row: GameRow) => (
+        <span
+          className="font-semibold text-primary cursor-pointer hover:underline"
+          onClick={() => handleCellClick(row, "name")}
+        >
+          {String(row.name ?? "")}
+        </span>
+      ),
+      sortKey: "name",
+    },
+    {
+      header: "UID",
+      accessor: (row: GameRow) => (
+        <span
+          className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded cursor-pointer hover:bg-muted/80"
+          onClick={() => handleCellClick(row, "game_uid")}
+        >
+          {String(row.game_uid ?? "")}
+        </span>
+      ),
+      sortKey: "game_uid",
+    },
+    {
+      header: "Category",
+      accessor: (row: GameRow) => (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 cursor-pointer hover:bg-blue-500/25"
+          onClick={() => handleCellClick(row, "category")}
+        >
+          {String(row.category_name ?? "")}
+        </span>
+      ),
+      sortKey: "category_name",
+    },
+    {
+      header: "Subcategory",
+      accessor: (row: GameRow) => (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 cursor-pointer hover:bg-indigo-500/25"
+          onClick={() => handleCellClick(row, "subcategory")}
+        >
+          {row.subcategory_name ? String(row.subcategory_name) : <span className="text-muted-foreground italic">—</span>}
+        </span>
+      ),
+      sortKey: "subcategory_name",
+    },
+    {
+      header: "Provider",
+      accessor: (row: GameRow) => (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 cursor-pointer hover:bg-purple-500/25"
+          onClick={() => handleCellClick(row, "provider")}
+        >
+          {String(row.provider_name ?? "")}
+        </span>
+      ),
+      sortKey: "provider_name",
+    },
+    {
+      header: "Min Bet",
+      accessor: (row: GameRow) => (
+        <span
+          className="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 cursor-pointer hover:bg-emerald-500/25"
+          onClick={() => handleCellClick(row, "min_bet")}
+        >
+          ₹{row.min_bet ?? ""}
+        </span>
+      ),
+      sortKey: "min_bet",
+    },
+    {
+      header: "Max Bet",
+      accessor: (row: GameRow) => (
+        <span
+          className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 cursor-pointer hover:bg-amber-500/25"
+          onClick={() => handleCellClick(row, "max_bet")}
+        >
+          ₹{Number(row.max_bet ?? 0).toLocaleString()}
+        </span>
+      ),
+      sortKey: "max_bet",
+    },
     {
       header: "Flags",
-      accessor: (row: Record<string, unknown>) => (
+      accessor: (row: GameRow) => (
         <div className="flex gap-1 flex-wrap">
-          {row.is_top_game && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400">Top</span>}
-          {row.is_popular_game && <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-600 dark:text-violet-400">Popular</span>}
+          {row.is_top_game && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 cursor-pointer"
+              onClick={() => handleCellClick(row, "is_top_game")}
+            >
+              Top
+            </span>
+          )}
+          {row.is_popular_game && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-500/30 cursor-pointer"
+              onClick={() => handleCellClick(row, "is_popular_game")}
+            >
+              Popular
+            </span>
+          )}
+          {row.is_single_game && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 cursor-pointer"
+              onClick={() => handleCellClick(row, "is_single_game")}
+            >
+              Single
+            </span>
+          )}
+          {row.is_coming_soon && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/30 cursor-pointer"
+              onClick={() => handleCellClick(row, "is_coming_soon")}
+            >
+              Soon
+            </span>
+          )}
+          {!row.is_top_game && !row.is_popular_game && !row.is_single_game && !row.is_coming_soon && (
+            <span className="text-[10px] text-muted-foreground">—</span>
+          )}
         </div>
       ),
     },
-    { header: "Status", accessor: (row: Record<string, unknown>) => <StatusBadge status={row.is_active ? "active" : "suspended"} /> },
+    {
+      header: "Status",
+      accessor: (row: GameRow) => (
+        <span className="cursor-pointer" onClick={() => handleCellClick(row, "is_active")}>
+          <StatusBadge status={row.is_active ? "active" : "suspended"} />
+        </span>
+      ),
+      sortKey: "is_active",
+    },
+    {
+      header: "Created",
+      accessor: (row: GameRow) => (
+        <span className="text-xs text-muted-foreground">
+          {row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : ""}
+        </span>
+      ),
+      sortKey: "created_at",
+    },
     {
       header: "Actions",
-      accessor: (row: Record<string, unknown>) => (
+      accessor: (row: GameRow) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="text-xs" onClick={() => openEdit(row)}>Edit</Button>
-          <Button variant="ghost" size="sm" className="text-xs text-crimson">Delete</Button>
         </div>
       ),
     },
   ];
 
-  const handleSave = async () => {
-    const n = name.trim();
-    const uid = gameUid.trim();
-    if (!n || !uid) {
+  // ── Create handler ──
+  const buildPayload = () => ({
+    name: name.trim(),
+    game_uid: gameUid.trim(),
+    category: categoryId,
+    provider: providerId,
+    subcategory: subcategoryId !== "" ? subcategoryId : null,
+    min_bet: minBet || "0",
+    max_bet: maxBet || "0",
+    is_active: isActive,
+    is_coming_soon: isComingSoon,
+    is_single_game: isSingleGame,
+    is_top_game: isTopGame,
+    is_popular_game: isPopularGame,
+    coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
+    coming_soon_description: comingSoonDescription.trim() || "",
+  });
+
+  const buildFormData = () => {
+    const fd = new FormData();
+    const p = buildPayload();
+    fd.append("name", p.name);
+    fd.append("game_uid", p.game_uid);
+    fd.append("category", String(p.category));
+    fd.append("provider", String(p.provider));
+    if (p.subcategory != null) fd.append("subcategory", String(p.subcategory));
+    fd.append("min_bet", p.min_bet);
+    fd.append("max_bet", p.max_bet);
+    fd.append("is_active", String(p.is_active));
+    fd.append("is_coming_soon", String(p.is_coming_soon));
+    fd.append("is_single_game", String(p.is_single_game));
+    fd.append("is_top_game", String(p.is_top_game));
+    fd.append("is_popular_game", String(p.is_popular_game));
+    if (p.coming_soon_launch_date) fd.append("coming_soon_launch_date", p.coming_soon_launch_date);
+    fd.append("coming_soon_description", p.coming_soon_description);
+    if (imageFile) fd.append("image", imageFile);
+    return fd;
+  };
+
+  const validate = () => {
+    if (!name.trim() || !gameUid.trim()) {
       toast({ title: "Game name and Game UID are required", variant: "destructive" });
-      return;
+      return false;
     }
     if (categoryId === "" || providerId === "") {
       toast({ title: "Please select Category and Provider", variant: "destructive" });
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!validate()) return;
     setSaving(true);
     try {
       if (imageFile) {
-        const formData = new FormData();
-        formData.append("name", n);
-        formData.append("game_uid", uid);
-        formData.append("category", String(categoryId));
-        formData.append("provider", String(providerId));
-        formData.append("min_bet", minBet || "0");
-        formData.append("max_bet", maxBet || "0");
-        formData.append("is_active", String(isActive));
-        formData.append("is_coming_soon", String(isComingSoon));
-        formData.append("is_single_game", String(isSingleGame));
-        formData.append("is_top_game", String(isTopGame));
-        formData.append("is_popular_game", String(isPopularGame));
-        if (comingSoonLaunchDate.trim()) formData.append("coming_soon_launch_date", comingSoonLaunchDate.trim());
-        formData.append("coming_soon_description", comingSoonDescription.trim());
-        formData.append("image", imageFile);
-        await createGameForm(formData);
+        await createGameForm(buildFormData());
       } else {
-        await createGame({
-          name: n,
-          game_uid: uid,
-          category: categoryId,
-          provider: providerId,
-          min_bet: minBet || "0",
-          max_bet: maxBet || "0",
-          is_active: isActive,
-          is_coming_soon: isComingSoon,
-          is_single_game: isSingleGame,
-          is_top_game: isTopGame,
-          is_popular_game: isPopularGame,
-          coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
-          coming_soon_description: comingSoonDescription.trim() || "",
-        });
+        await createGame(buildPayload());
       }
       queryClient.invalidateQueries({ queryKey: ["admin-games"] });
       toast({ title: "Game created successfully." });
@@ -171,53 +514,14 @@ const PowerhouseGames = () => {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingGame?.id) return;
-    const n = name.trim();
-    const uid = gameUid.trim();
-    if (!n || !uid) {
-      toast({ title: "Game name and Game UID are required", variant: "destructive" });
-      return;
-    }
-    if (categoryId === "" || providerId === "") {
-      toast({ title: "Please select Category and Provider", variant: "destructive" });
-      return;
-    }
+    if (!editingGame?.id || !validate()) return;
     const id = Number(editingGame.id);
     setSaving(true);
     try {
       if (imageFile) {
-        const formData = new FormData();
-        formData.append("name", n);
-        formData.append("game_uid", uid);
-        formData.append("category", String(categoryId));
-        formData.append("provider", String(providerId));
-        formData.append("min_bet", minBet || "0");
-        formData.append("max_bet", maxBet || "0");
-        formData.append("is_active", String(isActive));
-        formData.append("is_coming_soon", String(isComingSoon));
-        formData.append("is_single_game", String(isSingleGame));
-        formData.append("is_top_game", String(isTopGame));
-        formData.append("is_popular_game", String(isPopularGame));
-        if (comingSoonLaunchDate.trim()) formData.append("coming_soon_launch_date", comingSoonLaunchDate.trim());
-        formData.append("coming_soon_description", comingSoonDescription.trim());
-        formData.append("image", imageFile);
-        await updateGameForm(id, formData);
+        await updateGameForm(id, buildFormData());
       } else {
-        await updateGame(id, {
-          name: n,
-          game_uid: uid,
-          category: categoryId,
-          provider: providerId,
-          min_bet: minBet || "0",
-          max_bet: maxBet || "0",
-          is_active: isActive,
-          is_coming_soon: isComingSoon,
-          is_single_game: isSingleGame,
-          is_top_game: isTopGame,
-          is_popular_game: isPopularGame,
-          coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
-          coming_soon_description: comingSoonDescription.trim() || "",
-        });
+        await updateGame(id, buildPayload());
       }
       queryClient.invalidateQueries({ queryKey: ["admin-games"] });
       toast({ title: "Game updated successfully." });
@@ -231,207 +535,184 @@ const PowerhouseGames = () => {
     }
   };
 
+  // ── Shared form body ──
+  const formBody = (isEdit: boolean) => (
+    <div className="overflow-y-auto max-h-[70vh] px-1 pb-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Row 1 */}
+        <div className="sm:col-span-2">
+          <label className="text-xs text-muted-foreground block mb-1">Game Name *</label>
+          <Input placeholder="Game Name" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs text-muted-foreground block mb-1">Game UID (provider code) *</label>
+          <Input placeholder="Game UID" value={gameUid} onChange={(e) => setGameUid(e.target.value)} />
+        </div>
+
+        {/* Category & Provider */}
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Category *</label>
+          <select
+            className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+            value={categoryId}
+            onChange={(e) => {
+              const val = e.target.value === "" ? "" : Number(e.target.value);
+              setCategoryId(val);
+              setSubcategoryId("");
+            }}
+          >
+            <option value="">Select Category</option>
+            {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Subcategory</label>
+          <select
+            className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+            value={subcategoryId}
+            onChange={(e) => setSubcategoryId(e.target.value === "" ? "" : Number(e.target.value))}
+          >
+            <option value="">None</option>
+            {filteredSubcats.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Provider *</label>
+          <select
+            className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+            value={providerId}
+            onChange={(e) => setProviderId(e.target.value === "" ? "" : Number(e.target.value))}
+          >
+            <option value="">Select Provider</option>
+            {provs.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
+          </select>
+        </div>
+
+        {/* Bets */}
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Min Bet</label>
+          <Input placeholder="Min Bet" type="number" value={minBet} onChange={(e) => setMinBet(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Max Bet</label>
+          <Input placeholder="Max Bet" type="number" value={maxBet} onChange={(e) => setMaxBet(e.target.value)} />
+        </div>
+
+        {/* Image */}
+        <div className="sm:col-span-2">
+          <label className="text-xs text-muted-foreground block mb-1">
+            Game image {isEdit ? "(leave empty to keep current)" : "(optional)"}
+          </label>
+          <input
+            key={isEdit ? (editOpen ? "e-open" : "e-closed") : (createOpen ? "c-open" : "c-closed")}
+            type="file"
+            accept="image/*"
+            className="w-full text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
+            onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+          />
+          {(imagePreviewUrl || (isEdit && editingGame?.image && typeof editingGame.image === "string" && editingGame.image.trim())) && (
+            <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-20 h-20">
+              <img
+                src={imagePreviewUrl ?? getMediaUrl((editingGame?.image as string).trim())}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Flags section */}
+        <div className="sm:col-span-2 border-t border-border pt-3 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status &amp; Flags</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
+              Active
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={isSingleGame} onChange={(e) => setIsSingleGame(e.target.checked)} className="rounded border-border" />
+              Single game
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={isTopGame} onChange={(e) => setIsTopGame(e.target.checked)} className="rounded border-border" />
+              Top Game
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={isPopularGame} onChange={(e) => setIsPopularGame(e.target.checked)} className="rounded border-border" />
+              Popular Game
+            </label>
+          </div>
+        </div>
+
+        {/* Coming soon */}
+        <div className="sm:col-span-2 border-t border-border pt-3 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Coming Soon</p>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={isComingSoon} onChange={(e) => setIsComingSoon(e.target.checked)} className="rounded border-border" />
+            Mark as coming soon
+          </label>
+          {isComingSoon && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Launch date (optional)</label>
+                <Input type="date" value={comingSoonLaunchDate} onChange={(e) => setComingSoonLaunchDate(e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
+                <Textarea placeholder="Short description for the card" value={comingSoonDescription} onChange={(e) => setComingSoonDescription(e.target.value)} rows={2} className="resize-none" />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Games Management</h2>
-      <DataTable data={games as Record<string, unknown>[]} columns={columns} searchKey="name" onAdd={() => setCreateOpen(true)} addLabel="Add Game" pageSize={15} />
-      <Dialog
-        open={createOpen}
-        onOpenChange={(open) => {
-          setCreateOpen(open);
-          if (!open) resetForm();
-        }}
-      >
-        <DialogContent className="max-w-md">
+      <DataTable
+        data={games as GameRow[]}
+        columns={columns}
+        searchKey="name"
+        onAdd={() => setCreateOpen(true)}
+        addLabel="Add Game"
+        pageSize={15}
+      />
+
+      {/* Inline single-field edit */}
+      <InlineEditModal
+        state={inlineEdit}
+        onClose={() => setInlineEdit(null)}
+        categories={cats}
+        providers={provs}
+        subcategories={subcats}
+      />
+
+      {/* Create */}
+      <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="font-display">Add Game</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <Input placeholder="Game Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input placeholder="Game UID (provider code)" value={gameUid} onChange={(e) => setGameUid(e.target.value)} />
-            <select
-              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value === "" ? "" : Number(e.target.value))}
-            >
-              <option value="">Select Category</option>
-              {(categories as { id: number; name: string }[]).map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <select
-              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-              value={providerId}
-              onChange={(e) => setProviderId(e.target.value === "" ? "" : Number(e.target.value))}
-            >
-              <option value="">Select Provider</option>
-              {(providers as { id: number; name: string; code: string }[]).map((p) => (
-                <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
-              ))}
-            </select>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Game image (optional)</label>
-              <input
-                key={createOpen ? "open" : "closed"}
-                type="file"
-                accept="image/*"
-                className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
-                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              />
-              {imagePreviewUrl && (
-                <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-24 h-24">
-                  <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="Min Bet" type="number" value={minBet} onChange={(e) => setMinBet(e.target.value)} />
-              <Input placeholder="Max Bet" type="number" value={maxBet} onChange={(e) => setMaxBet(e.target.value)} />
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
-              Active
-            </label>
-            <div className="space-y-2 border-t border-border pt-3">
-              <p className="text-xs font-medium text-muted-foreground">Coming soon</p>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isComingSoon} onChange={(e) => setIsComingSoon(e.target.checked)} className="rounded border-border" />
-                Mark as coming soon
-              </label>
-              {isComingSoon && (
-                <>
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">Launch date (optional)</label>
-                    <Input type="date" value={comingSoonLaunchDate} onChange={(e) => setComingSoonLaunchDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
-                    <Textarea placeholder="Short description for the card" value={comingSoonDescription} onChange={(e) => setComingSoonDescription(e.target.value)} rows={2} className="resize-none" />
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="space-y-2 border-t border-border pt-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isSingleGame} onChange={(e) => setIsSingleGame(e.target.checked)} className="rounded border-border" />
-                Single game (open directly when provider is clicked)
-              </label>
-            </div>
-            <div className="space-y-2 border-t border-border pt-3">
-              <p className="text-xs font-medium text-muted-foreground">Homepage</p>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isTopGame} onChange={(e) => setIsTopGame(e.target.checked)} className="rounded border-border" />
-                Top Game
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isPopularGame} onChange={(e) => setIsPopularGame(e.target.checked)} className="rounded border-border" />
-                Popular Game
-              </label>
-            </div>
-          </div>
+          {formBody(false)}
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancel</Button>
-            <Button className="gold-gradient text-primary-foreground" onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            <Button className="gold-gradient text-primary-foreground" onClick={handleSave} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog
-        open={editOpen}
-        onOpenChange={(open) => {
-          setEditOpen(open);
-          if (!open) resetForm();
-        }}
-      >
-        <DialogContent className="max-w-md">
+
+      {/* Edit */}
+      <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="font-display">Edit Game</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <Input placeholder="Game Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input placeholder="Game UID (provider code)" value={gameUid} onChange={(e) => setGameUid(e.target.value)} />
-            <select
-              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value === "" ? "" : Number(e.target.value))}
-            >
-              <option value="">Select Category</option>
-              {(categories as { id: number; name: string }[]).map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <select
-              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-              value={providerId}
-              onChange={(e) => setProviderId(e.target.value === "" ? "" : Number(e.target.value))}
-            >
-              <option value="">Select Provider</option>
-              {(providers as { id: number; name: string; code: string }[]).map((p) => (
-                <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
-              ))}
-            </select>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Game image (optional, leave empty to keep current)</label>
-              <input
-                key={editOpen ? "open" : "closed"}
-                type="file"
-                accept="image/*"
-                className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
-                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              />
-              {(imagePreviewUrl || (editingGame?.image && typeof editingGame.image === "string" && editingGame.image.trim())) && (
-                <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-24 h-24">
-                  <img
-                    src={imagePreviewUrl ?? getMediaUrl((editingGame?.image as string).trim())}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="Min Bet" type="number" value={minBet} onChange={(e) => setMinBet(e.target.value)} />
-              <Input placeholder="Max Bet" type="number" value={maxBet} onChange={(e) => setMaxBet(e.target.value)} />
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
-              Active
-            </label>
-            <div className="space-y-2 border-t border-border pt-3">
-              <p className="text-xs font-medium text-muted-foreground">Coming soon</p>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isComingSoon} onChange={(e) => setIsComingSoon(e.target.checked)} className="rounded border-border" />
-                Mark as coming soon
-              </label>
-              {isComingSoon && (
-                <>
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">Launch date (optional)</label>
-                    <Input type="date" value={comingSoonLaunchDate} onChange={(e) => setComingSoonLaunchDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
-                    <Textarea placeholder="Short description for the card" value={comingSoonDescription} onChange={(e) => setComingSoonDescription(e.target.value)} rows={2} className="resize-none" />
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="space-y-2 border-t border-border pt-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isSingleGame} onChange={(e) => setIsSingleGame(e.target.checked)} className="rounded border-border" />
-                Single game (open directly when provider is clicked)
-              </label>
-            </div>
-            <div className="space-y-2 border-t border-border pt-3">
-              <p className="text-xs font-medium text-muted-foreground">Homepage</p>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isTopGame} onChange={(e) => setIsTopGame(e.target.checked)} className="rounded border-border" />
-                Top Game
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isPopularGame} onChange={(e) => setIsPopularGame(e.target.checked)} className="rounded border-border" />
-                Popular Game
-              </label>
-            </div>
-          </div>
+          {formBody(true)}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>Cancel</Button>
-            <Button className="gold-gradient text-primary-foreground" onClick={handleSaveEdit} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            <Button className="gold-gradient text-primary-foreground" onClick={handleSaveEdit} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

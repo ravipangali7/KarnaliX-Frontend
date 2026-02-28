@@ -23,9 +23,84 @@ import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, ArrowRightLeft } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
 
-type MasterRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; pl_balance?: string; players_count?: number; users_balance?: string; status?: string; created_at?: string; pin?: string };
+type MasterRow = Record<string, unknown> & {
+  id?: number; username?: string; name?: string;
+  main_balance?: string; pl_balance?: string; bonus_balance?: string;
+  exposure_balance?: string; exposure_limit?: string;
+  players_count?: number; users_balance?: string;
+  total_balance?: string; total_win_loss?: string;
+  status?: string; created_at?: string; pin?: string;
+  commission_percentage?: string;
+};
 
 type PendingAction = "deposit" | "withdraw" | "resetPassword" | "regeneratePin" | "settlement" | null;
+
+interface InlineEditState {
+  row: MasterRow;
+  field: string;
+  label: string;
+  value: unknown;
+}
+
+// ── Single-field inline edit ──────────────────────────────────────────────────
+
+function InlineEditModal({
+  state, onClose, role,
+}: {
+  state: InlineEditState | null;
+  onClose: () => void;
+  role: "powerhouse" | "super";
+}) {
+  const queryClient = useQueryClient();
+  const [value, setValue] = useState<unknown>(state?.value ?? null);
+  const [saving, setSaving] = useState(false);
+
+  if (!state) return null;
+
+  const handleSave = async () => {
+    const id = Number(state.row.id);
+    setSaving(true);
+    try {
+      await updateMaster(id, { [state.field]: value }, role);
+      queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
+      toast({ title: `${state.label} updated.` });
+      onClose();
+    } catch (e) {
+      const msg = (e as { detail?: string })?.detail ?? "Failed to update";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-display text-base">
+            Edit — {String(state.row.username ?? state.row.id)}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">{state.label}</p>
+        </DialogHeader>
+        <div className="py-2">
+          <Input
+            type={typeof state.value === "number" ? "number" : "text"}
+            value={String(value ?? "")}
+            onChange={(e) => setValue(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="gold-gradient text-primary-foreground" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 
 const AdminMasters = () => {
   const { user } = useAuth();
@@ -61,6 +136,7 @@ const AdminMasters = () => {
   const [editName, setEditName] = useState("");
   const [editCommission, setEditCommission] = useState("10");
   const [editSaving, setEditSaving] = useState(false);
+  const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
 
   const { data: masters = [] } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role) });
   const { data: supersList = [] } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers, enabled: role === "powerhouse" && createOpen });
@@ -71,18 +147,135 @@ const AdminMasters = () => {
   });
   const rows = masters as MasterRow[];
 
-  const columns = [
-    { header: "Username", accessor: (row: MasterRow) => String(row.username ?? "") },
-    { header: "Balance", accessor: (row: MasterRow) => `₹${Number(row.main_balance ?? 0).toLocaleString()}` },
-    { header: "P/L", accessor: (row: MasterRow) => (
-      <span className={Number(row.pl_balance ?? 0) >= 0 ? "text-success" : "text-accent"}>
-        {Number(row.pl_balance ?? 0) >= 0 ? "+" : ""}₹{Number(row.pl_balance ?? 0).toLocaleString()}
+  const EDITABLE_CELLS: Record<string, string> = {
+    name: "Name",
+    commission_percentage: "Commission %",
+  };
+
+  const handleCellClick = (row: MasterRow, field: string) => {
+    if (!EDITABLE_CELLS[field]) return;
+    setInlineEdit({ row, field, label: EDITABLE_CELLS[field], value: row[field] ?? null });
+  };
+
+  const fmt = (v: unknown) => `₹${Number(v ?? 0).toLocaleString()}`;
+  const fmtPL = (v: unknown) => {
+    const n = Number(v ?? 0);
+    return (
+      <span className={n >= 0 ? "text-success" : "text-accent"}>
+        {n >= 0 ? "+" : ""}₹{n.toLocaleString()}
       </span>
-    )},
-    { header: "Players", accessor: (row: MasterRow) => row.players_count ?? 0 },
-    { header: "Users Bal", accessor: (row: MasterRow) => `₹${Number(row.users_balance ?? 0).toLocaleString()}` },
-    { header: "Status", accessor: (row: MasterRow) => <StatusBadge status={String(row.status ?? "active")} /> },
-    { header: "Joined", accessor: (row: MasterRow) => row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "" },
+    );
+  };
+
+  const columns = [
+    {
+      header: "Username",
+      accessor: (row: MasterRow) => (
+        <span className="font-semibold text-primary">{String(row.username ?? "")}</span>
+      ),
+      sortKey: "username",
+    },
+    {
+      header: "Name",
+      accessor: (row: MasterRow) => (
+        <span
+          className="cursor-pointer hover:underline"
+          onClick={() => handleCellClick(row, "name")}
+        >
+          {String(row.name ?? "")}
+        </span>
+      ),
+      sortKey: "name",
+    },
+    {
+      header: "Balance",
+      accessor: (row: MasterRow) => (
+        <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+          {fmt(row.main_balance)}
+        </span>
+      ),
+      sortKey: "main_balance",
+    },
+    {
+      header: "P/L",
+      accessor: (row: MasterRow) => (
+        <span className={`text-xs px-2 py-0.5 rounded border ${Number(row.pl_balance ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+          {fmtPL(row.pl_balance)}
+        </span>
+      ),
+      sortKey: "pl_balance",
+    },
+    {
+      header: "Bonus Bal",
+      accessor: (row: MasterRow) => (
+        <span className="text-xs px-2 py-0.5 rounded bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30">
+          {fmt(row.bonus_balance)}
+        </span>
+      ),
+      sortKey: "bonus_balance",
+    },
+    {
+      header: "Total Bal",
+      accessor: (row: MasterRow) => (
+        <span className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+          {fmt(row.total_balance)}
+        </span>
+      ),
+      sortKey: "total_balance",
+    },
+    {
+      header: "Win/Loss",
+      accessor: (row: MasterRow) => (
+        <span className={`text-xs px-2 py-0.5 rounded border ${Number(row.total_win_loss ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+          {fmtPL(row.total_win_loss)}
+        </span>
+      ),
+      sortKey: "total_win_loss",
+    },
+    {
+      header: "Users Bal",
+      accessor: (row: MasterRow) => (
+        <span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+          {fmt(row.users_balance)}
+        </span>
+      ),
+      sortKey: "users_balance",
+    },
+    {
+      header: "Players",
+      accessor: (row: MasterRow) => (
+        <span className="text-xs px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
+          {row.players_count ?? 0}
+        </span>
+      ),
+      sortKey: "players_count",
+    },
+    {
+      header: "Commission",
+      accessor: (row: MasterRow) => (
+        <span
+          className="text-xs px-2 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/30 cursor-pointer hover:bg-orange-500/25"
+          onClick={() => handleCellClick(row, "commission_percentage")}
+        >
+          {row.commission_percentage ?? 0}%
+        </span>
+      ),
+      sortKey: "commission_percentage",
+    },
+    {
+      header: "Status",
+      accessor: (row: MasterRow) => <StatusBadge status={String(row.status ?? "active")} />,
+      sortKey: "status",
+    },
+    {
+      header: "Joined",
+      accessor: (row: MasterRow) => (
+        <span className="text-xs text-muted-foreground">
+          {row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : ""}
+        </span>
+      ),
+      sortKey: "created_at",
+    },
     {
       header: "Actions",
       accessor: (row: MasterRow) => (
@@ -105,6 +298,9 @@ const AdminMasters = () => {
       <h2 className="font-display font-bold text-xl">Master Users</h2>
       <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search masters..." onAdd={() => setCreateOpen(true)} addLabel="Add Master" />
 
+      {/* Inline single-field edit */}
+      <InlineEditModal state={inlineEdit} onClose={() => setInlineEdit(null)} role={role} />
+
       {/* Create */}
       <Dialog open={createOpen} onOpenChange={(open) => {
         setCreateOpen(open);
@@ -112,31 +308,54 @@ const AdminMasters = () => {
           setCreateName(""); setCreateUsername(""); setCreatePhone(""); setCreateEmail(""); setCreateWhatsApp(""); setCreatePassword(""); setCreateCommission("10"); setCreateParentId("");
         }
       }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="font-display">Create Master</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            {role === "powerhouse" && (
+          <div className="overflow-y-auto max-h-[70vh] px-1 pb-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {role === "powerhouse" && (
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-muted-foreground block mb-1">Super *</label>
+                  <select
+                    className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                    value={createParentId}
+                    onChange={(e) => setCreateParentId(e.target.value === "" ? "" : Number(e.target.value))}
+                  >
+                    <option value="">Select super</option>
+                    {(supersList as { id?: number; username?: string }[]).map((s) => (
+                      <option key={s.id} value={s.id}>{s.username ?? s.id}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
-                <label className="text-xs text-muted-foreground">Super</label>
-                <select
-                  className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm mt-1"
-                  value={createParentId}
-                  onChange={(e) => setCreateParentId(e.target.value === "" ? "" : Number(e.target.value))}
-                >
-                  <option value="">Select super</option>
-                  {(supersList as { id?: number; username?: string }[]).map((s) => (
-                    <option key={s.id} value={s.id}>{s.username ?? s.id}</option>
-                  ))}
-                </select>
+                <label className="text-xs text-muted-foreground block mb-1">Full Name</label>
+                <Input placeholder="Full Name" value={createName} onChange={(e) => setCreateName(e.target.value)} />
               </div>
-            )}
-            <Input placeholder="Full Name" value={createName} onChange={(e) => setCreateName(e.target.value)} />
-            <Input placeholder="Username" value={createUsername} onChange={(e) => setCreateUsername(e.target.value)} />
-            <Input placeholder="Phone" value={createPhone} onChange={(e) => setCreatePhone(e.target.value)} />
-            <Input placeholder="Email (optional)" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} />
-            <Input placeholder="WhatsApp Number" value={createWhatsApp} onChange={(e) => setCreateWhatsApp(e.target.value)} />
-            <Input type="password" placeholder="Password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} />
-            <Input type="number" placeholder="Commission %" value={createCommission} onChange={(e) => setCreateCommission(e.target.value)} />
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Username</label>
+                <Input placeholder="Username" value={createUsername} onChange={(e) => setCreateUsername(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Phone</label>
+                <Input placeholder="Phone" value={createPhone} onChange={(e) => setCreatePhone(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Email (optional)</label>
+                <Input placeholder="Email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">WhatsApp Number</label>
+                <Input placeholder="WhatsApp" value={createWhatsApp} onChange={(e) => setCreateWhatsApp(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Password</label>
+                <Input type="password" placeholder="Password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Commission %</label>
+                <Input type="number" placeholder="Commission %" value={createCommission} onChange={(e) => setCreateCommission(e.target.value)} />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
@@ -179,18 +398,33 @@ const AdminMasters = () => {
 
       {/* View */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle className="font-display">Master Details</DialogTitle></DialogHeader>
           {selectedUser && (
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><span className="text-muted-foreground text-xs">Username</span><p className="font-medium">{String(selectedUser.username ?? "")}</p></div>
-              <div><span className="text-muted-foreground text-xs">Name</span><p className="font-medium">{String(selectedUser.name ?? "")}</p></div>
-              <div><span className="text-muted-foreground text-xs">Balance</span><p className="font-medium">₹{Number(selectedUser.main_balance ?? 0).toLocaleString()}</p></div>
-              <div><span className="text-muted-foreground text-xs">P/L</span><p className={`font-medium ${Number(selectedUser.pl_balance ?? 0) >= 0 ? "text-success" : "text-accent"}`}>{Number(selectedUser.pl_balance ?? 0) >= 0 ? "+" : ""}₹{Number(selectedUser.pl_balance ?? 0).toLocaleString()}</p></div>
-              <div><span className="text-muted-foreground text-xs">Players</span><p className="font-medium">{Number(selectedUser.players_count ?? 0)}</p></div>
-              <div><span className="text-muted-foreground text-xs">Users Balance</span><p className="font-medium">₹{Number(selectedUser.users_balance ?? 0).toLocaleString()}</p></div>
-              <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selectedUser.status ?? "active")} /></p></div>
-              <div><span className="text-muted-foreground text-xs">Joined</span><p className="font-medium">{selectedUser.created_at ? new Date(String(selectedUser.created_at)).toLocaleDateString() : ""}</p></div>
+            <div className="overflow-y-auto max-h-[70vh]">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                {[
+                  { label: "Username", val: String(selectedUser.username ?? "") },
+                  { label: "Name", val: String(selectedUser.name ?? "") },
+                  { label: "Balance", val: fmt(selectedUser.main_balance) },
+                  { label: "P/L", val: fmtPL(selectedUser.pl_balance) },
+                  { label: "Bonus Bal", val: fmt(selectedUser.bonus_balance) },
+                  { label: "Exposure Bal", val: fmt(selectedUser.exposure_balance) },
+                  { label: "Exposure Limit", val: fmt(selectedUser.exposure_limit) },
+                  { label: "Total Bal", val: fmt(selectedUser.total_balance) },
+                  { label: "Win/Loss", val: fmtPL(selectedUser.total_win_loss) },
+                  { label: "Users Bal", val: fmt(selectedUser.users_balance) },
+                  { label: "Players", val: String(selectedUser.players_count ?? 0) },
+                  { label: "Commission", val: `${selectedUser.commission_percentage ?? 0}%` },
+                  { label: "Status", val: <StatusBadge status={String(selectedUser.status ?? "active")} /> },
+                  { label: "Joined", val: selectedUser.created_at ? new Date(String(selectedUser.created_at)).toLocaleDateString() : "" },
+                ].map(({ label, val }) => (
+                  <div key={label} className="p-2 rounded-lg bg-muted/30 border border-border">
+                    <span className="text-muted-foreground text-xs block">{label}</span>
+                    <p className="font-medium mt-0.5">{val}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setViewOpen(false)}>Close</Button></DialogFooter>
@@ -199,12 +433,20 @@ const AdminMasters = () => {
 
       {/* Edit */}
       <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) setEditSaving(false); }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle className="font-display">Edit Master</DialogTitle></DialogHeader>
           {selectedUser && (
-            <div className="space-y-3">
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Full Name" />
-              <Input type="number" placeholder="Commission %" value={editCommission} onChange={(e) => setEditCommission(e.target.value)} />
+            <div className="overflow-y-auto max-h-[70vh] px-1 pb-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Full Name</label>
+                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Full Name" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Commission %</label>
+                  <Input type="number" placeholder="Commission %" value={editCommission} onChange={(e) => setEditCommission(e.target.value)} />
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -310,14 +552,8 @@ const AdminMasters = () => {
             <Button
               className="gold-gradient text-primary-foreground"
               onClick={() => {
-                if (newPassword !== newPasswordConfirm) {
-                  toast({ title: "Passwords do not match", variant: "destructive" });
-                  return;
-                }
-                if (newPassword.length < 6) {
-                  toast({ title: "Password must be at least 6 characters", variant: "destructive" });
-                  return;
-                }
+                if (newPassword !== newPasswordConfirm) { toast({ title: "Passwords do not match", variant: "destructive" }); return; }
+                if (newPassword.length < 6) { toast({ title: "Password must be at least 6 characters", variant: "destructive" }); return; }
                 setPendingAction("resetPassword");
                 setPendingPayload({ userId: selectedUser?.id, new_password: newPassword });
                 setResetPwOpen(false);
@@ -354,7 +590,7 @@ const AdminMasters = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Settlement (super only) */}
+      {/* Settlement */}
       <Dialog open={settlementOpen} onOpenChange={setSettlementOpen}>
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Settlement — {selectedUser?.username}</DialogTitle></DialogHeader>
@@ -386,11 +622,7 @@ const AdminMasters = () => {
 
       <PinDialog
         open={pinOpen}
-        onClose={() => {
-          setPinOpen(false);
-          setPendingAction(null);
-          setPendingPayload({});
-        }}
+        onClose={() => { setPinOpen(false); setPendingAction(null); setPendingPayload({}); }}
         onConfirm={async (pin) => {
           try {
             if (pendingAction === "deposit") {
@@ -399,10 +631,7 @@ const AdminMasters = () => {
               const remarks = (pendingPayload.remarks as string) ?? "";
               const paymentModeId = pendingPayload.paymentModeId as number | "" | undefined;
               const body: { user_id: number; amount: number; remarks?: string; pin: string; payment_mode?: number } = {
-                user_id: userId,
-                amount: Number(amount) || 0,
-                remarks,
-                pin,
+                user_id: userId, amount: Number(amount) || 0, remarks, pin,
               };
               if (paymentModeId !== "" && paymentModeId != null) body.payment_mode = Number(paymentModeId);
               await directDeposit(body, role);
@@ -413,10 +642,7 @@ const AdminMasters = () => {
               const userId = pendingPayload.userId as number;
               const amount = pendingPayload.amount as string;
               const remarks = (pendingPayload.remarks as string) ?? "";
-              await directWithdraw(
-                { user_id: userId, amount: Number(amount) || 0, remarks, pin },
-                role
-              );
+              await directWithdraw({ user_id: userId, amount: Number(amount) || 0, remarks, pin }, role);
               queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
               queryClient.invalidateQueries({ queryKey: ["admin-withdrawals", role] });
               toast({ title: "Withdrawal created and approved." });
@@ -437,9 +663,7 @@ const AdminMasters = () => {
               queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
               toast({ title: "Settlement completed." });
             }
-            setPinOpen(false);
-            setPendingAction(null);
-            setPendingPayload({});
+            setPinOpen(false); setPendingAction(null); setPendingPayload({});
           } catch (e: unknown) {
             const msg = (e as { detail?: string })?.detail ?? "Something went wrong.";
             toast({ title: msg, variant: "destructive" });

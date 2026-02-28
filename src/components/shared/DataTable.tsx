@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Plus, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react";
 
 interface Column<T> {
   header: string;
   accessor: keyof T | ((row: T) => React.ReactNode);
   className?: string;
+  /** If provided, enables sorting by this key from the row object. */
+  sortKey?: string;
 }
 
 interface DataTableProps<T> {
@@ -21,18 +23,59 @@ interface DataTableProps<T> {
   pageSize?: number;
 }
 
-export function DataTable<T extends { id: string }>({
+type SortDir = "asc" | "desc";
+
+export function DataTable<T extends { id: string | number }>({
   data, columns, searchPlaceholder = "Search...", searchKey, onAdd, addLabel = "Add New", secondaryAction, pageSize = 10,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  const filtered = searchKey
-    ? data.filter((row) => String(row[searchKey]).toLowerCase().includes(search.toLowerCase()))
-    : data;
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+    setPage(0);
+  };
+
+  const filtered = useMemo(() => {
+    let rows = searchKey
+      ? data.filter((row) => String(row[searchKey]).toLowerCase().includes(search.toLowerCase()))
+      : data;
+
+    if (sortKey) {
+      rows = [...rows].sort((a, b) => {
+        const av = (a as Record<string, unknown>)[sortKey];
+        const bv = (b as Record<string, unknown>)[sortKey];
+        const an = Number(av);
+        const bn = Number(bv);
+        let cmp = 0;
+        if (!isNaN(an) && !isNaN(bn)) {
+          cmp = an - bn;
+        } else {
+          cmp = String(av ?? "").localeCompare(String(bv ?? ""));
+        }
+        return sortDir === "asc" ? cmp : -cmp;
+      });
+    }
+    return rows;
+  }, [data, search, searchKey, sortKey, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const pageData = filtered.slice(page * pageSize, (page + 1) * pageSize);
+
+  const SortIcon = ({ col }: { col: Column<T> }) => {
+    if (!col.sortKey) return null;
+    if (sortKey !== col.sortKey) return <ChevronsUpDown className="h-3 w-3 ml-0.5 text-muted-foreground/50 inline" />;
+    return sortDir === "asc"
+      ? <ChevronUp className="h-3 w-3 ml-0.5 text-primary inline" />
+      : <ChevronDown className="h-3 w-3 ml-0.5 text-primary inline" />;
+  };
 
   return (
     <div className="space-y-3">
@@ -66,8 +109,13 @@ export function DataTable<T extends { id: string }>({
             <TableHeader>
               <TableRow className="bg-muted/50">
                 {columns.map((col, i) => (
-                  <TableHead key={i} className={`text-xs whitespace-nowrap ${col.className || ""}`}>
+                  <TableHead
+                    key={i}
+                    className={`text-xs whitespace-nowrap ${col.className || ""} ${col.sortKey ? "cursor-pointer select-none hover:bg-muted/80 transition-colors" : ""}`}
+                    onClick={col.sortKey ? () => handleSort(col.sortKey!) : undefined}
+                  >
                     {col.header}
+                    <SortIcon col={col} />
                   </TableHead>
                 ))}
               </TableRow>
@@ -81,10 +129,10 @@ export function DataTable<T extends { id: string }>({
                 </TableRow>
               ) : (
                 pageData.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow key={row.id} className="hover:bg-muted/30 transition-colors">
                     {columns.map((col, i) => (
                       <TableCell key={i} className={`text-sm ${col.className || ""}`}>
-                        {typeof col.accessor === "function" ? col.accessor(row) : String(row[col.accessor])}
+                        {typeof col.accessor === "function" ? col.accessor(row) : String(row[col.accessor] ?? "")}
                       </TableCell>
                     ))}
                   </TableRow>
