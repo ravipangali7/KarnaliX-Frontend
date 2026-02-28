@@ -138,14 +138,15 @@ const AdminMasters = () => {
   const [editSaving, setEditSaving] = useState(false);
   const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
 
-  const { data: masters = [] } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role) });
-  const { data: supersList = [] } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers, enabled: role === "powerhouse" && createOpen });
+  const { data: mastersRaw } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role) });
+  const { data: supersListRaw } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers, enabled: role === "powerhouse" && createOpen });
   const { data: depositPaymentModesList = [] } = useQuery({
     queryKey: ["deposit-payment-modes-masters", role, selectedUser?.id],
     queryFn: () => getPaymentModesForDepositTarget(role, selectedUser!.id as number),
     enabled: depositOpen && !!selectedUser?.id,
   });
-  const rows = masters as MasterRow[];
+  const rows = (Array.isArray(mastersRaw) ? mastersRaw : []) as MasterRow[];
+  const supersList = Array.isArray(supersListRaw) ? supersListRaw : [];
 
   const EDITABLE_CELLS: Record<string, string> = {
     name: "Name",

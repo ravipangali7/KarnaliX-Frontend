@@ -174,10 +174,15 @@ function InlineEditModal({
 
 const PowerhouseGames = () => {
   const queryClient = useQueryClient();
-  const { data: games = [] } = useQuery({ queryKey: ["admin-games"], queryFn: getGamesAdmin });
-  const { data: categories = [] } = useQuery({ queryKey: ["admin-categories"], queryFn: getCategoriesAdmin });
-  const { data: providers = [] } = useQuery({ queryKey: ["admin-providers"], queryFn: getProvidersAdmin });
-  const { data: subcategories = [] } = useQuery({ queryKey: ["admin-subcategories"], queryFn: () => getSubcategoriesAdmin() });
+  const { data: gamesRaw } = useQuery({ queryKey: ["admin-games"], queryFn: getGamesAdmin });
+  const { data: categoriesRaw } = useQuery({ queryKey: ["admin-categories"], queryFn: getCategoriesAdmin });
+  const { data: providersRaw } = useQuery({ queryKey: ["admin-providers"], queryFn: getProvidersAdmin });
+  const { data: subcategoriesRaw } = useQuery({ queryKey: ["admin-subcategories"], queryFn: () => getSubcategoriesAdmin() });
+
+  const games = Array.isArray(gamesRaw) ? gamesRaw : [];
+  const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
+  const providers = Array.isArray(providersRaw) ? providersRaw : [];
+  const subcategories = Array.isArray(subcategoriesRaw) ? subcategoriesRaw : [];
 
   const cats = categories as { id: number; name: string }[];
   const provs = providers as { id: number; name: string; code: string }[];
@@ -214,7 +219,7 @@ const PowerhouseGames = () => {
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  const filteredSubcats = categoryId !== "" ? subcats.filter((s) => s.game_category === categoryId) : subcats;
+  const filteredSubcats = Array.isArray(subcats) && categoryId !== "" ? subcats.filter((s) => s.game_category === categoryId) : subcats;
 
   const resetForm = () => {
     setName(""); setGameUid(""); setCategoryId(""); setSubcategoryId(""); setProviderId("");

@@ -43,10 +43,12 @@ export function DataTable<T extends { id: string | number }>({
     setPage(0);
   };
 
+  const safeData = Array.isArray(data) ? data : [];
+
   const filtered = useMemo(() => {
     let rows = searchKey
-      ? data.filter((row) => String(row[searchKey]).toLowerCase().includes(search.toLowerCase()))
-      : data;
+      ? safeData.filter((row) => String(row[searchKey]).toLowerCase().includes(search.toLowerCase()))
+      : safeData;
 
     if (sortKey) {
       rows = [...rows].sort((a, b) => {
@@ -64,7 +66,7 @@ export function DataTable<T extends { id: string | number }>({
       });
     }
     return rows;
-  }, [data, search, searchKey, sortKey, sortDir]);
+  }, [safeData, search, searchKey, sortKey, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const pageData = filtered.slice(page * pageSize, (page + 1) * pageSize);

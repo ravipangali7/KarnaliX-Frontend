@@ -5,6 +5,17 @@ import { apiGet, apiPost, apiPut, apiPatch, apiDelete, apiPostForm, apiPatchForm
 
 const prefix = (role: "powerhouse" | "super" | "master") => `/${role}`;
 
+/** Ensure list API response is always an array (handles raw array or wrapped { data/results }). */
+function asList<T = Record<string, unknown>>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  if (res != null && typeof res === "object") {
+    const o = res as Record<string, unknown>;
+    if (Array.isArray(o.data)) return o.data as T[];
+    if (Array.isArray(o.results)) return o.results as T[];
+  }
+  return [];
+}
+
 // --- Dashboard ---
 export async function getDashboard(role: "powerhouse" | "super" | "master") {
   const res = await apiGet<Record<string, unknown>>(`${prefix(role)}/dashboard/`);
@@ -31,7 +42,7 @@ export async function changePassword(role: AdminRole, body: { old_password: stri
 // --- Users (role-specific paths) ---
 export async function getSupers() {
   const res = await apiGet(`${prefix("powerhouse")}/supers/`);
-  return (res as unknown as Record<string, unknown>[]) ?? [];
+  return asList(res);
 }
 export async function getSuper(id: number) {
   return apiGet(`${prefix("powerhouse")}/supers/${id}/`);
@@ -48,7 +59,7 @@ export async function deleteSuper(id: number) {
 
 export async function getMasters(role: "powerhouse" | "super" = "powerhouse") {
   const res = await apiGet(`${prefix(role)}/masters/`);
-  return (res as unknown as Record<string, unknown>[]) ?? [];
+  return asList(res);
 }
 export async function getMaster(id: number, role: "powerhouse" | "super" = "powerhouse") {
   return apiGet(`${prefix(role)}/masters/${id}/`);
@@ -328,7 +339,7 @@ export async function resetPassword(
 // ========== Powerhouse-only ==========
 export async function getCategoriesAdmin() {
   const res = await apiGet(`${prefix("powerhouse")}/categories/`);
-  return (res as unknown as Record<string, unknown>[]) ?? [];
+  return asList(res);
 }
 export async function getCategoryAdmin(id: number) {
   return apiGet(`${prefix("powerhouse")}/categories/${id}/`);
@@ -355,7 +366,7 @@ export async function deleteCategoryAdmin(id: number) {
 export async function getSubcategoriesAdmin(categoryId?: number) {
   const url = categoryId != null ? `${prefix("powerhouse")}/subcategories/?category_id=${categoryId}` : `${prefix("powerhouse")}/subcategories/`;
   const res = await apiGet(url);
-  return (res as unknown as Record<string, unknown>[]) ?? [];
+  return asList(res);
 }
 export async function getSubcategoryAdmin(id: number) {
   return apiGet(`${prefix("powerhouse")}/subcategories/${id}/`);
@@ -378,7 +389,7 @@ export async function deleteSubcategoryAdmin(id: number) {
 
 export async function getProvidersAdmin() {
   const res = await apiGet(`${prefix("powerhouse")}/providers/`);
-  return (res as unknown as Record<string, unknown>[]) ?? [];
+  return asList(res);
 }
 export async function getProviderAdmin(id: number) {
   return apiGet(`${prefix("powerhouse")}/providers/${id}/`);
@@ -403,7 +414,7 @@ export async function deleteProviderAdmin(id: number) {
 
 export async function getGamesAdmin() {
   const res = await apiGet(`${prefix("powerhouse")}/games/`);
-  return (res as unknown as Record<string, unknown>[]) ?? [];
+  return asList(res);
 }
 export async function getGameAdmin(id: number) {
   return apiGet(`${prefix("powerhouse")}/games/${id}/`);

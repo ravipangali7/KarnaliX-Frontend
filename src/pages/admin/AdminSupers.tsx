@@ -129,13 +129,13 @@ const AdminSupers = () => {
   const [editSaving, setEditSaving] = useState(false);
   const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
 
-  const { data: supers = [] } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers });
+  const { data: supersRaw } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers });
   const { data: depositPaymentModesList = [] } = useQuery({
     queryKey: ["deposit-payment-modes-supers", selectedUser?.id],
     queryFn: () => getPaymentModesForDepositTarget(ROLE, selectedUser!.id as number),
     enabled: depositOpen && !!selectedUser?.id,
   });
-  const rows = supers as SuperRow[];
+  const rows = (Array.isArray(supersRaw) ? supersRaw : []) as SuperRow[];
 
   const EDITABLE_CELLS: Record<string, string> = {
     name: "Name",
