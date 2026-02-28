@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, type LiveBettingSectionApi } from "@/api/site";
-import { getCategories, getSubcategories, getProviders, getGames, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameSubCategory, type GameProvider } from "@/api/games";
+import { getCategories, getProviders, getGames, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
 import { getBonusRules, mapBonusRulesToPromoShapes } from "@/api/bonus";
 import { getMediaUrl } from "@/lib/api";
 import type { ProviderShape, GameCardShape, PromoShape, TestimonialShape, ComingSoonShape } from "@/data/homePageMockData";
@@ -41,10 +41,6 @@ export interface SecondHomePageData {
   otherGames: GameCardShape[];
   /** First 16 games for Top Games carousel (is_top_game preferred, else live+other fallback). */
   topGames: GameCardShape[];
-  /** Subcategories for the "Live Casino" category (horizontal slider). */
-  liveCategorySubcategories: GameSubCategory[];
-  /** The category used for live subcategories (e.g. Live Casino). */
-  liveCategory: GameCategory | null;
   /** Games marked is_popular_game for Popular Games section. */
   popularGames: GameCardShape[];
   /** Games grouped by category id for category-wise rows. */
@@ -196,12 +192,6 @@ export function useSecondHomePageData(): {
     queryKey: ["categories"],
     queryFn: getCategories,
   });
-  const liveCategory = (categories as GameCategory[]).find((c) => /live/i.test(c.name)) ?? (categories as GameCategory[])[0] ?? null;
-  const { data: subcategoriesApi = [], refetch: refetchSubcategories } = useQuery({
-    queryKey: ["subcategories", liveCategory?.id],
-    queryFn: () => getSubcategories(liveCategory!.id),
-    enabled: !!liveCategory?.id,
-  });
   const { data: providers = [], isLoading: providersLoading } = useQuery({
     queryKey: ["providers"],
     queryFn: getProviders,
@@ -234,7 +224,6 @@ export function useSecondHomePageData(): {
   });
   const games: Game[] = Array.isArray(gamesResp?.results) ? (gamesResp.results as Game[]) : [];
   const categoriesList = Array.isArray(categories) ? (categories as GameCategory[]) : [];
-  const liveCategorySubcategories = Array.isArray(subcategoriesApi) ? (subcategoriesApi as GameSubCategory[]) : [];
 
   const isLoading = siteLoading || sliderLoading || liveBettingLoading || categoriesLoading || providersLoading || gamesLoading;
   const site = (siteSetting as Record<string, unknown>) ?? {};
@@ -261,15 +250,8 @@ export function useSecondHomePageData(): {
   let otherGames: GameCardShape[] = [];
   const gamesByCategory: Record<number, GameCardShape[]> = {};
   if (games.length > 0) {
-    if (liveCategory) {
-      const liveGames = games.filter((g) => g.category === liveCategory.id);
-      const rest = games.filter((g) => g.category !== liveCategory.id);
-      topLiveGames = liveGames.slice(0, TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
-      otherGames = rest.map((g, i) => mapGameToCardShape(g, i));
-    } else {
-      topLiveGames = games.slice(0, TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
-      otherGames = games.slice(TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
-    }
+    topLiveGames = games.slice(0, TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
+    otherGames = games.slice(TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
     categoriesList.forEach((cat) => {
       const catGames = games.filter((g) => g.category === cat.id).map((g, i) => mapGameToCardShape(g, i));
       if (catGames.length > 0) gamesByCategory[cat.id] = catGames;
@@ -358,8 +340,6 @@ export function useSecondHomePageData(): {
     topLiveGames,
     otherGames,
     topGames,
-    liveCategorySubcategories,
-    liveCategory,
     popularGames,
     gamesByCategory,
     sportsIframeUrl,
@@ -374,7 +354,6 @@ export function useSecondHomePageData(): {
   const refetch = () => {
     refetchSite();
     refetchGames();
-    refetchSubcategories();
     refetchPopularGames();
     refetchTopGames();
   };

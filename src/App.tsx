@@ -61,7 +61,6 @@ import AdminAccounting from "@/pages/admin/AdminAccounting";
 
 // Powerhouse-only Pages
 import PowerhouseCategories from "@/pages/admin/PowerhouseCategories";
-import PowerhouseSubcategories from "@/pages/admin/PowerhouseSubcategories";
 import PowerhouseProviders from "@/pages/admin/PowerhouseProviders";
 import PowerhouseGames from "@/pages/admin/PowerhouseGames";
 import PowerhouseBonusRules from "@/pages/admin/PowerhouseBonusRules";
@@ -222,7 +221,6 @@ const App = () => (
               <Route path="/powerhouse/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/powerhouse/bonus-requests" element={<AdminBonusRequests />} />
               <Route path="/powerhouse/categories" element={<PowerhouseCategories />} />
-              <Route path="/powerhouse/subcategories" element={<PowerhouseSubcategories />} />
               <Route path="/powerhouse/providers" element={<PowerhouseProviders />} />
               <Route path="/powerhouse/games" element={<PowerhouseGames />} />
               <Route path="/powerhouse/slider" element={<PowerhouseSlider />} />

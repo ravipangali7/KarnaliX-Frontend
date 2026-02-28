@@ -362,30 +362,6 @@ export async function deleteCategoryAdmin(id: number) {
   return apiDelete(`${prefix("powerhouse")}/categories/${id}/`);
 }
 
-// --- Subcategories (powerhouse) ---
-export async function getSubcategoriesAdmin(categoryId?: number) {
-  const url = categoryId != null ? `${prefix("powerhouse")}/subcategories/?category_id=${categoryId}` : `${prefix("powerhouse")}/subcategories/`;
-  const res = await apiGet(url);
-  return asList(res);
-}
-export async function getSubcategoryAdmin(id: number) {
-  return apiGet(`${prefix("powerhouse")}/subcategories/${id}/`);
-}
-export async function createSubcategoryAdmin(body: { name: string; svg?: string | null; is_active: boolean; game_category: number }) {
-  return apiPost(`${prefix("powerhouse")}/subcategories/`, body);
-}
-export async function createSubcategoryAdminForm(formData: FormData) {
-  return apiPostForm(`${prefix("powerhouse")}/subcategories/`, formData);
-}
-export async function updateSubcategoryAdmin(id: number, body: unknown) {
-  return apiPatch(`${prefix("powerhouse")}/subcategories/${id}/`, body);
-}
-export async function updateSubcategoryAdminForm(id: number, formData: FormData) {
-  return apiPatchForm(`${prefix("powerhouse")}/subcategories/${id}/`, formData);
-}
-export async function deleteSubcategoryAdmin(id: number) {
-  return apiDelete(`${prefix("powerhouse")}/subcategories/${id}/`);
-}
 
 export async function getProvidersAdmin() {
   const res = await apiGet(`${prefix("powerhouse")}/providers/`);

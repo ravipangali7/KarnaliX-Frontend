@@ -1,7 +1,6 @@
 import { useSecondHomePageData } from "@/hooks/useSecondHomePageData";
 import {
   SecondHomeSlider,
-  SecondHomeLiveCategorySubcategories,
   SecondHomeTopGamesCarousel,
   SecondHomeCategoryGames,
   SecondHomePopularGames,
@@ -50,10 +49,7 @@ export default function SecondHomePage() {
       {/* 1. Banner */}
       <SecondHomeSlider slides={data.sliderSlides} />
 
-      {/* 2. Live Casino Category — subcategories with icons, horizontal slider */}
-      <SecondHomeLiveCategorySubcategories liveCategory={data.liveCategory} subcategories={data.liveCategorySubcategories} />
-
-      {/* 3. Top Games (is_top_game) */}
+      {/* 2. Top Games (is_top_game) */}
       <SecondHomeTopGamesCarousel games={data.topGames} />
 
       {/* 4. Trusted Game Providers */}

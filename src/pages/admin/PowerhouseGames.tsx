@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
 import {
-  getGamesAdmin, getCategoriesAdmin, getProvidersAdmin, getSubcategoriesAdmin,
+  getGamesAdmin, getCategoriesAdmin, getProvidersAdmin,
   createGame, createGameForm, updateGame, updateGameForm,
 } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -26,13 +26,12 @@ interface InlineEditState {
 }
 
 function InlineEditModal({
-  state, onClose, categories, providers, subcategories,
+  state, onClose, categories, providers,
 }: {
   state: InlineEditState | null;
   onClose: () => void;
   categories: { id: number; name: string }[];
   providers: { id: number; name: string; code: string }[];
-  subcategories: { id: number; name: string; game_category: number }[];
 }) {
   const queryClient = useQueryClient();
   const [value, setValue] = useState<unknown>(null);
@@ -96,20 +95,6 @@ function InlineEditModal({
         >
           <option value="">Select Provider</option>
           {providers.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
-        </select>
-      );
-    }
-    if (f === "subcategory") {
-      const catId = typeof state.row.category === "number" ? state.row.category : Number(state.row.category);
-      const filtered = catId ? subcategories.filter((s) => s.game_category === catId) : subcategories;
-      return (
-        <select
-          className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-          value={String(value ?? "")}
-          onChange={(e) => setValue(e.target.value === "" ? null : Number(e.target.value))}
-        >
-          <option value="">None</option>
-          {filtered.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       );
     }
@@ -177,16 +162,13 @@ const PowerhouseGames = () => {
   const { data: gamesRaw } = useQuery({ queryKey: ["admin-games"], queryFn: getGamesAdmin });
   const { data: categoriesRaw } = useQuery({ queryKey: ["admin-categories"], queryFn: getCategoriesAdmin });
   const { data: providersRaw } = useQuery({ queryKey: ["admin-providers"], queryFn: getProvidersAdmin });
-  const { data: subcategoriesRaw } = useQuery({ queryKey: ["admin-subcategories"], queryFn: () => getSubcategoriesAdmin() });
 
   const games = Array.isArray(gamesRaw) ? gamesRaw : [];
   const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
   const providers = Array.isArray(providersRaw) ? providersRaw : [];
-  const subcategories = Array.isArray(subcategoriesRaw) ? subcategoriesRaw : [];
 
   const cats = categories as { id: number; name: string }[];
   const provs = providers as { id: number; name: string; code: string }[];
-  const subcats = subcategories as { id: number; name: string; game_category: number }[];
 
   // ── Form state ──
   const [createOpen, setCreateOpen] = useState(false);
@@ -198,7 +180,6 @@ const PowerhouseGames = () => {
   const [name, setName] = useState("");
   const [gameUid, setGameUid] = useState("");
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [subcategoryId, setSubcategoryId] = useState<number | "">("");
   const [providerId, setProviderId] = useState<number | "">("");
   const [minBet, setMinBet] = useState("10");
   const [maxBet, setMaxBet] = useState("5000");
@@ -219,10 +200,8 @@ const PowerhouseGames = () => {
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  const filteredSubcats = Array.isArray(subcats) && categoryId !== "" ? subcats.filter((s) => s.game_category === categoryId) : subcats;
-
   const resetForm = () => {
-    setName(""); setGameUid(""); setCategoryId(""); setSubcategoryId(""); setProviderId("");
+    setName(""); setGameUid(""); setCategoryId(""); setProviderId("");
     setMinBet("10"); setMaxBet("5000"); setImageFile(null);
     setIsActive(true); setIsComingSoon(false); setIsSingleGame(false);
     setIsTopGame(false); setIsPopularGame(false);
@@ -234,7 +213,6 @@ const PowerhouseGames = () => {
     setName(String(row.name ?? ""));
     setGameUid(String(row.game_uid ?? ""));
     setCategoryId(typeof row.category === "number" ? row.category : "");
-    setSubcategoryId(typeof row.subcategory === "number" ? row.subcategory : "");
     setProviderId(typeof row.provider === "number" ? row.provider : "");
     setMinBet(String(row.min_bet ?? "10"));
     setMaxBet(String(row.max_bet ?? "5000"));
@@ -255,7 +233,6 @@ const PowerhouseGames = () => {
     name: "Name",
     game_uid: "Game UID",
     category: "Category",
-    subcategory: "Subcategory",
     provider: "Provider",
     min_bet: "Min Bet",
     max_bet: "Max Bet",
@@ -327,18 +304,6 @@ const PowerhouseGames = () => {
         </span>
       ),
       sortKey: "category_name",
-    },
-    {
-      header: "Subcategory",
-      accessor: (row: GameRow) => (
-        <span
-          className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 cursor-pointer hover:bg-indigo-500/25"
-          onClick={() => handleCellClick(row, "subcategory")}
-        >
-          {row.subcategory_name ? String(row.subcategory_name) : <span className="text-muted-foreground italic">—</span>}
-        </span>
-      ),
-      sortKey: "subcategory_name",
     },
     {
       header: "Provider",
@@ -452,7 +417,6 @@ const PowerhouseGames = () => {
     game_uid: gameUid.trim(),
     category: categoryId,
     provider: providerId,
-    subcategory: subcategoryId !== "" ? subcategoryId : null,
     min_bet: minBet || "0",
     max_bet: maxBet || "0",
     is_active: isActive,
@@ -471,7 +435,6 @@ const PowerhouseGames = () => {
     fd.append("game_uid", p.game_uid);
     fd.append("category", String(p.category));
     fd.append("provider", String(p.provider));
-    if (p.subcategory != null) fd.append("subcategory", String(p.subcategory));
     fd.append("min_bet", p.min_bet);
     fd.append("max_bet", p.max_bet);
     fd.append("is_active", String(p.is_active));
@@ -560,25 +523,10 @@ const PowerhouseGames = () => {
           <select
             className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
             value={categoryId}
-            onChange={(e) => {
-              const val = e.target.value === "" ? "" : Number(e.target.value);
-              setCategoryId(val);
-              setSubcategoryId("");
-            }}
+            onChange={(e) => setCategoryId(e.target.value === "" ? "" : Number(e.target.value))}
           >
             <option value="">Select Category</option>
             {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Subcategory</label>
-          <select
-            className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-            value={subcategoryId}
-            onChange={(e) => setSubcategoryId(e.target.value === "" ? "" : Number(e.target.value))}
-          >
-            <option value="">None</option>
-            {filteredSubcats.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </div>
         <div>
@@ -691,7 +639,6 @@ const PowerhouseGames = () => {
         onClose={() => setInlineEdit(null)}
         categories={cats}
         providers={provs}
-        subcategories={subcats}
       />
 
       {/* Create */}

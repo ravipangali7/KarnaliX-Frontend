@@ -98,7 +98,7 @@ const RegisterPage = () => {
         phone: verifiedPhone,
         name: name.trim(),
         password,
-        referral_code: referralCode.trim() || undefined,
+        referral_code: refFromUrl.trim() || referralCode.trim() || undefined,
       });
       navigate("/player", { replace: true });
     } catch (err: unknown) {
@@ -137,13 +137,20 @@ const RegisterPage = () => {
                 onChange={(e) => setPhone(e.target.value)}
                 required
               />
-              {referralCode && (
-                <Input
-                  placeholder="Referral code"
-                  className="h-11"
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                />
+              {refFromUrl ? (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Referral</p>
+                  <p className="text-sm font-medium text-foreground">You are referred by <span className="text-primary font-semibold">{refFromUrl}</span></p>
+                </div>
+              ) : (
+                referralCode && (
+                  <Input
+                    placeholder="Referral code (optional)"
+                    className="h-11"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                  />
+                )
               )}
               <Button type="submit" className="w-full gold-gradient text-primary-foreground font-display font-semibold h-11 neon-glow-sm" disabled={loading}>
                 {loading ? "Checking..." : "Continue"}

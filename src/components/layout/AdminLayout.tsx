@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
   Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight,
-  Menu, X, Tag, Box, Layers, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image,
+  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image,
   Calculator, LayoutPanelTop
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,7 +38,6 @@ const getNavItems = (role: string) => {
       { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
       { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
       { label: "Categories", path: "/categories", icon: Tag },
-      { label: "Subcategories", path: "/subcategories", icon: Layers },
       { label: "Providers", path: "/providers", icon: Box },
       { label: "Games", path: "/games", icon: Gamepad2 },
       { label: "Slider", path: "/slider", icon: Image },

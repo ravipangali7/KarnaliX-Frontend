@@ -8,14 +8,6 @@ export interface GameCategory {
   is_active?: boolean;
 }
 
-export interface GameSubCategory {
-  id: number;
-  name: string;
-  svg?: string;
-  is_active?: boolean;
-  game_category: number;
-}
-
 export interface GameProvider {
   id: number;
   name: string;
@@ -78,13 +70,6 @@ export function getGameImageUrl(game: Game): string {
 export async function getCategories(): Promise<GameCategory[]> {
   const res = await apiGet<GameCategory[]>("/public/categories/");
   return unwrapList<GameCategory>(res as unknown);
-}
-
-/** Fetch subcategories (active). Optional categoryId to filter by game category. */
-export async function getSubcategories(categoryId?: number): Promise<GameSubCategory[]> {
-  const q = categoryId != null ? `?category_id=${categoryId}` : "";
-  const res = await apiGet<GameSubCategory[]>(`/public/subcategories/${q}`);
-  return unwrapList<GameSubCategory>(res as unknown);
 }
 
 export async function getProviders(): Promise<GameProvider[]> {
