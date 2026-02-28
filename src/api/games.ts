@@ -102,9 +102,21 @@ export async function getGames(
   page?: number,
   pageSize: number = 24,
   search?: string,
-  options?: { is_top_game?: boolean; is_popular_game?: boolean }
+  options?: { is_top_game?: boolean; is_popular_game?: boolean; ids?: number[] }
 ): Promise<GamesPaginatedResponse> {
   const params = new URLSearchParams();
+  if (options?.ids && options.ids.length > 0) {
+    params.set("ids", options.ids.join(","));
+    const q = `?${params.toString()}`;
+    const res = await apiGet<GamesPaginatedResponse>(`/public/games/${q}`);
+    const raw = res as unknown as { results?: Game[]; count?: number; next?: string | null; previous?: string | null };
+    return {
+      results: Array.isArray(raw?.results) ? raw.results : [],
+      count: typeof raw?.count === "number" ? raw.count : 0,
+      next: raw?.next ?? null,
+      previous: raw?.previous ?? null,
+    };
+  }
   if (categoryId != null) params.set("category_id", String(categoryId));
   if (providerId != null) params.set("provider_id", String(providerId));
   if (page != null) params.set("page", String(page));
