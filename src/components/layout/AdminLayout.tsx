@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
   Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight,
-  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image,
+  Menu, X, Tag, Box, Layers, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image,
   Calculator, LayoutPanelTop
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +38,7 @@ const getNavItems = (role: string) => {
       { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
       { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
       { label: "Categories", path: "/categories", icon: Tag },
+      { label: "Subcategories", path: "/subcategories", icon: Layers },
       { label: "Providers", path: "/providers", icon: Box },
       { label: "Games", path: "/games", icon: Gamepad2 },
       { label: "Slider", path: "/slider", icon: Image },
@@ -46,6 +47,7 @@ const getNavItems = (role: string) => {
       { label: "Bonus Rules", path: "/bonus-rules", icon: Gift },
       { label: "Game Log", path: "/game-log", icon: Gamepad2 },
       { label: "Transactions", path: "/transactions", icon: Clock },
+      { label: "Accounting", path: "/accounting", icon: Calculator },
       { label: "Activity Log", path: "/activity", icon: Activity },
       { label: "Super Settings", path: "/super-settings", icon: Settings },
       { label: "Site Settings", path: "/site-settings", icon: Globe },
@@ -179,6 +181,18 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
           ))}
         </nav>
 
+        {/* Mini accounting: balance summary in sidebar (same as header) */}
+        {balances.length > 0 && (
+          <div className={`border-t border-sidebar-border px-2 py-2 space-y-1 ${collapsed ? "flex flex-col items-center" : ""}`}>
+            {balances.map((b) => (
+              <div key={b.label} className={`flex ${collapsed ? "flex-col items-center gap-0" : "items-center justify-between gap-2"} text-[10px]`}>
+                <span className="text-muted-foreground whitespace-nowrap">{b.label}</span>
+                <span className="font-semibold text-primary truncate">{b.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="h-12 flex items-center justify-center border-t border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
@@ -221,6 +235,18 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
                 </Link>
               ))}
             </nav>
+            {/* Mini accounting in mobile sidebar */}
+            {balances.length > 0 && (
+              <div className="border-t border-sidebar-border px-3 py-2 space-y-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Balances</p>
+                {balances.map((b) => (
+                  <div key={b.label} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{b.label}</span>
+                    <span className="font-semibold text-primary">{b.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </aside>
         </div>
       )}
@@ -230,7 +256,7 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
         <header className="sticky top-0 z-40 glass-card border-b border-border/50">
           <div className="h-14 flex items-center justify-between px-4">
             <div className="flex items-center gap-3">
-              <button className="md:hidden p-2 rounded-lg hover:bg-muted" onClick={() => setMobileOpen(true)}>
+              <button className="md:hidden p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-muted touch-manipulation flex items-center justify-center" onClick={() => setMobileOpen(true)}>
                 <Menu className="h-5 w-5" />
               </button>
               <h1 className="font-display font-semibold text-lg hidden md:block">{roleLabel} Dashboard</h1>
@@ -254,7 +280,7 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
             </div>
           </div>
           {/* Mobile balance row */}
-          <div className="sm:hidden flex items-center gap-2 px-4 pb-2 overflow-x-auto">
+          <div className="sm:hidden flex items-center gap-2 px-4 pb-2 overflow-x-auto scrollbar-hide min-w-0" style={{ WebkitOverflowScrolling: "touch" }}>
             {balances.map((b) => (
               <div key={b.label} className="flex-shrink-0 px-2 py-1 rounded-md bg-muted text-[10px]">
                 <span className="text-muted-foreground">{b.label}: </span>
@@ -264,7 +290,7 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 min-w-0">
           <Outlet />
         </main>
       </div>

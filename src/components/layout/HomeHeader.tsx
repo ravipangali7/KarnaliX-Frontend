@@ -140,7 +140,7 @@ export const HomeHeader = () => {
               <Wallet className="h-4 w-4 text-primary" />
               <span className="font-roboto-mono text-sm font-semibold text-foreground">{walletBalance}</span>
             </div>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
               <Bell className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-neon-green animate-pulse" />
             </Button>
@@ -154,7 +154,7 @@ export const HomeHeader = () => {
                 </Link>
               </>
             )}
-            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMenuOpen(!menuOpen)}>
+            <Button variant="ghost" size="icon" className="lg:hidden min-h-[44px] min-w-[44px] touch-manipulation" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
@@ -190,7 +190,7 @@ export const HomeHeader = () => {
               to={item.path}
               onClick={() => setMenuOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium",
+                "flex items-center gap-3 px-4 py-3.5 rounded-lg text-sm font-medium min-h-[44px] touch-manipulation",
                 location.pathname === item.path ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5"
               )}
             >

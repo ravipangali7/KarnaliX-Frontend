@@ -61,6 +61,7 @@ import AdminAccounting from "@/pages/admin/AdminAccounting";
 
 // Powerhouse-only Pages
 import PowerhouseCategories from "@/pages/admin/PowerhouseCategories";
+import PowerhouseSubcategories from "@/pages/admin/PowerhouseSubcategories";
 import PowerhouseProviders from "@/pages/admin/PowerhouseProviders";
 import PowerhouseGames from "@/pages/admin/PowerhouseGames";
 import PowerhouseBonusRules from "@/pages/admin/PowerhouseBonusRules";
@@ -221,6 +222,7 @@ const App = () => (
               <Route path="/powerhouse/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/powerhouse/bonus-requests" element={<AdminBonusRequests />} />
               <Route path="/powerhouse/categories" element={<PowerhouseCategories />} />
+              <Route path="/powerhouse/subcategories" element={<PowerhouseSubcategories />} />
               <Route path="/powerhouse/providers" element={<PowerhouseProviders />} />
               <Route path="/powerhouse/games" element={<PowerhouseGames />} />
               <Route path="/powerhouse/slider" element={<PowerhouseSlider />} />
@@ -230,6 +232,7 @@ const App = () => (
               <Route path="/powerhouse/game-log" element={<AdminGameLog />} />
               <Route path="/powerhouse/game-log/:id" element={<AdminGameLogDetail />} />
               <Route path="/powerhouse/transactions" element={<AdminTransactions />} />
+              <Route path="/powerhouse/accounting" element={<AdminAccounting />} />
               <Route path="/powerhouse/activity" element={<AdminActivityLog />} />
               <Route path="/powerhouse/super-settings" element={<PowerhouseSuperSettings />} />
               <Route path="/powerhouse/site-settings" element={<PowerhouseSiteSettings />} />

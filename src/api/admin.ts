@@ -89,6 +89,14 @@ export async function createPlayer(body: unknown, role: "powerhouse" | "super" |
 export async function updatePlayer(id: number, body: unknown, role: "powerhouse" | "super" | "master" = "powerhouse") {
   return apiPatch(`${prefix(role)}/players/${id}/edit/`, body);
 }
+/** Toggle player is_active; requires PIN for master/super/powerhouse. */
+export async function togglePlayerActive(
+  id: number,
+  body: { pin: string; is_active: boolean },
+  role: "powerhouse" | "super" | "master"
+) {
+  return apiPatch(`${prefix(role)}/players/${id}/toggle-active/`, body);
+}
 export async function deletePlayer(id: number, role: "powerhouse" | "super" | "master" = "powerhouse") {
   return apiDelete(`${prefix(role)}/players/${id}/delete/`);
 }
@@ -265,7 +273,7 @@ export type AccountingReportResponse = {
   settlements?: { id: number; from_user_username: string | null; amount: string; created_at: string | null }[];
 };
 export async function getAccountingReport(
-  role: "master" | "super",
+  role: "master" | "super" | "powerhouse",
   params?: AccountingReportParams
 ): Promise<AccountingReportResponse> {
   const q = new URLSearchParams();
@@ -341,6 +349,31 @@ export async function updateCategoryAdminForm(id: number, formData: FormData) {
 }
 export async function deleteCategoryAdmin(id: number) {
   return apiDelete(`${prefix("powerhouse")}/categories/${id}/`);
+}
+
+// --- Subcategories (powerhouse) ---
+export async function getSubcategoriesAdmin(categoryId?: number) {
+  const url = categoryId != null ? `${prefix("powerhouse")}/subcategories/?category_id=${categoryId}` : `${prefix("powerhouse")}/subcategories/`;
+  const res = await apiGet(url);
+  return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+export async function getSubcategoryAdmin(id: number) {
+  return apiGet(`${prefix("powerhouse")}/subcategories/${id}/`);
+}
+export async function createSubcategoryAdmin(body: { name: string; svg?: string | null; is_active: boolean; game_category: number }) {
+  return apiPost(`${prefix("powerhouse")}/subcategories/`, body);
+}
+export async function createSubcategoryAdminForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/subcategories/`, formData);
+}
+export async function updateSubcategoryAdmin(id: number, body: unknown) {
+  return apiPatch(`${prefix("powerhouse")}/subcategories/${id}/`, body);
+}
+export async function updateSubcategoryAdminForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/subcategories/${id}/`, formData);
+}
+export async function deleteSubcategoryAdmin(id: number) {
+  return apiDelete(`${prefix("powerhouse")}/subcategories/${id}/`);
 }
 
 export async function getProvidersAdmin() {

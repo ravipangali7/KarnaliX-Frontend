@@ -8,6 +8,14 @@ export interface GameCategory {
   is_active?: boolean;
 }
 
+export interface GameSubCategory {
+  id: number;
+  name: string;
+  svg?: string;
+  is_active?: boolean;
+  game_category: number;
+}
+
 export interface GameProvider {
   id: number;
   name: string;
@@ -44,6 +52,8 @@ export interface Game {
   provider_code?: string;
   is_active?: boolean;
   is_single_game?: boolean;
+  is_top_game?: boolean;
+  is_popular_game?: boolean;
 }
 
 function unwrapList<T>(res: unknown): T[] {
@@ -68,6 +78,13 @@ export function getGameImageUrl(game: Game): string {
 export async function getCategories(): Promise<GameCategory[]> {
   const res = await apiGet<GameCategory[]>("/public/categories/");
   return unwrapList<GameCategory>(res as unknown);
+}
+
+/** Fetch subcategories (active). Optional categoryId to filter by game category. */
+export async function getSubcategories(categoryId?: number): Promise<GameSubCategory[]> {
+  const q = categoryId != null ? `?category_id=${categoryId}` : "";
+  const res = await apiGet<GameSubCategory[]>(`/public/subcategories/${q}`);
+  return unwrapList<GameSubCategory>(res as unknown);
 }
 
 export async function getProviders(): Promise<GameProvider[]> {
@@ -99,7 +116,8 @@ export async function getGames(
   providerId?: number,
   page?: number,
   pageSize: number = 24,
-  search?: string
+  search?: string,
+  options?: { is_top_game?: boolean; is_popular_game?: boolean }
 ): Promise<GamesPaginatedResponse> {
   const params = new URLSearchParams();
   if (categoryId != null) params.set("category_id", String(categoryId));
@@ -107,6 +125,8 @@ export async function getGames(
   if (page != null) params.set("page", String(page));
   params.set("page_size", String(pageSize));
   if (search != null && search.trim() !== "") params.set("search", search.trim());
+  if (options?.is_top_game === true) params.set("is_top_game", "true");
+  if (options?.is_popular_game === true) params.set("is_popular_game", "true");
   const q = params.toString() ? `?${params.toString()}` : "";
   const res = await apiGet<GamesPaginatedResponse>(`/public/games/${q}`);
   const raw = res as unknown as { results?: Game[]; count?: number; next?: string | null; previous?: string | null };

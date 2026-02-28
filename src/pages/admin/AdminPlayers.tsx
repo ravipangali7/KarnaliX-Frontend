@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getMasters, getPlayers, createPlayer, updatePlayer, getMasterPaymentModes, getPaymentModesForDepositTarget, directDeposit, directWithdraw, resetPassword, type ListParams } from "@/api/admin";
+import { getMasters, getPlayers, createPlayer, updatePlayer, togglePlayerActive, getMasterPaymentModes, getPaymentModesForDepositTarget, directDeposit, directWithdraw, resetPassword, type ListParams } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
+import { Switch } from "@/components/ui/switch";
 
 type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; is_active?: boolean; status?: string; created_at?: string; phone?: string; total_balance?: string | number; total_win_loss?: string | number };
 
@@ -36,6 +37,8 @@ const AdminPlayers = () => {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [resetPwOpen, setResetPwOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
+  const [togglePinOpen, setTogglePinOpen] = useState(false);
+  const [toggleTarget, setToggleTarget] = useState<{ row: PlayerRow; nextActive: boolean } | null>(null);
   const [selectedUser, setSelectedUser] = useState<PlayerRow | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [pendingPayload, setPendingPayload] = useState<Record<string, unknown>>({});
@@ -76,7 +79,25 @@ const AdminPlayers = () => {
     { header: "Total Balance", accessor: (row: PlayerRow) => `₹${Number(row.total_balance ?? 0).toLocaleString()}` },
     { header: "Win/Loss", accessor: (row: PlayerRow) => `₹${Number(row.total_win_loss ?? 0).toLocaleString()}` },
     { header: "Exp Limit", accessor: (row: PlayerRow) => `₹${Number(row.exposure_limit ?? 0).toLocaleString()}` },
-    { header: "Status", accessor: (row: PlayerRow) => <StatusBadge status={row.is_active === false ? "inactive" : "active"} /> },
+    {
+      header: "Status",
+      accessor: (row: PlayerRow) => {
+        const isActive = row.is_active !== false;
+        const label = isActive ? "User Activate" : "User Deactivate";
+        return (
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={isActive}
+              onCheckedChange={(checked) => {
+                setToggleTarget({ row, nextActive: checked });
+                setTogglePinOpen(true);
+              }}
+            />
+            <span className="text-xs font-medium whitespace-nowrap">{label}</span>
+          </div>
+        );
+      },
+    },
     { header: "Joined", accessor: (row: PlayerRow) => row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "" },
     {
       header: "Actions",
@@ -382,6 +403,25 @@ const AdminPlayers = () => {
           }
         }}
         title="Enter PIN to confirm"
+      />
+
+      <PinDialog
+        open={togglePinOpen}
+        onClose={() => { setTogglePinOpen(false); setToggleTarget(null); }}
+        onConfirm={async (pin) => {
+          if (!toggleTarget?.row?.id) return;
+          try {
+            await togglePlayerActive(toggleTarget.row.id, { pin, is_active: toggleTarget.nextActive }, role);
+            queryClient.invalidateQueries({ queryKey: ["admin-players", role] });
+            setTogglePinOpen(false);
+            setToggleTarget(null);
+            toast({ title: toggleTarget.nextActive ? "User activated." : "User deactivated." });
+          } catch (e: unknown) {
+            const msg = (e as { detail?: string })?.detail ?? "Invalid PIN or request failed.";
+            toast({ title: msg, variant: "destructive" });
+          }
+        }}
+        title={toggleTarget?.nextActive ? "Enter PIN to activate user" : "Enter PIN to deactivate user"}
       />
     </div>
   );

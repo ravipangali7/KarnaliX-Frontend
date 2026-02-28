@@ -245,7 +245,7 @@ const FirstHomePage = () => {
         <h2 className={sectionTitle}>Trusted Game Providers</h2>
         {providersLoading && <p className="text-sm text-muted-foreground py-4">Loading providers…</p>}
         {!providersLoading && (
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
             {providers.slice(0, 8).map((p: GameProvider) => (
               <div
                 key={p.id}

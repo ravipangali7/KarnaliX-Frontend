@@ -36,31 +36,33 @@ export function DataTable<T extends { id: string }>({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            className="pl-9 h-9 text-sm"
+            className="pl-9 h-9 sm:h-9 text-sm min-h-[44px] sm:min-h-0"
           />
         </div>
-        {onAdd && (
-          <Button onClick={onAdd} size="sm" className="gold-gradient text-primary-foreground gap-1">
-            <Plus className="h-3 w-3" /> {addLabel}
-          </Button>
-        )}
-        {secondaryAction && (
-          <Button onClick={secondaryAction.onClick} variant="outline" size="sm" className="gap-1">
-            <Plus className="h-3 w-3" /> {secondaryAction.label}
-          </Button>
-        )}
+        <div className="flex gap-2 shrink-0">
+          {onAdd && (
+            <Button onClick={onAdd} size="sm" className="gold-gradient text-primary-foreground gap-1 min-h-[44px] sm:min-h-9 px-4">
+              <Plus className="h-3 w-3" /> {addLabel}
+            </Button>
+          )}
+          {secondaryAction && (
+            <Button onClick={secondaryAction.onClick} variant="outline" size="sm" className="gap-1 min-h-[44px] sm:min-h-9 px-4">
+              {secondaryAction.label}
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="rounded-lg border overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
+      <div className="rounded-lg border overflow-hidden min-w-0">
+        <div className="overflow-x-auto -mx-px" style={{ WebkitOverflowScrolling: "touch" }}>
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow className="bg-muted/50">
                 {columns.map((col, i) => (

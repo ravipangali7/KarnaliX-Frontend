@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, type LiveBettingSectionApi } from "@/api/site";
-import { getCategories, getProviders, getGames, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
+import { getCategories, getSubcategories, getProviders, getGames, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameSubCategory, type GameProvider } from "@/api/games";
 import { getBonusRules, mapBonusRulesToPromoShapes } from "@/api/bonus";
 import { getMediaUrl } from "@/lib/api";
 import type { ProviderShape, GameCardShape, PromoShape, TestimonialShape, ComingSoonShape } from "@/data/homePageMockData";
@@ -39,13 +39,20 @@ export interface SecondHomePageData {
   liveBettingSections: LiveBettingSection[];
   topLiveGames: GameCardShape[];
   otherGames: GameCardShape[];
-  /** First 16 games for Top Games carousel (combined from live + other). */
+  /** First 16 games for Top Games carousel (is_top_game preferred, else live+other fallback). */
   topGames: GameCardShape[];
+  /** Subcategories for the "Live Casino" category (horizontal slider). */
+  liveCategorySubcategories: GameSubCategory[];
+  /** The category used for live subcategories (e.g. Live Casino). */
+  liveCategory: GameCategory | null;
+  /** Games marked is_popular_game for Popular Games section. */
+  popularGames: GameCardShape[];
   /** Games grouped by category id for category-wise rows. */
   gamesByCategory: Record<number, GameCardShape[]>;
   sportsIframeUrl: string;
-  /** Welcome + Deposit promos for section after banner, before top games. */
+  /** Welcome + Deposit promos (Bonus section). */
   welcomeDepositPromos: PromoShape[];
+  /** Refer & Earn promos. */
   promosGrid: PromoShape[];
   tournamentPromo: PromoShape | null;
   cashbackPromo: PromoShape | null;
@@ -189,6 +196,12 @@ export function useSecondHomePageData(): {
     queryKey: ["categories"],
     queryFn: getCategories,
   });
+  const liveCategory = (categories as GameCategory[]).find((c) => /live/i.test(c.name)) ?? (categories as GameCategory[])[0] ?? null;
+  const { data: subcategoriesApi = [], refetch: refetchSubcategories } = useQuery({
+    queryKey: ["subcategories", liveCategory?.id],
+    queryFn: () => getSubcategories(liveCategory!.id),
+    enabled: !!liveCategory?.id,
+  });
   const { data: providers = [], isLoading: providersLoading } = useQuery({
     queryKey: ["providers"],
     queryFn: getProviders,
@@ -211,6 +224,7 @@ export function useSecondHomePageData(): {
   });
   const games = (gamesResp?.results ?? []) as Game[];
   const categoriesList = (categories ?? []) as GameCategory[];
+  const liveCategorySubcategories = (subcategoriesApi ?? []) as GameSubCategory[];
 
   const isLoading = siteLoading || sliderLoading || liveBettingLoading || categoriesLoading || providersLoading || gamesLoading;
   const site = (siteSetting as Record<string, unknown>) ?? {};
@@ -233,7 +247,6 @@ export function useSecondHomePageData(): {
     single_game_id: p.single_game_id ?? undefined,
   }));
 
-  const liveCategory = categoriesList.find((c) => /live/i.test(c.name));
   let topLiveGames: GameCardShape[] = [];
   let otherGames: GameCardShape[] = [];
   const gamesByCategory: Record<number, GameCardShape[]> = {};
@@ -252,7 +265,9 @@ export function useSecondHomePageData(): {
       if (catGames.length > 0) gamesByCategory[cat.id] = catGames;
     });
   }
-  const topGames = [...topLiveGames, ...otherGames].slice(0, 16);
+  const topGamesFromFlags = games.filter((g) => g.is_top_game).map((g, i) => mapGameToCardShape(g, i)).slice(0, 16);
+  const topGames = topGamesFromFlags.length > 0 ? topGamesFromFlags : [...topLiveGames, ...otherGames].slice(0, 16);
+  const popularGames: GameCardShape[] = games.filter((g) => g.is_popular_game).map((g, i) => mapGameToCardShape(g, i));
 
   const sportsIframeUrl = (site.sports_iframe_url as string)?.trim() || "https://sprodm.uni247.xyz/?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWRmOTZiZjUtNGU2ZC00MWIyLWFmOGMtMTU5MTRmZjgyZjBjIiwicGxheWVyX2lkIjoiaGI1ZjQ5MTI2U1RBUiIsIm1lcmNoYW50X2NvZGUiOiJjbXQtaGQtc3ViLTg4MHIyYmYiLCJpc3N1ZWRfYXQiOiIyMDI2LTAyLTIzVDEwOjM5OjQyLjAyNjgyMDA2MloiLCJleHBpcmVzX2F0IjoiMjAyNi0wMi0yM1QxMzozOTo0Mi4wMjY4MjAxMjJaIiwibGFuZ3VhZ2UiOiJlbiJ9.5W0ZztMElPLnVqvFwaqh3ehaIhQYVieBe2FwnDMNNDw#/";
 
@@ -323,6 +338,9 @@ export function useSecondHomePageData(): {
     topLiveGames,
     otherGames,
     topGames,
+    liveCategorySubcategories,
+    liveCategory,
+    popularGames,
     gamesByCategory,
     sportsIframeUrl,
     welcomeDepositPromos,
@@ -336,6 +354,7 @@ export function useSecondHomePageData(): {
   const refetch = () => {
     refetchSite();
     refetchGames();
+    refetchSubcategories();
   };
   return { data, isLoading, isError: !!siteError || !!gamesError, refetch };
 }

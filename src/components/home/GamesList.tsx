@@ -27,7 +27,7 @@ export function AllGameCategories({ gamesByCategory: gamesByCategoryProp, catego
       {categories.map((cat) => {
         const games = gamesByCategory[cat.slug];
         if (!games?.length) return null;
-        const href = cat.slug === "sports" ? "/sports" : `/games/${cat.slug}`;
+        const href = cat.id != null ? `/games?category=${cat.id}` : (cat.slug === "sports" ? "/sports" : "/games");
         const Icon = slugIcons[cat.slug] ?? Gamepad2;
         return (
           <section key={cat.slug} className="container px-4 py-8">

@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Check, X, Eye, RefreshCw } from "lucide-react";
 
 type PaymentModeDetail = Record<string, unknown> & { name?: string; type_display?: string; wallet_phone?: string; bank_name?: string; bank_branch?: string; bank_account_no?: string; bank_account_holder_name?: string; status_display?: string; qr_image_url?: string };
-type DepositRow = Record<string, unknown> & { id?: number; user_username?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; payment_mode_detail?: PaymentModeDetail | null; status?: string; created_at?: string; screenshot?: string };
+type DepositRow = Record<string, unknown> & { id?: number; user_username?: string; user_name?: string; user_phone?: string; user_email?: string; user_whatsapp_number?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; payment_mode_detail?: PaymentModeDetail | null; status?: string; created_at?: string; screenshot?: string };
 
 const AdminDeposits = () => {
   const { user } = useAuth();
@@ -85,16 +85,25 @@ const AdminDeposits = () => {
       {/* View Deposit */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="font-display">Deposit Details</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-display">Deposit Details – Small Report</DialogTitle></DialogHeader>
           {selectedDeposit && (
             <div className="space-y-3 text-sm">
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">User</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><span className="text-muted-foreground text-xs">Username</span><p className="font-medium">{String(selectedDeposit.user_username ?? selectedDeposit.username ?? "")}</p></div>
+                  <div><span className="text-muted-foreground text-xs">Name</span><p className="font-medium">{String(selectedDeposit.user_name ?? "")}</p></div>
+                  {(selectedDeposit.user_phone != null && String(selectedDeposit.user_phone) !== "") && <div className="col-span-2"><span className="text-muted-foreground text-xs">Phone</span><p className="font-medium">{String(selectedDeposit.user_phone)}</p></div>}
+                  {(selectedDeposit.user_email != null && String(selectedDeposit.user_email) !== "") && <div><span className="text-muted-foreground text-xs">Email</span><p className="font-medium">{String(selectedDeposit.user_email)}</p></div>}
+                  {(selectedDeposit.user_whatsapp_number != null && String(selectedDeposit.user_whatsapp_number) !== "") && <div><span className="text-muted-foreground text-xs">WhatsApp</span><p className="font-medium">{String(selectedDeposit.user_whatsapp_number)}</p></div>}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="text-muted-foreground text-xs">ID</span><p className="font-medium">{String(selectedDeposit.id ?? "")}</p></div>
-                <div><span className="text-muted-foreground text-xs">User</span><p className="font-medium">{String(selectedDeposit.user_username ?? selectedDeposit.username ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">Amount</span><p className="font-bold text-success">₹{Number(selectedDeposit.amount ?? 0).toLocaleString()}</p></div>
                 <div><span className="text-muted-foreground text-xs">Method</span><p className="font-medium">{String(selectedDeposit.payment_mode_name ?? selectedDeposit.payment_mode ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selectedDeposit.status ?? "pending")} /></p></div>
-                <div><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{selectedDeposit.created_at ? new Date(String(selectedDeposit.created_at)).toLocaleString() : ""}</p></div>
+                <div className="col-span-2"><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{selectedDeposit.created_at ? new Date(String(selectedDeposit.created_at)).toLocaleString() : ""}</p></div>
               </div>
               {selectedDeposit.payment_mode_qr_image && (
                 <div>

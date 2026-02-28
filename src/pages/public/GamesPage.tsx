@@ -68,19 +68,19 @@ const GamesPage = () => {
       </div>
 
       {/* Search - uses backend API with pagination */}
-      <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-2 w-full sm:max-w-md min-w-0">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             type="search"
             placeholder="Search games by name or provider..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9 h-10"
+            className="pl-9 h-10 min-h-[44px]"
             aria-label="Search games"
           />
         </div>
-        <Button type="submit" size="sm" className="h-10 shrink-0">
+        <Button type="submit" size="sm" className="h-10 min-h-[44px] shrink-0 touch-manipulation">
           Search
         </Button>
       </form>
@@ -132,7 +132,7 @@ const GamesPage = () => {
       )}
 
       {/* Category tabs (below provider) */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide min-w-0" style={{ WebkitOverflowScrolling: "touch" }}>
         <Button
           variant={categoryParam === "all" ? "default" : "outline"}
           size="sm"

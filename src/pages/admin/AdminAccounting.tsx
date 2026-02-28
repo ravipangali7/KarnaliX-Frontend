@@ -19,7 +19,7 @@ function todayISO(): string {
 
 const AdminAccounting = () => {
   const { user } = useAuth();
-  const role = (user?.role === "super" || user?.role === "master") ? user.role : "master";
+  const role = (user?.role === "super" || user?.role === "master" || user?.role === "powerhouse") ? user.role : "master";
   const [dateFrom, setDateFrom] = useState(todayISO);
   const [dateTo, setDateTo] = useState(todayISO);
 

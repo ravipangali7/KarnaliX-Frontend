@@ -27,6 +27,8 @@ const PowerhouseGames = () => {
   const [isActive, setIsActive] = useState(true);
   const [isComingSoon, setIsComingSoon] = useState(false);
   const [isSingleGame, setIsSingleGame] = useState(false);
+  const [isTopGame, setIsTopGame] = useState(false);
+  const [isPopularGame, setIsPopularGame] = useState(false);
   const [comingSoonLaunchDate, setComingSoonLaunchDate] = useState("");
   const [comingSoonDescription, setComingSoonDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -55,6 +57,8 @@ const PowerhouseGames = () => {
     setIsActive(true);
     setIsComingSoon(false);
     setIsSingleGame(false);
+    setIsTopGame(false);
+    setIsPopularGame(false);
     setComingSoonLaunchDate("");
     setComingSoonDescription("");
     setEditingGame(null);
@@ -71,6 +75,8 @@ const PowerhouseGames = () => {
     setIsActive(Boolean(row.is_active));
     setIsComingSoon(Boolean(row.is_coming_soon));
     setIsSingleGame(Boolean(row.is_single_game));
+    setIsTopGame(Boolean(row.is_top_game));
+    setIsPopularGame(Boolean(row.is_popular_game));
     const launchDate = row.coming_soon_launch_date;
     setComingSoonLaunchDate(launchDate ? String(launchDate).slice(0, 10) : "");
     setComingSoonDescription(String(row.coming_soon_description ?? ""));
@@ -84,6 +90,15 @@ const PowerhouseGames = () => {
     { header: "Provider", accessor: (row: Record<string, unknown>) => String(row.provider_name ?? "") },
     { header: "Min Bet", accessor: (row: Record<string, unknown>) => `₹${row.min_bet ?? ""}` },
     { header: "Max Bet", accessor: (row: Record<string, unknown>) => `₹${Number(row.max_bet ?? 0).toLocaleString()}` },
+    {
+      header: "Flags",
+      accessor: (row: Record<string, unknown>) => (
+        <div className="flex gap-1 flex-wrap">
+          {row.is_top_game && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400">Top</span>}
+          {row.is_popular_game && <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-600 dark:text-violet-400">Popular</span>}
+        </div>
+      ),
+    },
     { header: "Status", accessor: (row: Record<string, unknown>) => <StatusBadge status={row.is_active ? "active" : "suspended"} /> },
     {
       header: "Actions",
@@ -120,6 +135,8 @@ const PowerhouseGames = () => {
         formData.append("is_active", String(isActive));
         formData.append("is_coming_soon", String(isComingSoon));
         formData.append("is_single_game", String(isSingleGame));
+        formData.append("is_top_game", String(isTopGame));
+        formData.append("is_popular_game", String(isPopularGame));
         if (comingSoonLaunchDate.trim()) formData.append("coming_soon_launch_date", comingSoonLaunchDate.trim());
         formData.append("coming_soon_description", comingSoonDescription.trim());
         formData.append("image", imageFile);
@@ -135,6 +152,8 @@ const PowerhouseGames = () => {
           is_active: isActive,
           is_coming_soon: isComingSoon,
           is_single_game: isSingleGame,
+          is_top_game: isTopGame,
+          is_popular_game: isPopularGame,
           coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
           coming_soon_description: comingSoonDescription.trim() || "",
         });
@@ -177,6 +196,8 @@ const PowerhouseGames = () => {
         formData.append("is_active", String(isActive));
         formData.append("is_coming_soon", String(isComingSoon));
         formData.append("is_single_game", String(isSingleGame));
+        formData.append("is_top_game", String(isTopGame));
+        formData.append("is_popular_game", String(isPopularGame));
         if (comingSoonLaunchDate.trim()) formData.append("coming_soon_launch_date", comingSoonLaunchDate.trim());
         formData.append("coming_soon_description", comingSoonDescription.trim());
         formData.append("image", imageFile);
@@ -192,6 +213,8 @@ const PowerhouseGames = () => {
           is_active: isActive,
           is_coming_soon: isComingSoon,
           is_single_game: isSingleGame,
+          is_top_game: isTopGame,
+          is_popular_game: isPopularGame,
           coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
           coming_soon_description: comingSoonDescription.trim() || "",
         });
@@ -292,6 +315,17 @@ const PowerhouseGames = () => {
                 Single game (open directly when provider is clicked)
               </label>
             </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs font-medium text-muted-foreground">Homepage</p>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isTopGame} onChange={(e) => setIsTopGame(e.target.checked)} className="rounded border-border" />
+                Top Game
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isPopularGame} onChange={(e) => setIsPopularGame(e.target.checked)} className="rounded border-border" />
+                Popular Game
+              </label>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancel</Button>
@@ -381,6 +415,17 @@ const PowerhouseGames = () => {
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={isSingleGame} onChange={(e) => setIsSingleGame(e.target.checked)} className="rounded border-border" />
                 Single game (open directly when provider is clicked)
+              </label>
+            </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs font-medium text-muted-foreground">Homepage</p>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isTopGame} onChange={(e) => setIsTopGame(e.target.checked)} className="rounded border-border" />
+                Top Game
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isPopularGame} onChange={(e) => setIsPopularGame(e.target.checked)} className="rounded border-border" />
+                Popular Game
               </label>
             </div>
           </div>

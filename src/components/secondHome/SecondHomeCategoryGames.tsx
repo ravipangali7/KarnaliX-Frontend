@@ -19,11 +19,11 @@ export function SecondHomeCategoryGames({ categories, gamesByCategory }: SecondH
           <section key={cat.id} className="container px-4 py-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-bold text-lg text-foreground">{cat.name}</h2>
-              <Link to="/games" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
+              <Link to={`/games?category=${cat.id}`} className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
                 View All <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 min-w-0" style={{ WebkitOverflowScrolling: "touch" }}>
               {games.map((game) => (
                 <Link
                   key={game.id}

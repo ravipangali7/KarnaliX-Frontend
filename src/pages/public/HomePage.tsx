@@ -187,7 +187,7 @@ const HomePage = () => {
           </div>
         )}
         {!categoriesLoading && !categoriesError && (
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
             {categories.map((cat: { id: number; name: string }) => (
               <Link key={cat.id} to={`/games?category=${cat.id}`}>
                 <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:neon-glow-sm transition-all duration-300 group cyber-border">

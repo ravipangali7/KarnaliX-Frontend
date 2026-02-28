@@ -1,10 +1,10 @@
 import { useSecondHomePageData } from "@/hooks/useSecondHomePageData";
 import {
   SecondHomeSlider,
-  SecondGameCategoryBar,
-  LiveBettingSection,
+  SecondHomeLiveCategorySubcategories,
   SecondHomeTopGamesCarousel,
   SecondHomeCategoryGames,
+  SecondHomePopularGames,
 } from "@/components/secondHome";
 import { GameProviders } from "@/components/home/GameProviders";
 import { ActivePopups } from "@/components/home/ActivePopups";
@@ -45,9 +45,30 @@ export default function SecondHomePage() {
   return (
     <div className="space-y-0 pb-8 bg-background">
       <ActivePopups />
+      {/* 1. Banner */}
       <SecondHomeSlider slides={data.sliderSlides} />
 
-      {/* Welcome + Deposit: after banner, before top games */}
+      {/* 2. Live Casino Category — subcategories with icons, horizontal slider */}
+      <SecondHomeLiveCategorySubcategories liveCategory={data.liveCategory} subcategories={data.liveCategorySubcategories} />
+
+      {/* 3. Top Games */}
+      <SecondHomeTopGamesCarousel games={data.topGames} />
+
+      {/* 4. Trusted Game Providers */}
+      <GameProviders providers={data.providerCards} />
+
+      {/* 5. GameCategory-wise game cards */}
+      <SecondHomeCategoryGames categories={data.categories} gamesByCategory={data.gamesByCategory} />
+
+      {/* 6. Popular Games */}
+      <SecondHomePopularGames games={data.popularGames} />
+
+      {/* 7. Refer & Earn */}
+      {data.promosGrid.length > 0 && (
+        <PromoBannerGrid promos={data.promosGrid} />
+      )}
+
+      {/* 8. Bonus — Welcome (first column) + Deposit (second column) */}
       {data.welcomeDepositPromos.length > 0 && (
         <section className="container px-4 py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -56,48 +77,6 @@ export default function SecondHomePage() {
             ))}
           </div>
         </section>
-      )}
-
-      <SecondGameCategoryBar categories={data.categories} />
-
-      {/* Scrolling static section (e.g. Ind vs Pak) */}
-      {/* <div className="container px-4 py-6">
-        {data.liveBettingSections.map((section, i) => (
-          <LiveBettingSection key={i} section={section} />
-        ))}
-      </div> */}
-
-      {/* Top Games: 16 cards, 8 visible, horizontal auto-scroll, image only, click -> game */}
-      <SecondHomeTopGamesCarousel games={data.topGames} />
-
-      {/* Sports iframe: full width, viewport crop to hide remote header/footer */}
-      {/* {data.sportsIframeUrl && (
-        <section className="w-full">
-          <div className="w-full overflow-hidden h-[70vh] min-h-[400px] relative bg-background">
-            <iframe
-              src={data.sportsIframeUrl}
-              title="Sports"
-              className="absolute left-0 border-0 w-full"
-              style={{
-                height: "calc(100% + 144px)",
-                top: 0,
-                transform: "translateY(-64px)",
-              }}
-              allowFullScreen
-            />
-          </div>
-        </section>
-      )} */}
-
-      {/* Providers: image + name only, circular irregular shape */}
-      <GameProviders providers={data.providerCards} />
-
-      {/* Games by category: category name + horizontal scroll */}
-      <SecondHomeCategoryGames categories={data.categories} gamesByCategory={data.gamesByCategory} />
-
-      {/* Promotion and bonus (like first home) */}
-      {data.promosGrid.length > 0 && (
-        <PromoBannerGrid promos={data.promosGrid} />
       )}
       {data.tournamentPromo && (
         <section className="container px-4 py-6">
@@ -110,10 +89,12 @@ export default function SecondHomePage() {
         </section>
       )}
 
-      {/* Coming Soon */}
+      {/* 9. Coming Soon Games */}
       <ComingSoon comingSoon={data.comingSoon} />
 
-      {/* Review / Testimonials */}
+      {/* 10. Footer is in SecondPublicLayout */}
+
+      {/* Testimonials */}
       <Testimonials testimonials={data.testimonials} />
     </div>
   );

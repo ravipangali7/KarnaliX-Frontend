@@ -218,7 +218,7 @@ export function useHomePageData(): {
           const slug = slugFromCategoryName(c.name);
           categoryIdToSlug[c.id] = slug;
           const count = games.filter((g: Game) => g.category === c.id).length;
-          return { slug, label: c.name, count };
+          return { slug, label: c.name, count, id: c.id };
         })
       : defaultCategories;
 

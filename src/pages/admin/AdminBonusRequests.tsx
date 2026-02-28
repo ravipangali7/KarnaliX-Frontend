@@ -21,6 +21,10 @@ import { Check, X, Eye, RefreshCw } from "lucide-react";
 type BonusRequestRow = Record<string, unknown> & {
   id?: number;
   user_username?: string;
+  user_name?: string;
+  user_phone?: string;
+  user_email?: string;
+  user_whatsapp_number?: string;
   amount?: string;
   bonus_type?: string;
   bonus_type_display?: string;
@@ -106,13 +110,22 @@ const AdminBonusRequests = () => {
       {/* View */}
       <Dialog open={viewOpen} onOpenChange={(open) => { setViewOpen(open); if (!open) setEditAmount(""); }}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="font-display">Bonus Request Details</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-display">Bonus Request Details – Small Report</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-3 text-sm">
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">User</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><span className="text-muted-foreground text-xs">Username</span><p className="font-medium">{String(selected.user_username ?? "")}</p></div>
+                  <div><span className="text-muted-foreground text-xs">Name</span><p className="font-medium">{String(selected.user_name ?? "")}</p></div>
+                  {(selected.user_phone != null && String(selected.user_phone) !== "") && <div className="col-span-2"><span className="text-muted-foreground text-xs">Phone</span><p className="font-medium">{String(selected.user_phone)}</p></div>}
+                  {(selected.user_email != null && String(selected.user_email) !== "") && <div><span className="text-muted-foreground text-xs">Email</span><p className="font-medium">{String(selected.user_email)}</p></div>}
+                  {(selected.user_whatsapp_number != null && String(selected.user_whatsapp_number) !== "") && <div><span className="text-muted-foreground text-xs">WhatsApp</span><p className="font-medium">{String(selected.user_whatsapp_number)}</p></div>}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="text-muted-foreground text-xs">ID</span><p className="font-medium">{String(selected.id ?? "")}</p></div>
-                <div><span className="text-muted-foreground text-xs">User</span><p className="font-medium">{String(selected.user_username ?? "")}</p></div>
-                <div className="col-span-2">
+                <div>
                   <span className="text-muted-foreground text-xs">Amount</span>
                   {String(selected.status) === "pending" ? (
                     <div className="flex items-center gap-2 mt-1">

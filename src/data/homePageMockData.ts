@@ -40,6 +40,8 @@ export interface CategoryShape {
   slug: string;
   label?: string;
   count?: number;
+  /** Category id from API; when set, View All links to /games?category=id */
+  id?: number;
 }
 
 export interface ProviderShape {
