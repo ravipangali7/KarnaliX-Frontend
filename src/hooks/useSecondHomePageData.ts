@@ -210,6 +210,16 @@ export function useSecondHomePageData(): {
     queryKey: ["games", "second-home"],
     queryFn: () => getGames(undefined, undefined, 1, 100),
   });
+  /** Fetch popular games separately so we get all is_popular_game=true games (not limited to first 100). */
+  const { data: popularGamesResp, refetch: refetchPopularGames } = useQuery({
+    queryKey: ["games", "second-home", "popular"],
+    queryFn: () => getGames(undefined, undefined, 1, 50, undefined, { is_popular_game: true }),
+  });
+  /** Fetch top games separately so we get all is_top_game=true games (not limited to first 100). */
+  const { data: topGamesResp, refetch: refetchTopGames } = useQuery({
+    queryKey: ["games", "second-home", "top"],
+    queryFn: () => getGames(undefined, undefined, 1, 24, undefined, { is_top_game: true }),
+  });
   const { data: testimonialsApi = [] } = useQuery({
     queryKey: ["testimonials"],
     queryFn: getTestimonials,
@@ -265,9 +275,19 @@ export function useSecondHomePageData(): {
       if (catGames.length > 0) gamesByCategory[cat.id] = catGames;
     });
   }
+  /** Top games: prefer dedicated API (all is_top_game), else from main list, else live+other fallback. */
+  const topGamesFromApi = Array.isArray(topGamesResp?.results)
+    ? (topGamesResp.results as Game[]).map((g, i) => mapGameToCardShape(g, i)).slice(0, 16)
+    : [];
   const topGamesFromFlags = games.filter((g) => g.is_top_game).map((g, i) => mapGameToCardShape(g, i)).slice(0, 16);
-  const topGames = topGamesFromFlags.length > 0 ? topGamesFromFlags : [...topLiveGames, ...otherGames].slice(0, 16);
-  const popularGames: GameCardShape[] = games.filter((g) => g.is_popular_game).map((g, i) => mapGameToCardShape(g, i));
+  const topGames =
+    topGamesFromApi.length > 0 ? topGamesFromApi : topGamesFromFlags.length > 0 ? topGamesFromFlags : [...topLiveGames, ...otherGames].slice(0, 16);
+
+  /** Popular games: prefer dedicated API (all is_popular_game), else filter from main list. */
+  const popularFromApi = Array.isArray(popularGamesResp?.results)
+    ? (popularGamesResp.results as Game[]).map((g, i) => mapGameToCardShape(g, i))
+    : [];
+  const popularGames: GameCardShape[] = popularFromApi.length > 0 ? popularFromApi : games.filter((g) => g.is_popular_game).map((g, i) => mapGameToCardShape(g, i));
 
   const sportsIframeUrl = (site.sports_iframe_url as string)?.trim() || "https://sprodm.uni247.xyz/?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWRmOTZiZjUtNGU2ZC00MWIyLWFmOGMtMTU5MTRmZjgyZjBjIiwicGxheWVyX2lkIjoiaGI1ZjQ5MTI2U1RBUiIsIm1lcmNoYW50X2NvZGUiOiJjbXQtaGQtc3ViLTg4MHIyYmYiLCJpc3N1ZWRfYXQiOiIyMDI2LTAyLTIzVDEwOjM5OjQyLjAyNjgyMDA2MloiLCJleHBpcmVzX2F0IjoiMjAyNi0wMi0yM1QxMzozOTo0Mi4wMjY4MjAxMjJaIiwibGFuZ3VhZ2UiOiJlbiJ9.5W0ZztMElPLnVqvFwaqh3ehaIhQYVieBe2FwnDMNNDw#/";
 
@@ -355,6 +375,8 @@ export function useSecondHomePageData(): {
     refetchSite();
     refetchGames();
     refetchSubcategories();
+    refetchPopularGames();
+    refetchTopGames();
   };
   return { data, isLoading, isError: !!siteError || !!gamesError, refetch };
 }
