@@ -7,15 +7,20 @@ const CARD_WIDTH = 140;
 
 interface SecondHomePopularGamesProps {
   games: GameCardShape[];
+  sectionTitle?: string;
+  sectionSvg?: string;
 }
 
-export function SecondHomePopularGames({ games }: SecondHomePopularGamesProps) {
+export function SecondHomePopularGames({ games, sectionTitle, sectionSvg }: SecondHomePopularGamesProps) {
   if (!games.length) return null;
 
   return (
     <section className="container px-4 py-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display font-bold text-xl text-foreground">Popular Games</h2>
+        <h2 className="font-display font-bold text-xl text-foreground flex items-center gap-2">
+          {sectionSvg && <img src={sectionSvg} alt="" className="h-6 w-6 object-contain" />}
+          {sectionTitle || "Popular Games"}
+        </h2>
         <Link to="/games" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
           View All <ChevronRight className="h-4 w-4" />
         </Link>

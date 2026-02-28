@@ -17,10 +17,36 @@ import {
   createLiveBettingEvent,
   updateLiveBettingEvent,
   deleteLiveBettingEvent,
+  getCategoriesAdmin,
+  getProvidersAdmin,
+  getGamesAdmin,
+  getPaymentMethods,
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { getMediaUrl } from "@/lib/api";
 import { ChevronUp, ChevronDown, Trash2, Plus, ChevronRight } from "lucide-react";
+import {
+  SectionTitleSvg,
+  OrderedIdSelector,
+  CategoryGamesEditor,
+  type CategoryGamesEntry,
+} from "@/components/admin/SiteJsonSectionEditor";
+
+interface SectionJson {
+  section_title?: string;
+  section_svg?: string;
+  category_ids?: number[];
+  game_ids?: number[];
+  provider_ids?: number[];
+  payment_method_ids?: number[];
+  categories?: CategoryGamesEntry[];
+  description?: string;
+  cta?: string;
+  href?: string;
+  title?: string;
+  subtitle?: string;
+  tagline?: string;
+}
 
 export interface LiveBettingEventAdmin {
   id: number;
@@ -77,6 +103,29 @@ const PowerhouseSiteSettings = () => {
   const [promoBanners, setPromoBanners] = useState<PromoBannerSlide[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // Home page section JSON states
+  const [siteCategoriesJson, setSiteCategoriesJson] = useState<SectionJson>({});
+  const [siteTopGamesJson, setSiteTopGamesJson] = useState<SectionJson>({});
+  const [siteProvidersJson, setSiteProvidersJson] = useState<SectionJson>({});
+  const [siteCategoriesGameJson, setSiteCategoriesGameJson] = useState<SectionJson>({});
+  const [sitePopularGamesJson, setSitePopularGamesJson] = useState<SectionJson>({});
+  const [siteComingSoonJson, setSiteComingSoonJson] = useState<SectionJson>({});
+  const [siteReferBonusJson, setSiteReferBonusJson] = useState<SectionJson>({});
+  const [sitePaymentsAcceptedJson, setSitePaymentsAcceptedJson] = useState<SectionJson>({});
+  const [siteFooterJson, setSiteFooterJson] = useState<SectionJson>({});
+  const [siteWelcomeDepositJson, setSiteWelcomeDepositJson] = useState<SectionJson>({});
+
+  // Data for selectors
+  const { data: allCategoriesRaw = [] } = useQuery({ queryKey: ["admin-categories"], queryFn: getCategoriesAdmin });
+  const { data: allProvidersRaw = [] } = useQuery({ queryKey: ["admin-providers"], queryFn: getProvidersAdmin });
+  const { data: allGamesRaw = [] } = useQuery({ queryKey: ["admin-games"], queryFn: getGamesAdmin });
+  const { data: allPaymentMethodsRaw = [] } = useQuery({ queryKey: ["admin-payment-methods"], queryFn: getPaymentMethods });
+
+  const allCategories = (allCategoriesRaw as { id: number; name: string }[]).map((c) => ({ id: c.id, name: c.name }));
+  const allProviders = (allProvidersRaw as { id: number; name: string }[]).map((p) => ({ id: p.id, name: p.name }));
+  const allGames = (allGamesRaw as { id: number; name: string }[]).map((g) => ({ id: g.id, name: g.name }));
+  const allPaymentMethods = (allPaymentMethodsRaw as { id: number; name: string }[]).map((m) => ({ id: m.id, name: m.name }));
+
   const { data: liveBettingSectionsApi = [] } = useQuery({
     queryKey: ["admin-live-betting-sections"],
     queryFn: getLiveBettingSectionsAdmin,
@@ -129,6 +178,18 @@ const PowerhouseSiteSettings = () => {
     setFooterDescription(String(s.footer_description ?? ""));
     const banners = s.promo_banners as PromoBannerSlide[] | undefined;
     setPromoBanners(Array.isArray(banners) ? banners.map((b) => ({ ...b })) : []);
+    // Load new JSON section fields
+    const parseSection = (val: unknown): SectionJson => (val && typeof val === "object" && !Array.isArray(val) ? (val as SectionJson) : {});
+    setSiteCategoriesJson(parseSection(s.site_categories_json));
+    setSiteTopGamesJson(parseSection(s.site_top_games_json));
+    setSiteProvidersJson(parseSection(s.site_providers_json));
+    setSiteCategoriesGameJson(parseSection(s.site_categories_game_json));
+    setSitePopularGamesJson(parseSection(s.site_popular_games_json));
+    setSiteComingSoonJson(parseSection(s.site_coming_soon_json));
+    setSiteReferBonusJson(parseSection(s.site_refer_bonus_json));
+    setSitePaymentsAcceptedJson(parseSection(s.site_payments_accepted_json));
+    setSiteFooterJson(parseSection(s.site_footer_json));
+    setSiteWelcomeDepositJson(parseSection(s.site_welcome_deposit_json));
   }, [siteSettings]);
 
   const buildPayload = () => {
@@ -149,6 +210,16 @@ const PowerhouseSiteSettings = () => {
       instant_payouts: i ? parseInt(i, 10) : 0,
       footer_description: footerDescription.trim(),
       promo_banners: promoBanners,
+      site_categories_json: siteCategoriesJson,
+      site_top_games_json: siteTopGamesJson,
+      site_providers_json: siteProvidersJson,
+      site_categories_game_json: siteCategoriesGameJson,
+      site_popular_games_json: sitePopularGamesJson,
+      site_coming_soon_json: siteComingSoonJson,
+      site_refer_bonus_json: siteReferBonusJson,
+      site_payments_accepted_json: sitePaymentsAcceptedJson,
+      site_footer_json: siteFooterJson,
+      site_welcome_deposit_json: siteWelcomeDepositJson,
     };
   };
 
@@ -170,6 +241,16 @@ const PowerhouseSiteSettings = () => {
         formData.set("games_available", gamesAvailable.trim());
         formData.set("total_winnings", totalWinnings.trim());
         formData.set("instant_payouts", instantPayouts.trim());
+        formData.set("site_categories_json", JSON.stringify(siteCategoriesJson));
+        formData.set("site_top_games_json", JSON.stringify(siteTopGamesJson));
+        formData.set("site_providers_json", JSON.stringify(siteProvidersJson));
+        formData.set("site_categories_game_json", JSON.stringify(siteCategoriesGameJson));
+        formData.set("site_popular_games_json", JSON.stringify(sitePopularGamesJson));
+        formData.set("site_coming_soon_json", JSON.stringify(siteComingSoonJson));
+        formData.set("site_refer_bonus_json", JSON.stringify(siteReferBonusJson));
+        formData.set("site_payments_accepted_json", JSON.stringify(sitePaymentsAcceptedJson));
+        formData.set("site_footer_json", JSON.stringify(siteFooterJson));
+        formData.set("site_welcome_deposit_json", JSON.stringify(siteWelcomeDepositJson));
         if (logoFile) formData.set("logo", logoFile);
         if (faviconFile) formData.set("favicon", faviconFile);
         await updateSiteSettingsForm(formData);
@@ -540,6 +621,246 @@ const PowerhouseSiteSettings = () => {
               </ul>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* ---- HOME PAGE SECTION CONFIG ---- */}
+      <div className="pt-4">
+        <h2 className="font-display font-bold text-lg tracking-tight mb-1">Home page section config</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Configure which categories, games, and providers appear in each home page section, and their titles/icons.
+          Link to <Link to="/powerhouse/payment-methods" className="text-primary underline">Payment Methods</Link> to add new methods.
+        </p>
+      </div>
+
+      {/* Banner – Categories horizontal slides */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Banner – Categories (horizontal slides)</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Select categories to show as horizontal slides in the banner area, with their SVG and name.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SectionTitleSvg
+            sectionTitle={siteCategoriesJson.section_title ?? ""}
+            sectionSvg={siteCategoriesJson.section_svg ?? ""}
+            onTitleChange={(v) => setSiteCategoriesJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSiteCategoriesJson((s) => ({ ...s, section_svg: v }))}
+          />
+          <OrderedIdSelector
+            label="categories"
+            allItems={allCategories}
+            selectedIds={siteCategoriesJson.category_ids ?? []}
+            onChange={(ids) => setSiteCategoriesJson((s) => ({ ...s, category_ids: ids }))}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Top Games – big cards */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Top Games (big cards)</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Show name, provider, category with full card images. If empty, falls back to is_top_game flag.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SectionTitleSvg
+            sectionTitle={siteTopGamesJson.section_title ?? ""}
+            sectionSvg={siteTopGamesJson.section_svg ?? ""}
+            onTitleChange={(v) => setSiteTopGamesJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSiteTopGamesJson((s) => ({ ...s, section_svg: v }))}
+          />
+          <OrderedIdSelector
+            label="games"
+            allItems={allGames}
+            selectedIds={siteTopGamesJson.game_ids ?? []}
+            onChange={(ids) => setSiteTopGamesJson((s) => ({ ...s, game_ids: ids }))}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Providers – horizontal slides */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Providers (horizontal slides)</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Select providers in order. Shown with irregular shape image and name. Falls back to all providers.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SectionTitleSvg
+            sectionTitle={siteProvidersJson.section_title ?? ""}
+            sectionSvg={siteProvidersJson.section_svg ?? ""}
+            onTitleChange={(v) => setSiteProvidersJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSiteProvidersJson((s) => ({ ...s, section_svg: v }))}
+          />
+          <OrderedIdSelector
+            label="providers"
+            allItems={allProviders}
+            selectedIds={siteProvidersJson.provider_ids ?? []}
+            onChange={(ids) => setSiteProvidersJson((s) => ({ ...s, provider_ids: ids }))}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Categories as section titles with game card lists */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Categories → Game Card Lists</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Each category becomes a section title (with SVG icon). Mobile: 2 cards visible, rest slide. Select categories and their games in order.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SectionTitleSvg
+            sectionTitle={siteCategoriesGameJson.section_title ?? ""}
+            sectionSvg={siteCategoriesGameJson.section_svg ?? ""}
+            onTitleChange={(v) => setSiteCategoriesGameJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSiteCategoriesGameJson((s) => ({ ...s, section_svg: v }))}
+          />
+          <CategoryGamesEditor
+            allCategories={allCategories}
+            allGames={allGames}
+            value={siteCategoriesGameJson.categories ?? []}
+            onChange={(cats) => setSiteCategoriesGameJson((s) => ({ ...s, categories: cats }))}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Popular Games – big cards */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Popular Games (big cards)</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Show name, provider, category with full card images. Falls back to is_popular_game flag.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SectionTitleSvg
+            sectionTitle={sitePopularGamesJson.section_title ?? ""}
+            sectionSvg={sitePopularGamesJson.section_svg ?? ""}
+            onTitleChange={(v) => setSitePopularGamesJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSitePopularGamesJson((s) => ({ ...s, section_svg: v }))}
+          />
+          <OrderedIdSelector
+            label="games"
+            allItems={allGames}
+            selectedIds={sitePopularGamesJson.game_ids ?? []}
+            onChange={(ids) => setSitePopularGamesJson((s) => ({ ...s, game_ids: ids }))}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Welcome | Deposit */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Welcome / Deposit Bonus</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Section title and icon for the welcome/deposit bonus section.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SectionTitleSvg
+            sectionTitle={siteWelcomeDepositJson.section_title ?? ""}
+            sectionSvg={siteWelcomeDepositJson.section_svg ?? ""}
+            onTitleChange={(v) => setSiteWelcomeDepositJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSiteWelcomeDepositJson((s) => ({ ...s, section_svg: v }))}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Title</label>
+              <Input value={siteWelcomeDepositJson.title ?? ""} onChange={(e) => setSiteWelcomeDepositJson((s) => ({ ...s, title: e.target.value }))} placeholder="Welcome Bonus" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Subtitle</label>
+              <Input value={siteWelcomeDepositJson.subtitle ?? ""} onChange={(e) => setSiteWelcomeDepositJson((s) => ({ ...s, subtitle: e.target.value }))} placeholder="Up to ₹50,000" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">CTA text</label>
+              <Input value={siteWelcomeDepositJson.cta ?? ""} onChange={(e) => setSiteWelcomeDepositJson((s) => ({ ...s, cta: e.target.value }))} placeholder="Claim Now" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">CTA link</label>
+              <Input value={siteWelcomeDepositJson.href ?? ""} onChange={(e) => setSiteWelcomeDepositJson((s) => ({ ...s, href: e.target.value }))} placeholder="/bonus" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Coming Soon */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Coming Soon</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Section title and icon. Games come from the coming-soon API (is_coming_soon flag).</p>
+        </CardHeader>
+        <CardContent>
+          <SectionTitleSvg
+            sectionTitle={siteComingSoonJson.section_title ?? ""}
+            sectionSvg={siteComingSoonJson.section_svg ?? ""}
+            onTitleChange={(v) => setSiteComingSoonJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSiteComingSoonJson((s) => ({ ...s, section_svg: v }))}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Refer & Earn */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Refer &amp; Earn Bonus</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Section title, icon and optional description/CTA.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SectionTitleSvg
+            sectionTitle={siteReferBonusJson.section_title ?? ""}
+            sectionSvg={siteReferBonusJson.section_svg ?? ""}
+            onTitleChange={(v) => setSiteReferBonusJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSiteReferBonusJson((s) => ({ ...s, section_svg: v }))}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label className="text-xs text-muted-foreground block mb-1">Description</label>
+              <Input value={siteReferBonusJson.description ?? ""} onChange={(e) => setSiteReferBonusJson((s) => ({ ...s, description: e.target.value }))} placeholder="Invite friends and earn ₹500 per referral" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">CTA text</label>
+              <Input value={siteReferBonusJson.cta ?? ""} onChange={(e) => setSiteReferBonusJson((s) => ({ ...s, cta: e.target.value }))} placeholder="Get Link" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">CTA link</label>
+              <Input value={siteReferBonusJson.href ?? ""} onChange={(e) => setSiteReferBonusJson((s) => ({ ...s, href: e.target.value }))} placeholder="/referral" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Payments Accepted */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Payments Accepted</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Select payment methods to show. Home page shows only images; footer shows names + images.
+            Manage methods at <Link to="/powerhouse/payment-methods" className="text-primary underline">Payment Methods</Link>.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SectionTitleSvg
+            sectionTitle={sitePaymentsAcceptedJson.section_title ?? ""}
+            sectionSvg={sitePaymentsAcceptedJson.section_svg ?? ""}
+            onTitleChange={(v) => setSitePaymentsAcceptedJson((s) => ({ ...s, section_title: v }))}
+            onSvgChange={(v) => setSitePaymentsAcceptedJson((s) => ({ ...s, section_svg: v }))}
+          />
+          <OrderedIdSelector
+            label="payment methods"
+            allItems={allPaymentMethods}
+            selectedIds={sitePaymentsAcceptedJson.payment_method_ids ?? []}
+            onChange={(ids) => setSitePaymentsAcceptedJson((s) => ({ ...s, payment_method_ids: ids }))}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Footer */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Footer JSON config</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Optional footer tagline override (in addition to footer_description above).</p>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Tagline override</label>
+            <Input value={siteFooterJson.tagline ?? ""} onChange={(e) => setSiteFooterJson((s) => ({ ...s, tagline: e.target.value }))} placeholder="Your trusted gaming platform" />
+          </div>
         </CardContent>
       </Card>
 

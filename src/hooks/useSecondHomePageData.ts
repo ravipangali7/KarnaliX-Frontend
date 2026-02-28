@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, type LiveBettingSectionApi } from "@/api/site";
+import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, getPublicPaymentMethods, type LiveBettingSectionApi, type PublicPaymentMethod } from "@/api/site";
 import { getCategories, getProviders, getGames, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
 import { getBonusRules, mapBonusRulesToPromoShapes } from "@/api/bonus";
 import { getMediaUrl } from "@/lib/api";
@@ -31,6 +31,11 @@ export interface LiveBettingSection {
   events: LiveBettingEvent[];
 }
 
+export interface SectionMeta {
+  title?: string;
+  svg?: string;
+}
+
 export interface SecondHomePageData {
   sliderSlides: SliderSlide[];
   categories: GameCategory[];
@@ -54,6 +59,20 @@ export interface SecondHomePageData {
   cashbackPromo: PromoShape | null;
   comingSoon: ComingSoonShape[];
   testimonials: TestimonialShape[];
+  /** Payment methods accepted (from site_payments_accepted_json, resolved). */
+  paymentMethods: PublicPaymentMethod[];
+  /** Section meta (title, svg) for each configurable section. */
+  sectionMeta: {
+    banner: SectionMeta;
+    topGames: SectionMeta;
+    providers: SectionMeta;
+    categoriesGame: SectionMeta;
+    popularGames: SectionMeta;
+    comingSoon: SectionMeta;
+    referBonus: SectionMeta;
+    paymentsAccepted: SectionMeta;
+    welcomeDeposit: SectionMeta;
+  };
 }
 
 function mapGameToCardShape(game: Game, index: number): GameCardShape {
@@ -222,11 +241,36 @@ export function useSecondHomePageData(): {
     queryKey: ["bonusRules"],
     queryFn: getBonusRules,
   });
+  const { data: publicPaymentMethodsApi = [] } = useQuery({
+    queryKey: ["publicPaymentMethods"],
+    queryFn: getPublicPaymentMethods,
+  });
   const games: Game[] = Array.isArray(gamesResp?.results) ? (gamesResp.results as Game[]) : [];
   const categoriesList = Array.isArray(categories) ? (categories as GameCategory[]) : [];
 
   const isLoading = siteLoading || sliderLoading || liveBettingLoading || categoriesLoading || providersLoading || gamesLoading;
   const site = (siteSetting as Record<string, unknown>) ?? {};
+
+  // Parse site JSON section configs
+  const parseSiteSection = (key: string): Record<string, unknown> => {
+    const val = site[key];
+    return (val && typeof val === "object" && !Array.isArray(val)) ? (val as Record<string, unknown>) : {};
+  };
+  const siteCategoriesJson = parseSiteSection("site_categories_json");
+  const siteTopGamesJson = parseSiteSection("site_top_games_json");
+  const siteProvidersJson = parseSiteSection("site_providers_json");
+  const siteCategoriesGameJson = parseSiteSection("site_categories_game_json");
+  const sitePopularGamesJson = parseSiteSection("site_popular_games_json");
+  const siteComingSoonJson = parseSiteSection("site_coming_soon_json");
+  const siteReferBonusJson = parseSiteSection("site_refer_bonus_json");
+  const sitePaymentsAcceptedJson = parseSiteSection("site_payments_accepted_json");
+  const siteWelcomeDepositJson = parseSiteSection("site_welcome_deposit_json");
+
+  const getSectionMeta = (json: Record<string, unknown>): SectionMeta => ({
+    title: (json.section_title as string) || undefined,
+    svg: (json.section_svg as string) || undefined,
+  });
+
   const liveBettingSections: LiveBettingSection[] =
     Array.isArray(liveBettingApi) && liveBettingApi.length > 0
       ? mapLiveBettingApiToSections(liveBettingApi)
@@ -235,8 +279,20 @@ export function useSecondHomePageData(): {
     Array.isArray(sliderSlidesApi) && sliderSlidesApi.length > 0
       ? sliderSlidesApi.map(mapSliderApiToSlide)
       : defaultSliderSlides(site);
+
   const providersList = (providers ?? []) as GameProvider[];
-  const providerCards: ProviderShape[] = providersList.map((p, i) => ({
+
+  // If site_providers_json.provider_ids is set, order providers by that list
+  const providerIdOrder = Array.isArray(siteProvidersJson.provider_ids) ? (siteProvidersJson.provider_ids as number[]) : [];
+  const orderedProvidersList: GameProvider[] =
+    providerIdOrder.length > 0
+      ? [
+          ...providerIdOrder.map((id) => providersList.find((p) => p.id === id)).filter(Boolean) as GameProvider[],
+          ...providersList.filter((p) => !providerIdOrder.includes(p.id!)),
+        ]
+      : providersList;
+
+  const providerCards: ProviderShape[] = orderedProvidersList.map((p, i) => ({
     id: p.id,
     name: p.name,
     logo: (p.code ?? p.name.slice(0, 2).toUpperCase()).slice(0, 2),
@@ -252,24 +308,72 @@ export function useSecondHomePageData(): {
   if (games.length > 0) {
     topLiveGames = games.slice(0, TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
     otherGames = games.slice(TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
-    categoriesList.forEach((cat) => {
-      const catGames = games.filter((g) => g.category === cat.id).map((g, i) => mapGameToCardShape(g, i));
-      if (catGames.length > 0) gamesByCategory[cat.id] = catGames;
-    });
+
+    // If site_categories_game_json.categories is set, use that ordering
+    const siteCatEntries = Array.isArray(siteCategoriesGameJson.categories)
+      ? (siteCategoriesGameJson.categories as { category_id: number; game_ids: number[] }[])
+      : [];
+    if (siteCatEntries.length > 0) {
+      siteCatEntries.forEach(({ category_id, game_ids }) => {
+        const orderedGames = game_ids
+          .map((gid) => games.find((g) => g.id === gid))
+          .filter(Boolean) as Game[];
+        const fallbackCatGames = games.filter((g) => g.category === category_id);
+        const catGames = orderedGames.length > 0 ? orderedGames : fallbackCatGames;
+        if (catGames.length > 0) gamesByCategory[category_id] = catGames.map((g, i) => mapGameToCardShape(g, i));
+      });
+    } else {
+      categoriesList.forEach((cat) => {
+        const catGames = games.filter((g) => g.category === cat.id).map((g, i) => mapGameToCardShape(g, i));
+        if (catGames.length > 0) gamesByCategory[cat.id] = catGames;
+      });
+    }
   }
-  /** Top games: prefer dedicated API (all is_top_game), else from main list, else live+other fallback. */
+
+  // Top games: if site_top_games_json.game_ids set, use those in order
+  const siteTopGameIds = Array.isArray(siteTopGamesJson.game_ids) ? (siteTopGamesJson.game_ids as number[]) : [];
+  const topGamesFromSiteJson: GameCardShape[] = siteTopGameIds.length > 0
+    ? siteTopGameIds.map((id) => games.find((g) => g.id === id)).filter(Boolean).map((g, i) => mapGameToCardShape(g as Game, i))
+    : [];
+  /** Top games: prefer site JSON, then dedicated API (all is_top_game), else from main list, else live+other fallback. */
   const topGamesFromApi = Array.isArray(topGamesResp?.results)
     ? (topGamesResp.results as Game[]).map((g, i) => mapGameToCardShape(g, i)).slice(0, 16)
     : [];
   const topGamesFromFlags = games.filter((g) => g.is_top_game).map((g, i) => mapGameToCardShape(g, i)).slice(0, 16);
   const topGames =
+    topGamesFromSiteJson.length > 0 ? topGamesFromSiteJson.slice(0, 16) :
     topGamesFromApi.length > 0 ? topGamesFromApi : topGamesFromFlags.length > 0 ? topGamesFromFlags : [...topLiveGames, ...otherGames].slice(0, 16);
 
-  /** Popular games: prefer dedicated API (all is_popular_game), else filter from main list. */
+  // Popular games: if site_popular_games_json.game_ids set, use those
+  const sitePopularGameIds = Array.isArray(sitePopularGamesJson.game_ids) ? (sitePopularGamesJson.game_ids as number[]) : [];
+  const popularFromSiteJson: GameCardShape[] = sitePopularGameIds.length > 0
+    ? sitePopularGameIds.map((id) => games.find((g) => g.id === id)).filter(Boolean).map((g, i) => mapGameToCardShape(g as Game, i))
+    : [];
+  /** Popular games: prefer site JSON, then dedicated API (all is_popular_game), else filter from main list. */
   const popularFromApi = Array.isArray(popularGamesResp?.results)
     ? (popularGamesResp.results as Game[]).map((g, i) => mapGameToCardShape(g, i))
     : [];
-  const popularGames: GameCardShape[] = popularFromApi.length > 0 ? popularFromApi : games.filter((g) => g.is_popular_game).map((g, i) => mapGameToCardShape(g, i));
+  const popularGames: GameCardShape[] =
+    popularFromSiteJson.length > 0 ? popularFromSiteJson :
+    popularFromApi.length > 0 ? popularFromApi : games.filter((g) => g.is_popular_game).map((g, i) => mapGameToCardShape(g, i));
+
+  // Payment methods: filter by payment_method_ids from site_payments_accepted_json if set
+  const acceptedIds = Array.isArray(sitePaymentsAcceptedJson.payment_method_ids) ? (sitePaymentsAcceptedJson.payment_method_ids as number[]) : [];
+  const allPublicPaymentMethods = (publicPaymentMethodsApi as PublicPaymentMethod[]);
+  const paymentMethods: PublicPaymentMethod[] = acceptedIds.length > 0
+    ? acceptedIds.map((id) => allPublicPaymentMethods.find((m) => m.id === id)).filter(Boolean) as PublicPaymentMethod[]
+    : allPublicPaymentMethods;
+
+  // categories for categoriesGameJson – respect site ordering
+  const siteCatIdOrder = Array.isArray(siteCategoriesGameJson.categories)
+    ? (siteCategoriesGameJson.categories as { category_id: number }[]).map((e) => e.category_id)
+    : [];
+  const orderedCategoriesList: GameCategory[] = siteCatIdOrder.length > 0
+    ? [
+        ...siteCatIdOrder.map((id) => categoriesList.find((c) => c.id === id)).filter(Boolean) as GameCategory[],
+        ...categoriesList.filter((c) => !siteCatIdOrder.includes(c.id!)),
+      ]
+    : categoriesList;
 
   const sportsIframeUrl = (site.sports_iframe_url as string)?.trim() || "https://sprodm.uni247.xyz/?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWRmOTZiZjUtNGU2ZC00MWIyLWFmOGMtMTU5MTRmZjgyZjBjIiwicGxheWVyX2lkIjoiaGI1ZjQ5MTI2U1RBUiIsIm1lcmNoYW50X2NvZGUiOiJjbXQtaGQtc3ViLTg4MHIyYmYiLCJpc3N1ZWRfYXQiOiIyMDI2LTAyLTIzVDEwOjM5OjQyLjAyNjgyMDA2MloiLCJleHBpcmVzX2F0IjoiMjAyNi0wMi0yM1QxMzozOTo0Mi4wMjY4MjAxMjJaIiwibGFuZ3VhZ2UiOiJlbiJ9.5W0ZztMElPLnVqvFwaqh3ehaIhQYVieBe2FwnDMNNDw#/";
 
@@ -333,8 +437,8 @@ export function useSecondHomePageData(): {
 
   const data: SecondHomePageData = {
     sliderSlides,
-    categories: categoriesList,
-    providers: providersList,
+    categories: orderedCategoriesList,
+    providers: orderedProvidersList,
     providerCards,
     liveBettingSections,
     topLiveGames,
@@ -349,6 +453,18 @@ export function useSecondHomePageData(): {
     cashbackPromo,
     comingSoon: Array.isArray(comingSoonApi) && comingSoonApi.length > 0 ? comingSoonApi : defaultComingSoon,
     testimonials: testimonialsMapped,
+    paymentMethods,
+    sectionMeta: {
+      banner: getSectionMeta(siteCategoriesJson),
+      topGames: getSectionMeta(siteTopGamesJson),
+      providers: getSectionMeta(siteProvidersJson),
+      categoriesGame: getSectionMeta(siteCategoriesGameJson),
+      popularGames: getSectionMeta(sitePopularGamesJson),
+      comingSoon: getSectionMeta(siteComingSoonJson),
+      referBonus: getSectionMeta(siteReferBonusJson),
+      paymentsAccepted: getSectionMeta(sitePaymentsAcceptedJson),
+      welcomeDeposit: getSectionMeta(siteWelcomeDepositJson),
+    },
   };
 
   const refetch = () => {

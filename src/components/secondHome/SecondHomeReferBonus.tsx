@@ -8,9 +8,11 @@ import { SecondHomeBonusCard } from "./SecondHomeBonusSection";
 
 interface SecondHomeReferBonusProps {
   promos?: PromoShape[] | null;
+  sectionTitle?: string;
+  sectionSvg?: string;
 }
 
-export function SecondHomeReferBonus({ promos: promosProp }: SecondHomeReferBonusProps) {
+export function SecondHomeReferBonus({ promos: promosProp, sectionTitle, sectionSvg }: SecondHomeReferBonusProps) {
   const { user } = useAuth();
   const promos = promosProp && promosProp.length > 0 ? promosProp : defaultPromos;
   const primary = promos[0];

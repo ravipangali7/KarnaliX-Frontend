@@ -50,6 +50,7 @@ const getNavItems = (role: string) => {
       { label: "Activity Log", path: "/activity", icon: Activity },
       { label: "Super Settings", path: "/super-settings", icon: Settings },
       { label: "Site Settings", path: "/site-settings", icon: Globe },
+      { label: "Payment Methods", path: "/payment-methods", icon: CreditCard },
       { label: "CMS Pages", path: "/cms", icon: FileText },
       { label: "Testimonials", path: "/testimonials", icon: Star },
     ];

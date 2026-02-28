@@ -71,6 +71,7 @@ import PowerhousePopup from "@/pages/admin/PowerhousePopup";
 import PowerhouseComingSoonEnrollments from "@/pages/admin/PowerhouseComingSoonEnrollments";
 import PowerhouseCMS from "@/pages/admin/PowerhouseCMS";
 import PowerhouseTestimonials from "@/pages/admin/PowerhouseTestimonials";
+import PowerhousePaymentMethods from "@/pages/admin/PowerhousePaymentMethods";
 
 import NotFound from "@/pages/NotFound";
 import { HOME_PAGE_VARIANT } from "@/config";
@@ -236,6 +237,7 @@ const App = () => (
               <Route path="/powerhouse/site-settings" element={<PowerhouseSiteSettings />} />
               <Route path="/powerhouse/cms" element={<PowerhouseCMS />} />
               <Route path="/powerhouse/testimonials" element={<PowerhouseTestimonials />} />
+              <Route path="/powerhouse/payment-methods" element={<PowerhousePaymentMethods />} />
               <Route path="/powerhouse/profile" element={<AdminProfile />} />
               <Route path="/powerhouse/change-password" element={<AdminChangePassword />} />
             </Route>

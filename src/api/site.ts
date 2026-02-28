@@ -70,3 +70,70 @@ export async function getActivePopups(): Promise<PopupApi[]> {
   const res = await apiGet("/public/popups/");
   return (Array.isArray(res) ? res : []) as PopupApi[];
 }
+
+export interface PublicPaymentMethod {
+  id: number;
+  name: string;
+  image_url?: string | null;
+  order: number;
+}
+
+export async function getPublicPaymentMethods(): Promise<PublicPaymentMethod[]> {
+  const res = await apiGet("/public/payment-methods/");
+  return (Array.isArray(res) ? res : []) as PublicPaymentMethod[];
+}
+
+// Type definitions for site setting JSON fields
+export interface SiteSectionBase {
+  section_title?: string;
+  section_svg?: string;
+}
+
+export interface SiteCategoriesJson extends SiteSectionBase {
+  category_ids?: number[];
+}
+
+export interface SiteTopGamesJson extends SiteSectionBase {
+  game_ids?: number[];
+}
+
+export interface SiteProvidersJson extends SiteSectionBase {
+  provider_ids?: number[];
+}
+
+export interface SiteCategoryEntry {
+  category_id: number;
+  game_ids: number[];
+}
+
+export interface SiteCategoriesGameJson extends SiteSectionBase {
+  categories?: SiteCategoryEntry[];
+}
+
+export interface SitePopularGamesJson extends SiteSectionBase {
+  game_ids?: number[];
+}
+
+export interface SiteComingSoonJson extends SiteSectionBase {}
+
+export interface SiteReferBonusJson extends SiteSectionBase {
+  description?: string;
+  cta?: string;
+  href?: string;
+}
+
+export interface SitePaymentsAcceptedJson extends SiteSectionBase {
+  payment_method_ids?: number[];
+}
+
+export interface SiteFooterJson {
+  tagline?: string;
+  links?: { label: string; href: string }[];
+}
+
+export interface SiteWelcomeDepositJson extends SiteSectionBase {
+  title?: string;
+  subtitle?: string;
+  cta?: string;
+  href?: string;
+}

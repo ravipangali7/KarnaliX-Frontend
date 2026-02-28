@@ -652,3 +652,35 @@ export async function updateTestimonialForm(id: number, formData: FormData) {
 export async function deleteTestimonial(id: number) {
   return apiDelete(`${prefix("powerhouse")}/testimonials/${id}/`);
 }
+
+// --- Payment Methods (site-level accepted payment methods) ---
+export interface PaymentMethodAdmin {
+  id: number;
+  name: string;
+  image?: string | null;
+  image_url?: string | null;
+  fields: Record<string, unknown>;
+  order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+export async function getPaymentMethods() {
+  const res = await apiGet(`${prefix("powerhouse")}/payment-methods/`);
+  return asList<PaymentMethodAdmin>(res);
+}
+export async function createPaymentMethod(body: unknown) {
+  return apiPost(`${prefix("powerhouse")}/payment-methods/`, body);
+}
+export async function createPaymentMethodForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/payment-methods/`, formData);
+}
+export async function updatePaymentMethod(id: number, body: unknown) {
+  return apiPatch(`${prefix("powerhouse")}/payment-methods/${id}/`, body);
+}
+export async function updatePaymentMethodForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/payment-methods/${id}/`, formData);
+}
+export async function deletePaymentMethod(id: number) {
+  return apiDelete(`${prefix("powerhouse")}/payment-methods/${id}/`);
+}

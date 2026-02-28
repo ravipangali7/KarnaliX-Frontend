@@ -50,20 +50,40 @@ export default function SecondHomePage() {
       <SecondHomeSlider slides={data.sliderSlides} />
 
       {/* 2. Top Games (is_top_game) */}
-      <SecondHomeTopGamesCarousel games={data.topGames} />
+      <SecondHomeTopGamesCarousel
+        games={data.topGames}
+        sectionTitle={data.sectionMeta.topGames.title}
+        sectionSvg={data.sectionMeta.topGames.svg}
+      />
 
       {/* 4. Trusted Game Providers */}
-      <GameProviders providers={data.providerCards} />
+      <GameProviders
+        providers={data.providerCards}
+        sectionTitle={data.sectionMeta.providers.title}
+        sectionSvg={data.sectionMeta.providers.svg}
+      />
 
       {/* 5–7. Category-wise game cards (Live Casino, Slots, Sports, etc.) */}
-      <SecondHomeCategoryGames categories={data.categories} gamesByCategory={data.gamesByCategory} />
+      <SecondHomeCategoryGames
+        categories={data.categories}
+        gamesByCategory={data.gamesByCategory}
+        sectionSvg={data.sectionMeta.categoriesGame.svg}
+      />
 
       {/* 8. Popular Games (is_popular_game) */}
-      <SecondHomePopularGames games={data.popularGames} />
+      <SecondHomePopularGames
+        games={data.popularGames}
+        sectionTitle={data.sectionMeta.popularGames.title}
+        sectionSvg={data.sectionMeta.popularGames.svg}
+      />
 
       {/* 9. Refer Bonus */}
       {data.promosGrid.length > 0 && (
-        <SecondHomeReferBonus promos={data.promosGrid} />
+        <SecondHomeReferBonus
+          promos={data.promosGrid}
+          sectionTitle={data.sectionMeta.referBonus.title}
+          sectionSvg={data.sectionMeta.referBonus.svg}
+        />
       )}
 
       {/* 10. Welcome | Deposit Bonus */}
@@ -74,7 +94,11 @@ export default function SecondHomePage() {
       />
 
       {/* 11. Coming Soon Games */}
-      <SecondHomeComingSoon comingSoon={data.comingSoon} />
+      <SecondHomeComingSoon
+        comingSoon={data.comingSoon}
+        sectionTitle={data.sectionMeta.comingSoon.title}
+        sectionSvg={data.sectionMeta.comingSoon.svg}
+      />
 
       {/* 12. Footer is in SecondPublicLayout */}
     </div>

@@ -11,9 +11,11 @@ const AUTO_SCROLL_MS = 4000;
 
 interface SecondHomeTopGamesCarouselProps {
   games: GameCardShape[];
+  sectionTitle?: string;
+  sectionSvg?: string;
 }
 
-export function SecondHomeTopGamesCarousel({ games }: SecondHomeTopGamesCarouselProps) {
+export function SecondHomeTopGamesCarousel({ games, sectionTitle, sectionSvg }: SecondHomeTopGamesCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const list = games.slice(0, TOTAL);
@@ -35,7 +37,10 @@ export function SecondHomeTopGamesCarousel({ games }: SecondHomeTopGamesCarousel
   return (
     <section className="container px-4 py-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display font-bold text-xl text-foreground">Top Games</h2>
+        <h2 className="font-display font-bold text-xl text-foreground flex items-center gap-2">
+          {sectionSvg && <img src={sectionSvg} alt="" className="h-6 w-6 object-contain" />}
+          {sectionTitle || "Top Games"}
+        </h2>
         <Link to="/games" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
           View All <ChevronRight className="h-4 w-4" />
         </Link>

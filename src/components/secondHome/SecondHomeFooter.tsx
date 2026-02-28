@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSetting, getCmsFooterPages } from "@/api/site";
+import { getSiteSetting, getCmsFooterPages, getPublicPaymentMethods } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { Phone, Mail, MessageCircle, Shield, Award, Headphones } from "lucide-react";
 import {
@@ -12,6 +12,7 @@ import {
 export function SecondHomeFooter() {
   const { data: siteSetting = {} } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: cmsPages = [] } = useQuery({ queryKey: ["cmsFooter"], queryFn: getCmsFooterPages });
+  const { data: paymentMethodsApi = [] } = useQuery({ queryKey: ["publicPaymentMethods"], queryFn: getPublicPaymentMethods });
 
   const s = siteSetting as {
     logo?: string;
@@ -51,8 +52,27 @@ export function SecondHomeFooter() {
               <span>{label}</span>
             </div>
           ))}
-          <div className="flex flex-wrap gap-2">
-            {defaultPaymentMethods.map((pm) => (
+          <div className="flex flex-wrap gap-2 items-center">
+            {(paymentMethodsApi as { id: number; name: string; image_url?: string | null }[]).length > 0
+              ? (paymentMethodsApi as { id: number; name: string; image_url?: string | null }[]).map((pm) => (
+                  pm.image_url ? (
+                    <img
+                      key={pm.id}
+                      src={getMediaUrl(pm.image_url)}
+                      alt={pm.name}
+                      title={pm.name}
+                      className="h-6 w-auto object-contain rounded opacity-70 hover:opacity-100 transition-opacity"
+                    />
+                  ) : (
+                    <span
+                      key={pm.id}
+                      className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium text-muted-foreground"
+                    >
+                      {pm.name}
+                    </span>
+                  )
+                ))
+              : defaultPaymentMethods.map((pm) => (
               <span
                 key={pm}
                 className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium text-muted-foreground"
@@ -61,6 +81,7 @@ export function SecondHomeFooter() {
               </span>
             ))}
           </div>
+
         </div>
       </div>
 

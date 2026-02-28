@@ -10,9 +10,11 @@ import type { ComingSoonShape } from "@/data/homePageMockData";
 
 interface SecondHomeComingSoonProps {
   comingSoon?: ComingSoonShape[] | null;
+  sectionTitle?: string;
+  sectionSvg?: string;
 }
 
-export function SecondHomeComingSoon({ comingSoon: comingSoonProp }: SecondHomeComingSoonProps) {
+export function SecondHomeComingSoon({ comingSoon: comingSoonProp, sectionTitle, sectionSvg }: SecondHomeComingSoonProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -49,8 +51,8 @@ export function SecondHomeComingSoon({ comingSoon: comingSoonProp }: SecondHomeC
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-amber-400" />
-          <h2 className="font-display font-bold text-lg text-foreground">Coming Soon</h2>
+          {sectionSvg ? <img src={sectionSvg} alt="" className="h-5 w-5 object-contain" /> : <Zap className="h-5 w-5 text-amber-400" />}
+          <h2 className="font-display font-bold text-lg text-foreground">{sectionTitle || "Coming Soon"}</h2>
           <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 border border-amber-500/30 text-amber-400">
             New
           </span>
