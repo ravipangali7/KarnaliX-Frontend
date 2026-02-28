@@ -36,9 +36,18 @@ export interface SectionMeta {
   svg?: string;
 }
 
+/** All categories section driven by site_categories_json. */
+export interface AllCategoriesSection {
+  title?: string;
+  svg?: string;
+  categories: GameCategory[];
+}
+
 export interface SecondHomePageData {
   sliderSlides: SliderSlide[];
   categories: GameCategory[];
+  /** Ordered categories list for All Categories section (from site_categories_json). */
+  allCategoriesSection: AllCategoriesSection;
   providers: GameProvider[];
   providerCards: ProviderShape[];
   liveBettingSections: LiveBettingSection[];
@@ -59,19 +68,16 @@ export interface SecondHomePageData {
   cashbackPromo: PromoShape | null;
   comingSoon: ComingSoonShape[];
   testimonials: TestimonialShape[];
-  /** Payment methods accepted (from site_payments_accepted_json, resolved). */
+  /** Payment methods accepted (from public API, filtered/ordered by backend using site_payments_accepted_json). */
   paymentMethods: PublicPaymentMethod[];
-  /** Section meta (title, svg) for each configurable section. */
+  /** Section meta (title, svg) for site-JSON-driven sections only. */
   sectionMeta: {
-    banner: SectionMeta;
+    allCategories: SectionMeta;
     topGames: SectionMeta;
     providers: SectionMeta;
     categoriesGame: SectionMeta;
     popularGames: SectionMeta;
-    comingSoon: SectionMeta;
-    referBonus: SectionMeta;
     paymentsAccepted: SectionMeta;
-    welcomeDeposit: SectionMeta;
   };
 }
 
@@ -357,12 +363,8 @@ export function useSecondHomePageData(): {
     popularFromSiteJson.length > 0 ? popularFromSiteJson :
     popularFromApi.length > 0 ? popularFromApi : games.filter((g) => g.is_popular_game).map((g, i) => mapGameToCardShape(g, i));
 
-  // Payment methods: filter by payment_method_ids from site_payments_accepted_json if set
-  const acceptedIds = Array.isArray(sitePaymentsAcceptedJson.payment_method_ids) ? (sitePaymentsAcceptedJson.payment_method_ids as number[]) : [];
-  const allPublicPaymentMethods = (publicPaymentMethodsApi as PublicPaymentMethod[]);
-  const paymentMethods: PublicPaymentMethod[] = acceptedIds.length > 0
-    ? acceptedIds.map((id) => allPublicPaymentMethods.find((m) => m.id === id)).filter(Boolean) as PublicPaymentMethod[]
-    : allPublicPaymentMethods;
+  // Payment methods: filtered/ordered by backend (payment_methods_list respects site_payments_accepted_json)
+  const paymentMethods: PublicPaymentMethod[] = publicPaymentMethodsApi as PublicPaymentMethod[];
 
   // categories for categoriesGameJson – respect site ordering
   const siteCatIdOrder = Array.isArray(siteCategoriesGameJson.categories)
@@ -374,6 +376,21 @@ export function useSecondHomePageData(): {
         ...categoriesList.filter((c) => !siteCatIdOrder.includes(c.id!)),
       ]
     : categoriesList;
+
+  // All Categories: ordered by site_categories_json.category_ids
+  const siteCategoryIds = Array.isArray(siteCategoriesJson.category_ids) ? (siteCategoriesJson.category_ids as number[]) : [];
+  const allCategoriesOrdered: GameCategory[] = siteCategoryIds.length > 0
+    ? [
+        ...siteCategoryIds.map((id) => categoriesList.find((c) => c.id === id)).filter(Boolean) as GameCategory[],
+        ...categoriesList.filter((c) => !siteCategoryIds.includes(c.id!)),
+      ]
+    : categoriesList;
+  const allCategoriesMeta = getSectionMeta(siteCategoriesJson);
+  const allCategoriesSection = {
+    title: allCategoriesMeta.title,
+    svg: allCategoriesMeta.svg,
+    categories: allCategoriesOrdered,
+  };
 
   const sportsIframeUrl = (site.sports_iframe_url as string)?.trim() || "https://sprodm.uni247.xyz/?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWRmOTZiZjUtNGU2ZC00MWIyLWFmOGMtMTU5MTRmZjgyZjBjIiwicGxheWVyX2lkIjoiaGI1ZjQ5MTI2U1RBUiIsIm1lcmNoYW50X2NvZGUiOiJjbXQtaGQtc3ViLTg4MHIyYmYiLCJpc3N1ZWRfYXQiOiIyMDI2LTAyLTIzVDEwOjM5OjQyLjAyNjgyMDA2MloiLCJleHBpcmVzX2F0IjoiMjAyNi0wMi0yM1QxMzozOTo0Mi4wMjY4MjAxMjJaIiwibGFuZ3VhZ2UiOiJlbiJ9.5W0ZztMElPLnVqvFwaqh3ehaIhQYVieBe2FwnDMNNDw#/";
 
@@ -438,6 +455,7 @@ export function useSecondHomePageData(): {
   const data: SecondHomePageData = {
     sliderSlides,
     categories: orderedCategoriesList,
+    allCategoriesSection,
     providers: orderedProvidersList,
     providerCards,
     liveBettingSections,
@@ -455,15 +473,12 @@ export function useSecondHomePageData(): {
     testimonials: testimonialsMapped,
     paymentMethods,
     sectionMeta: {
-      banner: getSectionMeta(siteCategoriesJson),
+      allCategories: getSectionMeta(siteCategoriesJson),
       topGames: getSectionMeta(siteTopGamesJson),
       providers: getSectionMeta(siteProvidersJson),
       categoriesGame: getSectionMeta(siteCategoriesGameJson),
       popularGames: getSectionMeta(sitePopularGamesJson),
-      comingSoon: getSectionMeta(siteComingSoonJson),
-      referBonus: getSectionMeta(siteReferBonusJson),
       paymentsAccepted: getSectionMeta(sitePaymentsAcceptedJson),
-      welcomeDeposit: getSectionMeta(siteWelcomeDepositJson),
     },
   };
 

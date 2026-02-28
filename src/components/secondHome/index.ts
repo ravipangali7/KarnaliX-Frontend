@@ -9,3 +9,5 @@ export { SecondHomeReferBonus } from "./SecondHomeReferBonus";
 export { SecondHomeBonusSection } from "./SecondHomeBonusSection";
 export { SecondHomeComingSoon } from "./SecondHomeComingSoon";
 export { SecondHomeFooter } from "./SecondHomeFooter";
+export { SecondHomeAllCategories } from "./SecondHomeAllCategories";
+export { SecondHomePaymentsAccepted } from "./SecondHomePaymentsAccepted";

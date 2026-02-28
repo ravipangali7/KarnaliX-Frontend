@@ -4,6 +4,8 @@ import {
   SecondHomeTopGamesCarousel,
   SecondHomeCategoryGames,
   SecondHomePopularGames,
+  SecondHomeAllCategories,
+  SecondHomePaymentsAccepted,
 } from "@/components/secondHome";
 import { GameProviders } from "@/components/home/GameProviders";
 import { ActivePopups } from "@/components/home/ActivePopups";
@@ -49,58 +51,64 @@ export default function SecondHomePage() {
       {/* 1. Banner */}
       <SecondHomeSlider slides={data.sliderSlides} />
 
-      {/* 2. Top Games (is_top_game) */}
+      {/* 2. All Categories (horizontal slides) – site JSON driven */}
+      <SecondHomeAllCategories
+        categories={data.allCategoriesSection.categories}
+        sectionTitle={data.sectionMeta.allCategories.title}
+        sectionSvg={data.sectionMeta.allCategories.svg}
+      />
+
+      {/* 3. Top Games – site JSON driven */}
       <SecondHomeTopGamesCarousel
         games={data.topGames}
         sectionTitle={data.sectionMeta.topGames.title}
         sectionSvg={data.sectionMeta.topGames.svg}
       />
 
-      {/* 4. Trusted Game Providers */}
+      {/* 4. Trusted Game Providers – site JSON driven */}
       <GameProviders
         providers={data.providerCards}
         sectionTitle={data.sectionMeta.providers.title}
         sectionSvg={data.sectionMeta.providers.svg}
       />
 
-      {/* 5–7. Category-wise game cards (Live Casino, Slots, Sports, etc.) */}
+      {/* 5. Category-wise game cards – site JSON driven */}
       <SecondHomeCategoryGames
         categories={data.categories}
         gamesByCategory={data.gamesByCategory}
         sectionSvg={data.sectionMeta.categoriesGame.svg}
       />
 
-      {/* 8. Popular Games (is_popular_game) */}
+      {/* 6. Popular Games – site JSON driven */}
       <SecondHomePopularGames
         games={data.popularGames}
         sectionTitle={data.sectionMeta.popularGames.title}
         sectionSvg={data.sectionMeta.popularGames.svg}
       />
 
-      {/* 9. Refer Bonus */}
+      {/* 7. Refer & Earn – no site JSON (fixed header) */}
       {data.promosGrid.length > 0 && (
-        <SecondHomeReferBonus
-          promos={data.promosGrid}
-          sectionTitle={data.sectionMeta.referBonus.title}
-          sectionSvg={data.sectionMeta.referBonus.svg}
-        />
+        <SecondHomeReferBonus promos={data.promosGrid} />
       )}
 
-      {/* 10. Welcome | Deposit Bonus */}
+      {/* 8. Welcome | Deposit Bonus – no site JSON */}
       <SecondHomeBonusSection
         welcomeDepositPromos={data.welcomeDepositPromos}
         tournamentPromo={data.tournamentPromo}
         cashbackPromo={data.cashbackPromo}
       />
 
-      {/* 11. Coming Soon Games */}
-      <SecondHomeComingSoon
-        comingSoon={data.comingSoon}
-        sectionTitle={data.sectionMeta.comingSoon.title}
-        sectionSvg={data.sectionMeta.comingSoon.svg}
+      {/* 9. Coming Soon – no site JSON (fixed header) */}
+      <SecondHomeComingSoon comingSoon={data.comingSoon} />
+
+      {/* 10. Payments Accepted – site JSON driven */}
+      <SecondHomePaymentsAccepted
+        paymentMethods={data.paymentMethods}
+        sectionTitle={data.sectionMeta.paymentsAccepted.title}
+        sectionSvg={data.sectionMeta.paymentsAccepted.svg}
       />
 
-      {/* 12. Footer is in SecondPublicLayout */}
+      {/* Footer is in SecondPublicLayout */}
     </div>
   );
 }

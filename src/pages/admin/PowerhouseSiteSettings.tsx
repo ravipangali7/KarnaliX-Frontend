@@ -633,11 +633,11 @@ const PowerhouseSiteSettings = () => {
         </p>
       </div>
 
-      {/* Banner – Categories horizontal slides */}
+      {/* All Categories – horizontal slides */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-display">Banner – Categories (horizontal slides)</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">Select categories to show as horizontal slides in the banner area, with their SVG and name.</p>
+          <CardTitle className="text-base font-display">All Categories (horizontal slides)</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">Select categories to show as horizontal slides, with their SVG and name.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <SectionTitleSvg
@@ -745,86 +745,6 @@ const PowerhouseSiteSettings = () => {
         </CardContent>
       </Card>
 
-      {/* Welcome | Deposit */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-display">Welcome / Deposit Bonus</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">Section title and icon for the welcome/deposit bonus section.</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <SectionTitleSvg
-            sectionTitle={siteWelcomeDepositJson.section_title ?? ""}
-            sectionSvg={siteWelcomeDepositJson.section_svg ?? ""}
-            onTitleChange={(v) => setSiteWelcomeDepositJson((s) => ({ ...s, section_title: v }))}
-            onSvgChange={(v) => setSiteWelcomeDepositJson((s) => ({ ...s, section_svg: v }))}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Title</label>
-              <Input value={siteWelcomeDepositJson.title ?? ""} onChange={(e) => setSiteWelcomeDepositJson((s) => ({ ...s, title: e.target.value }))} placeholder="Welcome Bonus" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Subtitle</label>
-              <Input value={siteWelcomeDepositJson.subtitle ?? ""} onChange={(e) => setSiteWelcomeDepositJson((s) => ({ ...s, subtitle: e.target.value }))} placeholder="Up to ₹50,000" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">CTA text</label>
-              <Input value={siteWelcomeDepositJson.cta ?? ""} onChange={(e) => setSiteWelcomeDepositJson((s) => ({ ...s, cta: e.target.value }))} placeholder="Claim Now" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">CTA link</label>
-              <Input value={siteWelcomeDepositJson.href ?? ""} onChange={(e) => setSiteWelcomeDepositJson((s) => ({ ...s, href: e.target.value }))} placeholder="/bonus" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Coming Soon */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-display">Coming Soon</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">Section title and icon. Games come from the coming-soon API (is_coming_soon flag).</p>
-        </CardHeader>
-        <CardContent>
-          <SectionTitleSvg
-            sectionTitle={siteComingSoonJson.section_title ?? ""}
-            sectionSvg={siteComingSoonJson.section_svg ?? ""}
-            onTitleChange={(v) => setSiteComingSoonJson((s) => ({ ...s, section_title: v }))}
-            onSvgChange={(v) => setSiteComingSoonJson((s) => ({ ...s, section_svg: v }))}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Refer & Earn */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-display">Refer &amp; Earn Bonus</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">Section title, icon and optional description/CTA.</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <SectionTitleSvg
-            sectionTitle={siteReferBonusJson.section_title ?? ""}
-            sectionSvg={siteReferBonusJson.section_svg ?? ""}
-            onTitleChange={(v) => setSiteReferBonusJson((s) => ({ ...s, section_title: v }))}
-            onSvgChange={(v) => setSiteReferBonusJson((s) => ({ ...s, section_svg: v }))}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="sm:col-span-2">
-              <label className="text-xs text-muted-foreground block mb-1">Description</label>
-              <Input value={siteReferBonusJson.description ?? ""} onChange={(e) => setSiteReferBonusJson((s) => ({ ...s, description: e.target.value }))} placeholder="Invite friends and earn ₹500 per referral" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">CTA text</label>
-              <Input value={siteReferBonusJson.cta ?? ""} onChange={(e) => setSiteReferBonusJson((s) => ({ ...s, cta: e.target.value }))} placeholder="Get Link" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">CTA link</label>
-              <Input value={siteReferBonusJson.href ?? ""} onChange={(e) => setSiteReferBonusJson((s) => ({ ...s, href: e.target.value }))} placeholder="/referral" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Payments Accepted */}
       <Card>
         <CardHeader className="pb-3">
@@ -847,20 +767,6 @@ const PowerhouseSiteSettings = () => {
             selectedIds={sitePaymentsAcceptedJson.payment_method_ids ?? []}
             onChange={(ids) => setSitePaymentsAcceptedJson((s) => ({ ...s, payment_method_ids: ids }))}
           />
-        </CardContent>
-      </Card>
-
-      {/* Footer */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-display">Footer JSON config</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">Optional footer tagline override (in addition to footer_description above).</p>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Tagline override</label>
-            <Input value={siteFooterJson.tagline ?? ""} onChange={(e) => setSiteFooterJson((s) => ({ ...s, tagline: e.target.value }))} placeholder="Your trusted gaming platform" />
-          </div>
         </CardContent>
       </Card>
 
