@@ -155,7 +155,8 @@ const PowerhousePaymentMethods = () => {
     setFieldEntries((f) => f.map((e, idx) => idx === i ? { ...e, [field]: val } : e));
   const removeFieldEntry = (i: number) => setFieldEntries((f) => f.filter((_, idx) => idx !== i));
 
-  const FormContent = () => (
+  /* Form content inlined (not a nested component) so inputs keep focus while typing — see https://react.dev/learn/preserving-and-resetting-state */
+  const formContent = (
     <div className="space-y-4">
       <div>
         <label className="text-sm font-medium mb-1.5 block">Name <span className="text-destructive">*</span></label>
@@ -196,7 +197,6 @@ const PowerhousePaymentMethods = () => {
           </div>
         )}
       </div>
-      {/* Extra fields (JSON key-value) */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium">Extra fields (JSON)</label>
@@ -306,7 +306,7 @@ const PowerhousePaymentMethods = () => {
           <DialogHeader>
             <DialogTitle className="font-display">Add payment method</DialogTitle>
           </DialogHeader>
-          <FormContent />
+          {formContent}
           <DialogFooter>
             <Button variant="outline" onClick={() => { setCreateOpen(false); resetForm(); }}>Cancel</Button>
             <Button onClick={handleCreate} disabled={saving}>{saving ? "Saving…" : "Create"}</Button>
@@ -320,7 +320,7 @@ const PowerhousePaymentMethods = () => {
           <DialogHeader>
             <DialogTitle className="font-display">Edit payment method</DialogTitle>
           </DialogHeader>
-          <FormContent />
+          {formContent}
           <DialogFooter>
             <Button variant="outline" onClick={() => { setEditOpen(false); resetForm(); }}>Cancel</Button>
             <Button onClick={handleUpdate} disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
