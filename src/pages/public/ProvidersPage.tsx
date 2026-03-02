@@ -43,7 +43,7 @@ const ProvidersPage = () => {
           return (
             <Link
               key={prov.id}
-              to={`/providers/${prov.id}`}
+              to={prov.single_game_id != null && prov.single_game_id > 0 ? `/games/${prov.single_game_id}/play` : `/providers/${prov.id}`}
               className="flex flex-col items-center gap-3 p-4 rounded-xl transition-all group focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
             >
               <div

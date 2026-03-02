@@ -526,6 +526,16 @@ export async function updateSiteSettingsForm(formData: FormData) {
   return apiPatchForm(`${prefix("powerhouse")}/site-settings/update/`, formData);
 }
 
+/** Upload an image for site section icons. Returns { url: string } (relative path for getMediaUrl). */
+export async function uploadSiteMedia(file: File): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.set("file", file, file.name || "image");
+  const res = await apiPostForm<{ url?: string }>(`${prefix("powerhouse")}/upload-site-media/`, formData);
+  const url = (res as { url?: string }).url;
+  if (url == null) throw new Error("Upload did not return url");
+  return { url };
+}
+
 // --- Slider (second home) ---
 export async function getSliderSlidesAdmin() {
   const res = await apiGet(`${prefix("powerhouse")}/slider/`);

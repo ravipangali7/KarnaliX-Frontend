@@ -98,7 +98,7 @@ const GameDetailPage = () => {
       {/* Game Hero */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-3 relative rounded-2xl overflow-hidden aspect-[16/9] lg:aspect-[4/3]">
-          <GameImageWithFallback src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover blur-md" />
+          <GameImageWithFallback src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
           {/* Live badge */}
           <div className="absolute top-3 left-3 z-20 flex items-center gap-2">

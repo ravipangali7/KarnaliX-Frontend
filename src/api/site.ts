@@ -104,6 +104,8 @@ export interface SiteProvidersJson extends SiteSectionBase {
 export interface SiteCategoryEntry {
   category_id: number;
   game_ids: number[];
+  section_title?: string;
+  section_icon?: string;
 }
 
 export interface SiteCategoriesGameJson extends SiteSectionBase {

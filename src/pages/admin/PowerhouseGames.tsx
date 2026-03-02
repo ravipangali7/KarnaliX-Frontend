@@ -61,7 +61,7 @@ function InlineEditModal({
 
   const renderField = () => {
     const f = state.field;
-    if (["is_active", "is_coming_soon", "is_single_game", "is_top_game", "is_popular_game"].includes(f)) {
+    if (["is_active", "is_coming_soon", "is_lobby", "is_top_game", "is_popular_game"].includes(f)) {
       return (
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -187,7 +187,7 @@ const PowerhouseGames = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [isComingSoon, setIsComingSoon] = useState(false);
-  const [isSingleGame, setIsSingleGame] = useState(false);
+  const [isLobby, setIsLobby] = useState(false);
   const [isTopGame, setIsTopGame] = useState(false);
   const [isPopularGame, setIsPopularGame] = useState(false);
   const [comingSoonLaunchDate, setComingSoonLaunchDate] = useState("");
@@ -203,7 +203,7 @@ const PowerhouseGames = () => {
   const resetForm = () => {
     setName(""); setGameUid(""); setCategoryId(""); setProviderId("");
     setMinBet("10"); setMaxBet("5000"); setImageFile(null);
-    setIsActive(true); setIsComingSoon(false); setIsSingleGame(false);
+    setIsActive(true); setIsComingSoon(false); setIsLobby(false);
     setIsTopGame(false); setIsPopularGame(false);
     setComingSoonLaunchDate(""); setComingSoonDescription(""); setEditingGame(null);
   };
@@ -218,7 +218,7 @@ const PowerhouseGames = () => {
     setMaxBet(String(row.max_bet ?? "5000"));
     setIsActive(Boolean(row.is_active));
     setIsComingSoon(Boolean(row.is_coming_soon));
-    setIsSingleGame(Boolean(row.is_single_game));
+    setIsLobby(Boolean(row.is_lobby));
     setIsTopGame(Boolean(row.is_top_game));
     setIsPopularGame(Boolean(row.is_popular_game));
     const launchDate = row.coming_soon_launch_date;
@@ -238,7 +238,7 @@ const PowerhouseGames = () => {
     max_bet: "Max Bet",
     is_active: "Active",
     is_coming_soon: "Coming Soon",
-    is_single_game: "Single Game",
+    is_lobby: "Lobby",
     is_top_game: "Top Game",
     is_popular_game: "Popular Game",
     coming_soon_launch_date: "Launch Date",
@@ -361,12 +361,12 @@ const PowerhouseGames = () => {
               Popular
             </span>
           )}
-          {row.is_single_game && (
+          {row.is_lobby && (
             <span
               className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 cursor-pointer"
-              onClick={() => handleCellClick(row, "is_single_game")}
+              onClick={() => handleCellClick(row, "is_lobby")}
             >
-              Single
+              Lobby
             </span>
           )}
           {row.is_coming_soon && (
@@ -377,7 +377,7 @@ const PowerhouseGames = () => {
               Soon
             </span>
           )}
-          {!row.is_top_game && !row.is_popular_game && !row.is_single_game && !row.is_coming_soon && (
+          {!row.is_top_game && !row.is_popular_game && !row.is_lobby && !row.is_coming_soon && (
             <span className="text-[10px] text-muted-foreground">—</span>
           )}
         </div>
@@ -421,7 +421,7 @@ const PowerhouseGames = () => {
     max_bet: maxBet || "0",
     is_active: isActive,
     is_coming_soon: isComingSoon,
-    is_single_game: isSingleGame,
+    is_lobby: isLobby,
     is_top_game: isTopGame,
     is_popular_game: isPopularGame,
     coming_soon_launch_date: comingSoonLaunchDate.trim() || null,
@@ -439,7 +439,7 @@ const PowerhouseGames = () => {
     fd.append("max_bet", p.max_bet);
     fd.append("is_active", String(p.is_active));
     fd.append("is_coming_soon", String(p.is_coming_soon));
-    fd.append("is_single_game", String(p.is_single_game));
+    fd.append("is_lobby", String(p.is_lobby));
     fd.append("is_top_game", String(p.is_top_game));
     fd.append("is_popular_game", String(p.is_popular_game));
     if (p.coming_soon_launch_date) fd.append("coming_soon_launch_date", p.coming_soon_launch_date);
@@ -583,8 +583,8 @@ const PowerhouseGames = () => {
               Active
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isSingleGame} onChange={(e) => setIsSingleGame(e.target.checked)} className="rounded border-border" />
-              Single game
+              <input type="checkbox" checked={isLobby} onChange={(e) => setIsLobby(e.target.checked)} className="rounded border-border" />
+              Lobby
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={isTopGame} onChange={(e) => setIsTopGame(e.target.checked)} className="rounded border-border" />

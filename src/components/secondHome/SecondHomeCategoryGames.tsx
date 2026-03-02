@@ -3,36 +3,51 @@ import { ChevronRight, Layers } from "lucide-react";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import type { GameCardShape } from "@/data/homePageMockData";
 import type { GameCategory } from "@/api/games";
-import { svgToImgSrc } from "@/lib/svg";
 import { getMediaUrl } from "@/lib/api";
 
 interface SecondHomeCategoryGamesProps {
   categories: GameCategory[];
   gamesByCategory: Record<number, GameCardShape[]>;
+  categorySectionOverrides?: Record<number, { section_title?: string; section_icon?: string }>;
   sectionTitle?: string;
   sectionSvg?: string;
 }
 
-function CatIcon({ svg, name }: { svg?: string; name: string }) {
-  if (svg?.trim()) {
-    const src = svg.trim().startsWith("<svg") ? svgToImgSrc(svg.trim()) : getMediaUrl(svg.trim());
+function CatIcon({ iconSrc, name }: { iconSrc?: string | null; name: string }) {
+  if (iconSrc?.trim()) {
+    const src = iconSrc.trim().startsWith("http") ? iconSrc.trim() : getMediaUrl(iconSrc.trim());
     return <img src={src} alt={name} className="h-5 w-5 object-contain flex-shrink-0" />;
   }
   return <Layers className="h-5 w-5 text-primary flex-shrink-0" />;
 }
 
-export function SecondHomeCategoryGames({ categories, gamesByCategory }: SecondHomeCategoryGamesProps) {
+function categoryIconSrc(
+  cat: GameCategory,
+  overrideIcon?: string
+): string | undefined {
+  if (overrideIcon?.trim()) return overrideIcon;
+  const svg = (cat as { svg?: string }).svg;
+  if (svg?.trim()) return svg.trim();
+  const icon = (cat as { icon?: string }).icon;
+  if (icon?.trim()) return icon.trim();
+  return undefined;
+}
+
+export function SecondHomeCategoryGames({ categories, gamesByCategory, categorySectionOverrides = {} }: SecondHomeCategoryGamesProps) {
   return (
     <>
       {categories.map((cat) => {
         const games = gamesByCategory[cat.id] ?? [];
         if (games.length === 0) return null;
+        const overrides = categorySectionOverrides[cat.id];
+        const sectionTitle = overrides?.section_title?.trim() || cat.name;
+        const sectionIconSrc = categoryIconSrc(cat, overrides?.section_icon);
         return (
           <section key={cat.id} className="container px-4 py-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-                <CatIcon svg={cat.svg} name={cat.name} />
-                {cat.name}
+                <CatIcon iconSrc={sectionIconSrc} name={sectionTitle} />
+                {sectionTitle}
               </h2>
               <Link to={`/games?category=${cat.id}`} className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
                 View All <ChevronRight className="h-4 w-4" />

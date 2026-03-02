@@ -1,6 +1,6 @@
 /**
  * Reusable building blocks for editing site setting JSON section configs in powerhouse.
- * Each section has: section_title, section_svg (SVG code or legacy URL), and section-specific selectors.
+ * Each section has: section_title, section_svg (image URL/path), and section-specific selectors.
  */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, ChevronUp, ChevronDown } from "lucide-react";
+import { ImageUploadWithPreview } from "@/components/shared/ImageUploadWithPreview";
+import { uploadSiteMedia } from "@/api/admin";
 
 interface BaseItem {
   id: number;
@@ -15,7 +17,7 @@ interface BaseItem {
 }
 
 // -----------------------------------------------------------------------
-// SectionTitleSvg – shared title + svg code inputs
+// SectionTitleSvg – shared title + section icon (image upload with preview)
 // -----------------------------------------------------------------------
 interface SectionTitleSvgProps {
   sectionTitle: string;
@@ -25,14 +27,6 @@ interface SectionTitleSvgProps {
 }
 
 export function SectionTitleSvg({ sectionTitle, sectionSvg, onTitleChange, onSvgChange }: SectionTitleSvgProps) {
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    onSvgChange(text);
-    e.target.value = "";
-  };
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
       <div>
@@ -40,19 +34,14 @@ export function SectionTitleSvg({ sectionTitle, sectionSvg, onTitleChange, onSvg
         <Input value={sectionTitle} onChange={(e) => onTitleChange(e.target.value)} placeholder="e.g. Top Games" />
       </div>
       <div>
-        <label className="text-xs text-muted-foreground block mb-1">Section SVG (paste code or upload file)</label>
-        <textarea
-          value={sectionSvg}
-          onChange={(e) => onSvgChange(e.target.value)}
-          placeholder="Paste SVG code here, e.g. <svg ...>...</svg>"
-          rows={3}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
-        />
-        <input
-          type="file"
-          accept=".svg,image/svg+xml"
-          className="mt-1 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-muted file:text-xs"
-          onChange={handleFileChange}
+        <ImageUploadWithPreview
+          value={sectionSvg || undefined}
+          onChange={(file, url) => {
+            if (url !== undefined) onSvgChange(url);
+            else if (file === null) onSvgChange("");
+          }}
+          onUpload={async (file) => (await uploadSiteMedia(file)).url}
+          label="Section icon (image)"
         />
       </div>
     </div>
@@ -149,11 +138,13 @@ export function OrderedIdSelector({ label, allItems, selectedIds, onChange }: Or
 }
 
 // -----------------------------------------------------------------------
-// CategoryGamesEditor – categories[{category_id, game_ids}] editor
+// CategoryGamesEditor – categories[{category_id, game_ids, section_title?, section_icon?}] editor
 // -----------------------------------------------------------------------
 export interface CategoryGamesEntry {
   category_id: number;
   game_ids: number[];
+  section_title?: string;
+  section_icon?: string;
 }
 
 interface CategoryGamesEditorProps {
@@ -172,6 +163,8 @@ export function CategoryGamesEditor({ allCategories, allGames, value, onChange }
   const removeCategory = (catId: number) => onChange(value.filter((e) => e.category_id !== catId));
   const setGames = (catId: number, gameIds: number[]) =>
     onChange(value.map((e) => e.category_id === catId ? { ...e, game_ids: gameIds } : e));
+  const setEntry = (catId: number, patch: Partial<Pick<CategoryGamesEntry, "section_title" | "section_icon">>) =>
+    onChange(value.map((e) => (e.category_id === catId ? { ...e, ...patch } : e)));
   const moveUp = (idx: number) => {
     if (idx === 0) return;
     const n = [...value];
@@ -205,6 +198,28 @@ export function CategoryGamesEditor({ allCategories, allGames, value, onChange }
                 <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeCategory(entry.category_id)}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Section title (optional)</label>
+                <Input
+                  value={entry.section_title ?? ""}
+                  onChange={(e) => setEntry(entry.category_id, { section_title: e.target.value || undefined })}
+                  placeholder="Leave empty to use category name"
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <ImageUploadWithPreview
+                  value={entry.section_icon ?? undefined}
+                  onChange={(file, url) => {
+                    if (url !== undefined) setEntry(entry.category_id, { section_icon: url });
+                    else if (file === null) setEntry(entry.category_id, { section_icon: undefined });
+                  }}
+                  onUpload={async (file) => (await uploadSiteMedia(file)).url}
+                  label="Section icon (optional)"
+                />
               </div>
             </div>
             <OrderedIdSelector

@@ -1,7 +1,10 @@
 import type { PublicPaymentMethod } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
-import { svgToImgSrc } from "@/lib/svg";
 import { CreditCard } from "lucide-react";
+
+function sectionIconSrc(value: string): string {
+  return value.trim().startsWith("http") ? value.trim() : getMediaUrl(value.trim());
+}
 
 interface SecondHomePaymentsAcceptedProps {
   paymentMethods: PublicPaymentMethod[];
@@ -16,8 +19,8 @@ export function SecondHomePaymentsAccepted({ paymentMethods, sectionTitle, secti
     <section className="container px-4 py-6">
       {/* Section header */}
       <div className="flex items-center gap-2 mb-4">
-        {sectionSvg ? (
-          <img src={svgToImgSrc(sectionSvg)} alt="" className="h-5 w-5 object-contain" />
+        {sectionSvg?.trim() ? (
+          <img src={sectionIconSrc(sectionSvg)} alt="" className="h-5 w-5 object-contain" />
         ) : (
           <CreditCard className="h-5 w-5 text-primary" />
         )}

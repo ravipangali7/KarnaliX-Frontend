@@ -59,6 +59,8 @@ export interface SecondHomePageData {
   popularGames: GameCardShape[];
   /** Games grouped by category id for category-wise rows. */
   gamesByCategory: Record<number, GameCardShape[]>;
+  /** Per-category overrides for section title and icon (from site_categories_game_json). */
+  categorySectionOverrides: Record<number, { section_title?: string; section_icon?: string }>;
   sportsIframeUrl: string;
   /** Welcome + Deposit promos (Bonus section). */
   welcomeDepositPromos: PromoShape[];
@@ -386,12 +388,22 @@ export function useSecondHomePageData(): {
   const paymentMethods: PublicPaymentMethod[] = publicPaymentMethodsApi as PublicPaymentMethod[];
 
   // categories for categoriesGameJson – show only selected categories in configured order
-  const siteCatIdOrder = Array.isArray(siteCategoriesGameJson.categories)
-    ? (siteCategoriesGameJson.categories as { category_id: number }[]).map((e) => e.category_id)
+  const siteCategoriesGameList = Array.isArray(siteCategoriesGameJson.categories)
+    ? (siteCategoriesGameJson.categories as { category_id: number; section_title?: string; section_icon?: string }[])
     : [];
+  const siteCatIdOrder = siteCategoriesGameList.map((e) => e.category_id);
   const orderedCategoriesList: GameCategory[] = siteCatIdOrder.length > 0
     ? siteCatIdOrder.map((id) => categoriesList.find((c) => c.id === id)).filter(Boolean) as GameCategory[]
     : categoriesList;
+  const categorySectionOverrides: Record<number, { section_title?: string; section_icon?: string }> = {};
+  for (const entry of siteCategoriesGameList) {
+    if (entry.section_title != null && entry.section_title !== "" || entry.section_icon != null && entry.section_icon !== "") {
+      categorySectionOverrides[entry.category_id] = {
+        ...(entry.section_title != null && entry.section_title !== "" && { section_title: entry.section_title }),
+        ...(entry.section_icon != null && entry.section_icon !== "" && { section_icon: entry.section_icon }),
+      };
+    }
+  }
 
   // All Categories: show only selected categories in configured order
   const siteCategoryIds = Array.isArray(siteCategoriesJson.category_ids) ? (siteCategoriesJson.category_ids as number[]) : [];
@@ -477,6 +489,7 @@ export function useSecondHomePageData(): {
     topGames,
     popularGames,
     gamesByCategory,
+    categorySectionOverrides,
     sportsIframeUrl,
     welcomeDepositPromos,
     promosGrid,

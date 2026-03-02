@@ -124,8 +124,13 @@ export async function apiDelete(path: string): Promise<ApiResponse> {
 export function getMediaUrl(path: string): string {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  const base = BASE_URL.replace('/api', '');
-  return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  const base = BASE_URL.replace(/\/api\/?$/, '').trim();
+  const normalized = path.startsWith('/') ? path.slice(1) : path;
+  // Avoid double /media/ when backend already returns path with media/ (e.g. provider images)
+  const pathSegment = normalized.toLowerCase().startsWith('media/')
+    ? normalized
+    : `media/${normalized}`;
+  return `${base}/${pathSegment}`;
 }
 
 /** WebSocket URL for real-time messages. Uses same host as API, path /ws/messages/, token in query. */

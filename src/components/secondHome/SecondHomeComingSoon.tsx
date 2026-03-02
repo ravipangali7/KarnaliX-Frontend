@@ -7,7 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { enrollComingSoon } from "@/api/games";
 import { toast } from "@/hooks/use-toast";
 import type { ComingSoonShape } from "@/data/homePageMockData";
-import { svgToImgSrc } from "@/lib/svg";
+import { getMediaUrl } from "@/lib/api";
+
+function sectionIconSrc(value: string): string {
+  return value.trim().startsWith("http") ? value.trim() : getMediaUrl(value.trim());
+}
 
 interface SecondHomeComingSoonProps {
   comingSoon?: ComingSoonShape[] | null;
@@ -52,7 +56,7 @@ export function SecondHomeComingSoon({ comingSoon: comingSoonProp, sectionTitle,
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          {sectionSvg ? <img src={svgToImgSrc(sectionSvg)} alt="" className="h-5 w-5 object-contain" /> : <Zap className="h-5 w-5 text-amber-400" />}
+          {sectionSvg?.trim() ? <img src={sectionIconSrc(sectionSvg)} alt="" className="h-5 w-5 object-contain" /> : <Zap className="h-5 w-5 text-amber-400" />}
           <h2 className="font-display font-bold text-lg text-foreground">{sectionTitle || "Coming Soon"}</h2>
           <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 border border-amber-500/30 text-amber-400">
             New
@@ -94,10 +98,9 @@ export function SecondHomeComingSoon({ comingSoon: comingSoonProp, sectionTitle,
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
               {/* Launch badge */}
               <div className="absolute top-2 left-2">

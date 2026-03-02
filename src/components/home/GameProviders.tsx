@@ -1,8 +1,12 @@
 import { Link } from "react-router-dom";
 import { providers as defaultProviders } from "@/data/homePageMockData";
 import type { ProviderShape } from "@/data/homePageMockData";
-import { svgToImgSrc } from "@/lib/svg";
+import { getMediaUrl } from "@/lib/api";
 import { Building2 } from "lucide-react";
+
+function sectionIconSrc(value: string): string {
+  return value.trim().startsWith("http") ? value.trim() : getMediaUrl(value.trim());
+}
 
 interface GameProvidersProps {
   providers?: ProviderShape[] | null;
@@ -16,19 +20,19 @@ export function GameProviders({ providers: providersProp, sectionTitle, sectionS
   return (
     <section className="container px-4 py-10">
       <h2 className="text-xl font-bold text-foreground mb-2 flex items-center gap-2">
-        {sectionSvg
-          ? <img src={svgToImgSrc(sectionSvg)} alt="" className="h-6 w-6 object-contain" />
+        {sectionSvg?.trim()
+          ? <img src={sectionIconSrc(sectionSvg)} alt="" className="h-6 w-6 object-contain" />
           : <Building2 className="h-6 w-6 text-primary" />
         }
         {sectionTitle ? sectionTitle : <>Trusted <span className="gradient-text-gold">Game Providers</span></>}
       </h2>
       <p className="text-sm text-muted-foreground mb-6">Play games from the best providers in the industry</p>
-      <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 flex-nowrap -mx-4 px-4">
+      <div className="grid grid-cols-3 gap-2 pb-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
         {providers.map((p) => (
           <Link
             key={p.id ?? p.name}
-            to={p.id != null ? `/providers/${p.id}` : `/games`}
-            className="p-4 flex flex-col items-center gap-2 hover:scale-[1.02] transition-all shrink-0 min-w-[120px] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+            to={p.single_game_id != null && p.single_game_id > 0 ? `/games/${p.single_game_id}/play` : (p.id != null ? `/providers/${p.id}` : `/games`)}
+            className="p-2 md:p-4 flex flex-col items-center gap-2 hover:scale-[1.02] transition-all min-w-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
           >
             {/* Circular irregular shape: organic blob via border-radius */}
             <div

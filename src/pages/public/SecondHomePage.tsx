@@ -4,7 +4,6 @@ import {
   SecondHomeTopGamesCarousel,
   SecondHomeCategoryGames,
   SecondHomePopularGames,
-  SecondHomeAllCategories,
   SecondHomePaymentsAccepted,
 } from "@/components/secondHome";
 import { GameProviders } from "@/components/home/GameProviders";
@@ -51,11 +50,11 @@ export default function SecondHomePage() {
       {/* 1. Banner */}
       <SecondHomeSlider slides={data.sliderSlides} />
 
-      {/* 2. All Categories (horizontal slides) – site JSON driven */}
-      <SecondHomeAllCategories
-        categories={data.allCategoriesSection.categories}
-        sectionTitle={data.sectionMeta.allCategories.title}
-        sectionSvg={data.sectionMeta.allCategories.svg}
+      {/* 2. Trusted Game Providers – site JSON driven */}
+      <GameProviders
+        providers={data.providerCards}
+        sectionTitle={data.sectionMeta.providers.title}
+        sectionSvg={data.sectionMeta.providers.svg}
       />
 
       {/* 3. Top Games – site JSON driven */}
@@ -65,17 +64,11 @@ export default function SecondHomePage() {
         sectionSvg={data.sectionMeta.topGames.svg}
       />
 
-      {/* 4. Trusted Game Providers – site JSON driven */}
-      <GameProviders
-        providers={data.providerCards}
-        sectionTitle={data.sectionMeta.providers.title}
-        sectionSvg={data.sectionMeta.providers.svg}
-      />
-
       {/* 5. Category-wise game cards – site JSON driven */}
       <SecondHomeCategoryGames
         categories={data.categories}
         gamesByCategory={data.gamesByCategory}
+        categorySectionOverrides={data.categorySectionOverrides}
         sectionSvg={data.sectionMeta.categoriesGame.svg}
       />
 

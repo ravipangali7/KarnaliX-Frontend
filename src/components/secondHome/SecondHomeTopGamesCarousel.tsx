@@ -1,8 +1,12 @@
 import { Link } from "react-router-dom";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import type { GameCardShape } from "@/data/homePageMockData";
+import { getMediaUrl } from "@/lib/api";
 import { ChevronRight, Star, Zap, Trophy } from "lucide-react";
-import { svgToImgSrc } from "@/lib/svg";
+
+function sectionIconSrc(value: string): string {
+  return value.trim().startsWith("http") ? value.trim() : getMediaUrl(value.trim());
+}
 
 const TOTAL = 16;
 
@@ -21,8 +25,8 @@ export function SecondHomeTopGamesCarousel({ games, sectionTitle, sectionSvg }: 
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-bold text-xl text-foreground flex items-center gap-2">
-          {sectionSvg
-            ? <img src={svgToImgSrc(sectionSvg)} alt="" className="h-6 w-6 object-contain" />
+          {sectionSvg?.trim()
+            ? <img src={sectionIconSrc(sectionSvg)} alt="" className="h-6 w-6 object-contain" />
             : <Trophy className="h-6 w-6 text-primary" />
           }
           {sectionTitle || "Top Games"}

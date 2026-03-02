@@ -4,6 +4,8 @@ import type { ComingSoonShape } from "@/data/homePageMockData";
 export interface GameCategory {
   id: number;
   name: string;
+  /** Prefer icon (image URL); svg is legacy. */
+  icon?: string;
   svg?: string;
   is_active?: boolean;
 }
@@ -15,13 +17,14 @@ export interface GameProvider {
   image?: string;
   banner?: string;
   is_active?: boolean;
-  /** When set, provider has exactly one active game with is_single_game=true; link to this game instead of provider page. */
+  /** When set, open this game directly; otherwise open provider detail. */
   single_game_id?: number | null;
 }
 
 export interface ProviderDetailCategory {
   id: number;
   name: string;
+  icon?: string | null;
   svg?: string | null;
 }
 
@@ -44,9 +47,9 @@ export interface Game {
   provider_name?: string;
   provider_code?: string;
   is_active?: boolean;
-  is_single_game?: boolean;
   is_top_game?: boolean;
   is_popular_game?: boolean;
+  is_lobby?: boolean;
 }
 
 function unwrapList<T>(res: unknown): T[] {

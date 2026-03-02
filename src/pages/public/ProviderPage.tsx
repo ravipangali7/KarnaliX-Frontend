@@ -5,21 +5,29 @@ import { GameCard } from "@/components/shared/GameCard";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { getProviderDetail, getGames, getGameImageUrl } from "@/api/games";
 import type { Game, ProviderDetailCategory } from "@/api/games";
-import { svgToImgSrc } from "@/lib/svg";
+import { getMediaUrl } from "@/lib/api";
 import { LayoutGrid } from "lucide-react";
 
-function CategoryIcon({ svg, name }: { svg?: string | null; name: string }) {
-  if (!svg?.trim()) {
+const IRREGULAR_SHAPE = "60% 40% 50% 50% / 50% 60% 40% 50%";
+
+function categoryIconSrc(cat: ProviderDetailCategory): string | null {
+  const icon = cat.icon?.trim();
+  if (icon) return icon.startsWith("http") ? icon : getMediaUrl(icon);
+  const svg = cat.svg?.trim();
+  if (svg) return svg.startsWith("http") ? svg : getMediaUrl(svg);
+  return null;
+}
+
+function CategoryIcon({ cat, name }: { cat: ProviderDetailCategory; name: string }) {
+  const src = categoryIconSrc(cat);
+  if (!src) {
     return (
-      <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-        <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+      <div className="h-full w-full flex items-center justify-center">
+        <LayoutGrid className="h-6 w-6 text-muted-foreground" />
       </div>
     );
   }
-  const src = svg.trim().startsWith("<svg") ? svgToImgSrc(svg.trim()) : svg.trim();
-  return (
-    <img src={src} alt={name} className="h-10 w-10 rounded-xl object-contain flex-shrink-0 bg-white/5 border border-white/10 p-1" />
-  );
+  return <img src={src} alt={name} className="h-full w-full object-cover" />;
 }
 
 const PAGE_SIZE = 24;
@@ -130,13 +138,13 @@ const ProviderPage = () => {
           className="scrollbar-hide pb-2"
           style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden", gap: "12px", width: "100%", WebkitOverflowScrolling: "touch" }}
         >
-          {/* All chip */}
+          {/* All chip — irregular shape like provider, no border/bg */}
           <button
             onClick={() => setFilters({ category: "all", page: 1 })}
-            className={`transition-all ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+            className={`transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0, flexGrow: 0, width: "64px", minWidth: "64px" }}
           >
-            <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border-2 transition-all ${categoryParam === "all" ? "border-primary neon-glow-sm bg-primary/10" : "border-white/10 bg-white/5"}`}>
+            <div className="h-14 w-14 flex items-center justify-center overflow-hidden transition-all" style={{ borderRadius: IRREGULAR_SHAPE }}>
               <LayoutGrid className={`h-6 w-6 ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} />
             </div>
             <span className={`text-[10px] font-medium text-center ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>All</span>
@@ -145,11 +153,11 @@ const ProviderPage = () => {
             <button
               key={cat.id}
               onClick={() => setFilters({ category: String(cat.id), page: 1 })}
-              className={`transition-all ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+              className={`transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0, flexGrow: 0, width: "64px", minWidth: "64px" }}
             >
-              <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border-2 transition-all overflow-hidden ${categoryParam === String(cat.id) ? "border-primary neon-glow-sm bg-primary/10" : "border-white/10 bg-white/5"}`}>
-                <CategoryIcon svg={cat.svg} name={cat.name} />
+              <div className="h-14 w-14 flex items-center justify-center overflow-hidden transition-all" style={{ borderRadius: IRREGULAR_SHAPE }}>
+                <CategoryIcon cat={cat} name={cat.name} />
               </div>
               <span className={`text-[10px] font-medium text-center ${categoryParam === String(cat.id) ? "text-primary" : "text-muted-foreground"}`} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>{cat.name}</span>
             </button>
