@@ -72,7 +72,7 @@ export const HomeHeader = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-white/10">
+    <header className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border">
       <div className="container flex flex-col">
         <div className="flex items-center justify-between h-14 px-4">
           <Link to="/" className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export const HomeHeader = () => {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <nav className="lg:hidden border-t border-white/10 glass-strong p-4 space-y-1 animate-fade-in">
+        <nav className="lg:hidden border-t border-border glass-strong p-4 space-y-1 animate-fade-in">
           {navItems.map((item) => (
             <Link
               key={item.path}

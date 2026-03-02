@@ -9,6 +9,7 @@ import { getMediaUrl } from "@/lib/api";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { SiteThemeApplier } from "@/components/SiteThemeApplier";
 
 // Layouts
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -133,6 +134,7 @@ const App = () => (
           <BrowserRouter>
             <ScrollToTop />
             <SiteFavicon />
+            <SiteThemeApplier />
             <Routes>
             {/* Public Website */}
             <Route path="/" element={<HomePageSwitch />} />

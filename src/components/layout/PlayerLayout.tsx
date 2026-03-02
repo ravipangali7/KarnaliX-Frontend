@@ -67,7 +67,7 @@ export const PlayerLayout = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Desktop Sidebar (no logo – site header shows branding) */}
-      <aside className="hidden md:flex flex-col w-64 bg-navy text-navy-foreground border-r border-sidebar-border flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
+      <aside className="hidden md:flex flex-col w-64 bg-card text-foreground border-r border-border flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
         {/* Balance card in sidebar */}
         <div className="p-4">
           <div className="rounded-xl gold-gradient p-4 neon-glow-sm">
@@ -88,11 +88,11 @@ export const PlayerLayout = () => {
               to={link.path}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                 isActive(link.path)
-                  ? "bg-sidebar-primary/10 text-sidebar-primary neon-glow-sm"
-                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                  ? "bg-primary/10 text-primary neon-glow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
-              <link.icon className={`h-4 w-4 ${isActive(link.path) ? "text-sidebar-primary" : ""}`} />
+              <link.icon className={`h-4 w-4 ${isActive(link.path) ? "text-primary" : ""}`} />
               <span className="flex-1 truncate">{link.label}</span>
               {link.path === "/player/messages" && messageBadge > 0 && (
                 <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
@@ -104,8 +104,8 @@ export const PlayerLayout = () => {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-sidebar-border space-y-2">
-          <Link to="/" className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors">
+        <div className="p-4 border-t border-border space-y-2">
+          <Link to="/" className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Gamepad2 className="h-4 w-4" />
             <span>Play Games</span>
           </Link>

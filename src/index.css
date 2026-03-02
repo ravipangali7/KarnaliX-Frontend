@@ -225,7 +225,7 @@ body::-webkit-scrollbar {
 
 @layer utilities {
   .gold-gradient {
-    background: linear-gradient(135deg, hsl(220 90% 56%), hsl(270 85% 60%));
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
   }
   .gold-text {
     background: linear-gradient(135deg, hsl(220 90% 56%), hsl(270 85% 60%));
@@ -265,7 +265,7 @@ body::-webkit-scrollbar {
     box-shadow: 0 0 20px -3px hsl(220 90% 56% / 0.5), 0 0 40px -6px hsl(270 85% 60% / 0.25);
   }
   .neon-glow-sm {
-    box-shadow: 0 0 10px -2px hsl(220 90% 56% / 0.35);
+    box-shadow: 0 0 10px -2px hsl(var(--primary) / 0.35);
   }
   .neon-glow-lg {
     box-shadow: 0 0 30px -3px hsl(220 90% 56% / 0.6), 0 0 60px -6px hsl(270 85% 60% / 0.3), 0 0 80px -10px hsl(185 100% 55% / 0.15);
@@ -324,7 +324,7 @@ body::-webkit-scrollbar {
     background-color: hsl(var(--card) / 0.8);
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
-    border: 1px solid rgb(255 255 255 / 0.15);
+    border: 1px solid hsl(var(--border) / 0.8);
   }
   .gradient-text {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));

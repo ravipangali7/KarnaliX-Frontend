@@ -15,7 +15,7 @@ export const PublicFooter = () => {
   const whatsapp = s?.whatsapp_number ?? "";
 
   return (
-    <footer className="bg-navy text-navy-foreground mt-auto">
+    <footer className="bg-card text-foreground mt-auto border-t border-border">
       <div className="container px-4 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
@@ -24,10 +24,10 @@ export const PublicFooter = () => {
               <img src={logoUrl} alt="Karnali X" className="h-8 w-8 rounded" />
               <span className="font-gaming font-bold text-sm neon-text tracking-wider">KARNALI X</span>
             </div>
-            <p className="text-sm text-navy-foreground/60 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Nepal's Premier Online Gaming Platform. Play responsibly.
             </p>
-            <div className="mt-3 text-xs text-navy-foreground/40 space-y-1">
+            <div className="mt-3 text-xs text-muted-foreground space-y-1">
               <p>{email}</p>
               <p>{phone}</p>
               <p>WhatsApp: {whatsapp}</p>
@@ -49,7 +49,7 @@ export const PublicFooter = () => {
                 { label: "Profile", path: "/player/profile" },
               ].map((l) => (
                 <li key={l.path}>
-                  <Link to={l.path} className="text-xs text-navy-foreground/60 hover:text-primary transition-colors">{l.label}</Link>
+                  <Link to={l.path} className="text-xs text-muted-foreground hover:text-primary transition-colors">{l.label}</Link>
                 </li>
               ))}
             </ul>
@@ -61,7 +61,7 @@ export const PublicFooter = () => {
             <ul className="space-y-2">
               {(categories as { id: number; name: string }[]).slice(0, 5).map((c) => (
                 <li key={c.id}>
-                  <Link to={`/games?category=${c.id}`} className="text-xs text-navy-foreground/60 hover:text-primary transition-colors">
+                  <Link to={`/games?category=${c.id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">
                     {c.name}
                   </Link>
                 </li>
@@ -75,14 +75,14 @@ export const PublicFooter = () => {
             <ul className="space-y-2">
               {(cmsPages as { id: number; title: string; slug: string }[]).map((p) => (
                 <li key={p.id}>
-                  <Link to={`/page/${p.slug}`} className="text-xs text-navy-foreground/60 hover:text-primary transition-colors">{p.title}</Link>
+                  <Link to={`/page/${p.slug}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{p.title}</Link>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-navy-foreground/10 mt-8 pt-4 text-center text-xs text-navy-foreground/40">
+        <div className="border-t border-border mt-8 pt-4 text-center text-xs text-muted-foreground">
           {s?.footer_description ?? "Nepal's Premier Online Gaming Platform."}
         </div>
       </div>

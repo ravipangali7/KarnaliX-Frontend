@@ -25,7 +25,7 @@ export const HomeFooter = () => {
   const waUrl = `https://wa.me/${whatsapp.replace(/[^0-9]/g, "")}`;
 
   return (
-    <footer className="glass-strong border-t border-white/10 mt-auto">
+    <footer className="glass-strong border-t border-border mt-auto">
       <div className="container px-4 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           <div className="col-span-2 md:col-span-1">
@@ -83,7 +83,7 @@ export const HomeFooter = () => {
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-8 pt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="border-t border-border mt-8 pt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
             <span>SSL Secured</span>
             <span>Licensed Gaming</span>
@@ -91,14 +91,14 @@ export const HomeFooter = () => {
           </div>
           <div className="flex flex-wrap gap-2">
             {defaultPaymentMethods.map((pm) => (
-              <span key={pm} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-muted-foreground">
+              <span key={pm} className="px-3 py-1 rounded-full bg-muted/50 border border-border text-xs text-muted-foreground">
                 {pm}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-4 pt-4 text-center text-xs text-muted-foreground">
+        <div className="border-t border-border mt-4 pt-4 text-center text-xs text-muted-foreground">
           <p>© {new Date().getFullYear()} {siteName}. All rights reserved.</p>
           <p className="mt-1">18+ only. Play responsibly.</p>
         </div>

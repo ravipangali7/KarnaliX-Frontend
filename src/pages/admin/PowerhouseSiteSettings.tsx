@@ -24,6 +24,7 @@ import {
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { getMediaUrl } from "@/lib/api";
+import { SITE_THEME_KEYS, filterAllowedTheme } from "@/lib/siteThemeKeys";
 import { ChevronUp, ChevronDown, Trash2, Plus, ChevronRight } from "lucide-react";
 import {
   SectionTitleSvg,
@@ -114,6 +115,7 @@ const PowerhouseSiteSettings = () => {
   const [sitePaymentsAcceptedJson, setSitePaymentsAcceptedJson] = useState<SectionJson>({});
   const [siteFooterJson, setSiteFooterJson] = useState<SectionJson>({});
   const [siteWelcomeDepositJson, setSiteWelcomeDepositJson] = useState<SectionJson>({});
+  const [siteThemeJson, setSiteThemeJson] = useState<Record<string, string>>({});
 
   // Data for selectors
   const { data: allCategoriesRaw = [] } = useQuery({ queryKey: ["admin-categories"], queryFn: getCategoriesAdmin });
@@ -190,6 +192,12 @@ const PowerhouseSiteSettings = () => {
     setSitePaymentsAcceptedJson(parseSection(s.site_payments_accepted_json));
     setSiteFooterJson(parseSection(s.site_footer_json));
     setSiteWelcomeDepositJson(parseSection(s.site_welcome_deposit_json));
+    const theme = s.site_theme_json;
+    setSiteThemeJson(
+      theme && typeof theme === "object" && !Array.isArray(theme)
+        ? filterAllowedTheme(theme as Record<string, unknown>)
+        : {}
+    );
   }, [siteSettings]);
 
   const buildPayload = () => {
@@ -220,6 +228,7 @@ const PowerhouseSiteSettings = () => {
       site_payments_accepted_json: sitePaymentsAcceptedJson,
       site_footer_json: siteFooterJson,
       site_welcome_deposit_json: siteWelcomeDepositJson,
+      site_theme_json: filterAllowedTheme(siteThemeJson),
     };
   };
 
@@ -251,6 +260,7 @@ const PowerhouseSiteSettings = () => {
         formData.set("site_payments_accepted_json", JSON.stringify(sitePaymentsAcceptedJson));
         formData.set("site_footer_json", JSON.stringify(siteFooterJson));
         formData.set("site_welcome_deposit_json", JSON.stringify(siteWelcomeDepositJson));
+        formData.set("site_theme_json", JSON.stringify(filterAllowedTheme(siteThemeJson)));
         if (logoFile) formData.set("logo", logoFile);
         if (faviconFile) formData.set("favicon", faviconFile);
         await updateSiteSettingsForm(formData);
@@ -501,6 +511,29 @@ const PowerhouseSiteSettings = () => {
         <CardContent>
           <label className="text-sm font-medium mb-1.5 block">Footer description / tagline</label>
           <Textarea value={footerDescription} onChange={(e) => setFooterDescription(e.target.value)} rows={2} placeholder="Short tagline under logo" />
+        </CardContent>
+      </Card>
+
+      {/* Theme / Colors (website and player only; hex, rgb, hsl, cmyk, hsv) */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Theme / Colors</CardTitle>
+          <p className="text-xs text-muted-foreground">Supports hex (#ff0000), rgb, hsl, cmyk, hsv. Applied on website and player only. Leave empty for default theme.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {SITE_THEME_KEYS.map((key) => (
+              <div key={key}>
+                <label className="text-sm font-medium mb-1.5 block">{key.replace(/_/g, " ")}</label>
+                <Input
+                  value={siteThemeJson[key] ?? ""}
+                  onChange={(e) => setSiteThemeJson((prev) => ({ ...prev, [key]: e.target.value }))}
+                  placeholder="e.g. #c00 or 220 90% 56% or rgb(255,0,0)"
+                  className="font-mono text-sm"
+                />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
