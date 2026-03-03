@@ -21,13 +21,17 @@ interface DataTableProps<T> {
   addLabel?: string;
   secondaryAction?: { label: string; onClick: () => void };
   pageSize?: number;
+  /** Use "adminListing" for master/super listing pages: colorful header, striped rows, styled pagination */
+  variant?: "default" | "adminListing";
 }
 
 type SortDir = "asc" | "desc";
 
 export function DataTable<T extends { id: string | number }>({
   data, columns, searchPlaceholder = "Search...", searchKey, onAdd, addLabel = "Add New", secondaryAction, pageSize = 10,
+  variant = "default",
 }: DataTableProps<T>) {
+  const isThemed = variant === "adminListing";
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -105,15 +109,15 @@ export function DataTable<T extends { id: string | number }>({
         </div>
       </div>
 
-      <div className="rounded-lg border overflow-hidden min-w-0">
+      <div className={`rounded-lg overflow-hidden min-w-0 ${isThemed ? "border-2 border-primary/40 shadow-md bg-gradient-to-b from-primary/5 to-transparent" : "border"}`}>
         <div className="overflow-x-auto -mx-px" style={{ WebkitOverflowScrolling: "touch" }}>
-          <Table className="min-w-[600px]">
+          <Table className={`min-w-[600px] ${isThemed ? "[&_th]:border-b [&_th]:border-primary/30 [&_td]:border-b [&_td]:border-primary/15" : ""}`}>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className={isThemed ? "bg-primary border-b-2 border-primary text-primary-foreground shadow-sm" : "bg-muted/50"}>
                 {columns.map((col, i) => (
                   <TableHead
                     key={i}
-                    className={`text-xs whitespace-nowrap ${col.className || ""} ${col.sortKey ? "cursor-pointer select-none hover:bg-muted/80 transition-colors" : ""}`}
+                    className={`text-xs whitespace-nowrap font-semibold ${isThemed ? "text-primary-foreground hover:bg-primary/90" : ""} ${col.className || ""} ${col.sortKey ? "cursor-pointer select-none transition-colors" : ""} ${!isThemed && col.sortKey ? "hover:bg-muted/80" : ""}`}
                     onClick={col.sortKey ? () => handleSort(col.sortKey!) : undefined}
                   >
                     {col.header}
@@ -130,13 +134,23 @@ export function DataTable<T extends { id: string | number }>({
                   </TableCell>
                 </TableRow>
               ) : (
-                pageData.map((row) => (
-                  <TableRow key={row.id} className="hover:bg-muted/30 transition-colors">
-                    {columns.map((col, i) => (
-                      <TableCell key={i} className={`text-sm ${col.className || ""}`}>
-                        {typeof col.accessor === "function" ? col.accessor(row) : String(row[col.accessor] ?? "")}
-                      </TableCell>
-                    ))}
+                pageData.map((row, rowIndex) => (
+                  <TableRow
+                    key={row.id}
+                    className={
+                      isThemed
+                        ? `transition-colors hover:bg-primary/15 ${rowIndex % 2 === 1 ? "bg-muted/40" : "bg-background/80"}`
+                        : "hover:bg-muted/30 transition-colors"
+                    }
+                  >
+                    {columns.map((col, i) => {
+                      const cellTint = isThemed && (i % 3 === 0 ? "bg-primary/5" : i % 3 === 1 ? "bg-accent/5" : "bg-muted/20");
+                      return (
+                        <TableCell key={i} className={`text-sm ${col.className || ""} ${cellTint || ""}`}>
+                          {typeof col.accessor === "function" ? col.accessor(row) : String(row[col.accessor] ?? "")}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))
               )}
@@ -146,7 +160,13 @@ export function DataTable<T extends { id: string | number }>({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div
+          className={
+            isThemed
+              ? "flex items-center justify-between text-xs rounded-lg border-2 border-primary/25 bg-gradient-to-r from-primary/10 to-accent/10 px-3 py-2 font-medium"
+              : "flex items-center justify-between text-xs text-muted-foreground"
+          }
+        >
           <span>{filtered.length} items</span>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 0} onClick={() => setPage(page - 1)}>

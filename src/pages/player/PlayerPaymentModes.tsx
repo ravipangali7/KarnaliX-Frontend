@@ -4,94 +4,72 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getPaymentModes, createPaymentMode, createPaymentModeFormData, deletePaymentMode } from "@/api/player";
+import { getPublicPaymentMethods, type PublicPaymentMethod } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Plus, Trash2, CreditCard, Smartphone, Upload } from "lucide-react";
+import { Plus, Trash2, CreditCard, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+
+function detailsSummary(details: Record<string, unknown> | null | undefined): string {
+  if (!details || typeof details !== "object") return "";
+  const vals = Object.values(details).filter((v) => v != null && String(v).trim() !== "");
+  if (vals.length === 0) return "";
+  const s = String(vals[0]).trim();
+  if (s.length <= 4) return "••••";
+  return "****" + s.slice(-4);
+}
 
 const PlayerPaymentModes = () => {
   const queryClient = useQueryClient();
   const { data: paymentModes = [] } = useQuery({ queryKey: ["player-payment-modes"], queryFn: getPaymentModes });
+  const { data: paymentMethodsList = [] } = useQuery({ queryKey: ["public-payment-methods"], queryFn: getPublicPaymentMethods });
+  const methods = paymentMethodsList as PublicPaymentMethod[];
   const modes = paymentModes as Record<string, unknown>[];
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [qrFile, setQrFile] = useState<File | null>(null);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
-  const [newMode, setNewMode] = useState({
-    type: "ewallet" as "ewallet" | "bank",
-    name: "",
-    wallet_phone: "",
-    bank_name: "",
-    bank_branch: "",
-    bank_account_no: "",
-    bank_account_holder_name: "",
-  });
+  const [selectedMethodId, setSelectedMethodId] = useState<number | "">("");
+  const [details, setDetails] = useState<Record<string, string>>({});
 
-  const buildBody = () => {
-    const body: Record<string, unknown> = {
-      name: newMode.name.trim(),
-      type: newMode.type,
-    };
-    if (newMode.type === "ewallet") {
-      body.wallet_phone = newMode.wallet_phone.trim();
-      body.bank_name = "";
-      body.bank_branch = "";
-      body.bank_account_no = "";
-      body.bank_account_holder_name = "";
-    } else {
-      body.wallet_phone = "";
-      body.bank_name = newMode.bank_name.trim();
-      body.bank_branch = newMode.bank_branch.trim();
-      body.bank_account_no = newMode.bank_account_no.trim();
-      body.bank_account_holder_name = newMode.bank_account_holder_name.trim();
-    }
-    return body;
-  };
+  const selectedMethod = selectedMethodId ? methods.find((m) => m.id === selectedMethodId) : null;
+  const fieldEntries = selectedMethod?.fields ? Object.entries(selectedMethod.fields) : [];
+
+  const buildBody = () => ({
+    payment_method: selectedMethodId,
+    details: { ...details },
+  });
 
   const buildFormData = (): FormData => {
     const formData = new FormData();
-    formData.append("name", newMode.name.trim());
-    formData.append("type", newMode.type);
-    if (newMode.type === "ewallet") {
-      formData.append("wallet_phone", newMode.wallet_phone.trim());
-      formData.append("bank_name", "");
-      formData.append("bank_branch", "");
-      formData.append("bank_account_no", "");
-      formData.append("bank_account_holder_name", "");
-    } else {
-      formData.append("wallet_phone", "");
-      formData.append("bank_name", newMode.bank_name.trim());
-      formData.append("bank_branch", newMode.bank_branch.trim());
-      formData.append("bank_account_no", newMode.bank_account_no.trim());
-      formData.append("bank_account_holder_name", newMode.bank_account_holder_name.trim());
-    }
-    if (qrFile) {
-      formData.append("qr_image", qrFile);
-    }
+    formData.append("payment_method", String(selectedMethodId));
+    formData.append("details", JSON.stringify({ ...details }));
+    if (qrFile) formData.append("qr_image", qrFile);
     return formData;
   };
 
   const resetAddForm = () => {
-    setNewMode({ type: "ewallet", name: "", wallet_phone: "", bank_name: "", bank_branch: "", bank_account_no: "", bank_account_holder_name: "" });
+    setSelectedMethodId("");
+    setDetails({});
     setQrFile(null);
     if (qrPreview) URL.revokeObjectURL(qrPreview);
     setQrPreview(null);
   };
 
   const handleAdd = async () => {
-    if (!newMode.name.trim()) {
-      toast({ title: "Enter provider name", variant: "destructive" });
+    if (!selectedMethodId) {
+      toast({ title: "Select a payment method", variant: "destructive" });
       return;
     }
-    if (newMode.type === "ewallet" && !newMode.wallet_phone.trim()) {
-      toast({ title: "Enter wallet / phone number", variant: "destructive" });
-      return;
-    }
-    if (newMode.type === "bank" && !newMode.bank_account_no.trim()) {
-      toast({ title: "Enter bank account number", variant: "destructive" });
-      return;
+    const requiredKeys = selectedMethod?.fields ? Object.keys(selectedMethod.fields) : [];
+    for (const key of requiredKeys) {
+      if (!String(details[key] ?? "").trim()) {
+        const label = selectedMethod?.fields?.[key] ?? key;
+        toast({ title: `Enter ${label}`, variant: "destructive" });
+        return;
+      }
     }
     setSubmitting(true);
     try {
@@ -127,6 +105,11 @@ const PlayerPaymentModes = () => {
     }
   };
 
+  const displayName = (pm: Record<string, unknown>) =>
+    (pm.payment_method_name as string) ?? "Payment method";
+  const displayDetail = (pm: Record<string, unknown>) =>
+    detailsSummary(pm.details as Record<string, unknown>) || "—";
+
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
@@ -143,11 +126,11 @@ const PlayerPaymentModes = () => {
             <CardContent className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl gold-gradient flex items-center justify-center neon-glow-sm">
-                  {pm.type === "ewallet" ? <Smartphone className="h-5 w-5 text-primary-foreground" /> : <CreditCard className="h-5 w-5 text-primary-foreground" />}
+                  <CreditCard className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">{String(pm.name ?? "")}</p>
-                  <p className="text-xs text-muted-foreground">{pm.type === "ewallet" ? String(pm.wallet_phone ?? pm.account_id ?? "") : String(pm.bank_account_no ?? pm.account_number ?? "")}</p>
+                  <p className="text-sm font-semibold">{displayName(pm)}</p>
+                  <p className="text-xs text-muted-foreground">{displayDetail(pm)}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <StatusBadge status={String(pm.status ?? "pending")} />
                     {pm.status === "pending" && (
@@ -171,7 +154,6 @@ const PlayerPaymentModes = () => {
         <p className="text-center text-muted-foreground py-8 text-sm">No payment modes added yet</p>
       )}
 
-      {/* Add Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetAddForm(); }}>
         <DialogContent className="max-w-sm gaming-card">
           <DialogHeader>
@@ -179,45 +161,42 @@ const PlayerPaymentModes = () => {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-muted-foreground font-medium mb-1 block">Provider Name</label>
-              <Input placeholder="e.g. eSewa, Khalti, My Bank" value={newMode.name} onChange={(e) => setNewMode({ ...newMode, name: e.target.value })} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground font-medium mb-1 block">Type</label>
+              <label className="text-xs text-muted-foreground font-medium mb-1 block">Payment method</label>
               <select
-                value={newMode.type}
-                onChange={(e) => setNewMode({ ...newMode, type: e.target.value as "ewallet" | "bank" })}
+                value={selectedMethodId}
+                onChange={(e) => {
+                  const id = e.target.value === "" ? "" : Number(e.target.value);
+                  setSelectedMethodId(id);
+                  setDetails({});
+                }}
                 className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm"
               >
-                <option value="ewallet">E-Wallet</option>
-                <option value="bank">Bank Account</option>
+                <option value="">Select method</option>
+                {methods.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
               </select>
             </div>
-            {newMode.type === "ewallet" && (
-              <div>
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Wallet / Phone number</label>
-                <Input placeholder="Your e-wallet ID or phone" value={newMode.wallet_phone} onChange={(e) => setNewMode({ ...newMode, wallet_phone: e.target.value })} />
+            {fieldEntries.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">Details (keys from selected payment method)</p>
+                {fieldEntries.map(([key, label]) => {
+                  const displayLabel = typeof label === "string" ? label : key.replace(/_/g, " ");
+                  return (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs text-muted-foreground font-medium block">
+                        {displayLabel}
+                        <span className="ml-1.5 font-mono text-[10px] text-muted-foreground/80">({key})</span>
+                      </label>
+                      <Input
+                        placeholder={displayLabel}
+                        value={details[key] ?? ""}
+                        onChange={(e) => setDetails((prev) => ({ ...prev, [key]: e.target.value }))}
+                      />
+                    </div>
+                  );
+                })}
               </div>
-            )}
-            {newMode.type === "bank" && (
-              <>
-                <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1 block">Bank name</label>
-                  <Input placeholder="Bank name" value={newMode.bank_name} onChange={(e) => setNewMode({ ...newMode, bank_name: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1 block">Branch</label>
-                  <Input placeholder="Branch" value={newMode.bank_branch} onChange={(e) => setNewMode({ ...newMode, bank_branch: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1 block">Account number</label>
-                  <Input placeholder="Account number" value={newMode.bank_account_no} onChange={(e) => setNewMode({ ...newMode, bank_account_no: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1 block">Account holder name</label>
-                  <Input placeholder="Account holder name" value={newMode.bank_account_holder_name} onChange={(e) => setNewMode({ ...newMode, bank_account_holder_name: e.target.value })} />
-                </div>
-              </>
             )}
             <div>
               <label className="text-xs text-muted-foreground font-medium mb-1 block flex items-center gap-1">
@@ -246,7 +225,6 @@ const PlayerPaymentModes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
       <Dialog open={deleteId != null} onOpenChange={() => { if (!submitting) setDeleteId(null); }}>
         <DialogContent className="max-w-sm gaming-card">
           <DialogHeader>

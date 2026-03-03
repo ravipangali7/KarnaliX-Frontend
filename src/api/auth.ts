@@ -59,3 +59,25 @@ export async function signupVerifyOtp(phone: string, otp: string): Promise<{ sig
   const res = await apiPost<{ signup_token: string }>("/public/auth/signup/verify-otp/", { phone, otp });
   return res as unknown as { signup_token: string };
 }
+
+// --- Google OAuth ---
+export type GoogleLoginSuccess = { token: string; user: import("@/contexts/AuthContext").User };
+export type GoogleLoginNeedsUsername = { needs_username: true; email: string; name: string };
+
+export async function authGoogle(idToken: string): Promise<GoogleLoginSuccess | GoogleLoginNeedsUsername> {
+  const res = await apiPost<GoogleLoginSuccess | GoogleLoginNeedsUsername>("/public/auth/google/", {
+    id_token: idToken,
+  });
+  return res as unknown as GoogleLoginSuccess | GoogleLoginNeedsUsername;
+}
+
+export async function authGoogleComplete(
+  idToken: string,
+  username: string
+): Promise<{ token: string; user: import("@/contexts/AuthContext").User }> {
+  const res = await apiPost<{ token: string; user: import("@/contexts/AuthContext").User }>(
+    "/public/auth/google/complete/",
+    { id_token: idToken, username }
+  );
+  return res as unknown as { token: string; user: import("@/contexts/AuthContext").User };
+}

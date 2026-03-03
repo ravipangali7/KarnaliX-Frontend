@@ -45,13 +45,12 @@ interface InlineEditState {
 // ── Single-field inline edit ──────────────────────────────────────────────────
 
 function InlineEditModal({
-  state, onClose, role,
+  state, onClose, onSave,
 }: {
   state: InlineEditState | null;
   onClose: () => void;
-  role: "powerhouse" | "super";
+  onSave: (id: number, field: string, value: unknown) => void | Promise<void>;
 }) {
-  const queryClient = useQueryClient();
   const [value, setValue] = useState<unknown>(state?.value ?? null);
   const [saving, setSaving] = useState(false);
 
@@ -61,10 +60,7 @@ function InlineEditModal({
     const id = Number(state.row.id);
     setSaving(true);
     try {
-      await updateMaster(id, { [state.field]: value }, role);
-      queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
-      toast({ title: `${state.label} updated.` });
-      onClose();
+      await onSave(id, state.field, value);
     } catch (e) {
       const msg = (e as { detail?: string })?.detail ?? "Failed to update";
       toast({ title: msg, variant: "destructive" });
@@ -137,6 +133,7 @@ const AdminMasters = () => {
   const [editCommission, setEditCommission] = useState("10");
   const [editSaving, setEditSaving] = useState(false);
   const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
+  const [pendingCellSave, setPendingCellSave] = useState<{ id: number; field: string; value: unknown } | null>(null);
 
   const { data: mastersRaw } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role) });
   const { data: supersListRaw } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers, enabled: role === "powerhouse" && createOpen });
@@ -150,12 +147,32 @@ const AdminMasters = () => {
 
   const EDITABLE_CELLS: Record<string, string> = {
     name: "Name",
+    main_balance: "Balance",
+    bonus_balance: "Bonus Bal",
+    exposure_balance: "Exposure",
+    total_balance: "Total Bal",
+    pl_balance: "P/L",
+    total_win_loss: "Win/Loss",
+    users_balance: "Users Bal",
     commission_percentage: "Commission %",
   };
 
   const handleCellClick = (row: MasterRow, field: string) => {
     if (!EDITABLE_CELLS[field]) return;
     setInlineEdit({ row, field, label: EDITABLE_CELLS[field], value: row[field] ?? null });
+  };
+
+  const handleCellSave = async (id: number, field: string, value: unknown) => {
+    if (role === "super") {
+      setPendingCellSave({ id, field, value });
+      setInlineEdit(null);
+      setPinOpen(true);
+      return;
+    }
+    await updateMaster(id, { [field]: value }, role);
+    queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
+    toast({ title: "Updated." });
+    setInlineEdit(null);
   };
 
   const fmt = (v: unknown) => `₹${Number(v ?? 0).toLocaleString()}`;
@@ -191,7 +208,10 @@ const AdminMasters = () => {
     {
       header: "Balance",
       accessor: (row: MasterRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+        <span
+          className="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 cursor-pointer hover:bg-emerald-500/25"
+          onClick={() => handleCellClick(row, "main_balance")}
+        >
           {fmt(row.main_balance)}
         </span>
       ),
@@ -200,7 +220,10 @@ const AdminMasters = () => {
     {
       header: "P/L",
       accessor: (row: MasterRow) => (
-        <span className={`text-xs px-2 py-0.5 rounded border ${Number(row.pl_balance ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+        <span
+          className={`text-xs px-2 py-0.5 rounded border cursor-pointer ${Number(row.pl_balance ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30 hover:bg-green-500/20" : "bg-red-500/10 border-red-500/30 hover:bg-red-500/20"}`}
+          onClick={() => handleCellClick(row, "pl_balance")}
+        >
           {fmtPL(row.pl_balance)}
         </span>
       ),
@@ -209,7 +232,10 @@ const AdminMasters = () => {
     {
       header: "Bonus Bal",
       accessor: (row: MasterRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30">
+        <span
+          className="text-xs px-2 py-0.5 rounded bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30 cursor-pointer hover:bg-violet-500/25"
+          onClick={() => handleCellClick(row, "bonus_balance")}
+        >
           {fmt(row.bonus_balance)}
         </span>
       ),
@@ -218,7 +244,10 @@ const AdminMasters = () => {
     {
       header: "Total Bal",
       accessor: (row: MasterRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+        <span
+          className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 cursor-pointer hover:bg-blue-500/25"
+          onClick={() => handleCellClick(row, "total_balance")}
+        >
           {fmt(row.total_balance)}
         </span>
       ),
@@ -227,7 +256,10 @@ const AdminMasters = () => {
     {
       header: "Win/Loss",
       accessor: (row: MasterRow) => (
-        <span className={`text-xs px-2 py-0.5 rounded border ${Number(row.total_win_loss ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+        <span
+          className={`text-xs px-2 py-0.5 rounded border cursor-pointer ${Number(row.total_win_loss ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30 hover:bg-green-500/20" : "bg-red-500/10 border-red-500/30 hover:bg-red-500/20"}`}
+          onClick={() => handleCellClick(row, "total_win_loss")}
+        >
           {fmtPL(row.total_win_loss)}
         </span>
       ),
@@ -236,7 +268,10 @@ const AdminMasters = () => {
     {
       header: "Users Bal",
       accessor: (row: MasterRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+        <span
+          className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 cursor-pointer hover:bg-amber-500/25"
+          onClick={() => handleCellClick(row, "users_balance")}
+        >
           {fmt(row.users_balance)}
         </span>
       ),
@@ -297,10 +332,10 @@ const AdminMasters = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Master Users</h2>
-      <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search masters..." onAdd={() => setCreateOpen(true)} addLabel="Add Master" />
+      <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search masters..." onAdd={() => setCreateOpen(true)} addLabel="Add Master" variant="adminListing" />
 
       {/* Inline single-field edit */}
-      <InlineEditModal state={inlineEdit} onClose={() => setInlineEdit(null)} role={role} />
+      <InlineEditModal state={inlineEdit} onClose={() => setInlineEdit(null)} onSave={handleCellSave} />
 
       {/* Create */}
       <Dialog open={createOpen} onOpenChange={(open) => {
@@ -623,9 +658,18 @@ const AdminMasters = () => {
 
       <PinDialog
         open={pinOpen}
-        onClose={() => { setPinOpen(false); setPendingAction(null); setPendingPayload({}); }}
+        onClose={() => { setPinOpen(false); setPendingAction(null); setPendingPayload({}); setPendingCellSave(null); }}
         onConfirm={async (pin) => {
           try {
+            if (pendingCellSave) {
+              const payload: Record<string, unknown> = { [pendingCellSave.field]: pendingCellSave.value, pin };
+              await updateMaster(pendingCellSave.id, payload, role);
+              queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
+              toast({ title: "Updated." });
+              setPendingCellSave(null);
+              setPinOpen(false);
+              return;
+            }
             if (pendingAction === "deposit") {
               const userId = pendingPayload.userId as number;
               const amount = pendingPayload.amount as string;

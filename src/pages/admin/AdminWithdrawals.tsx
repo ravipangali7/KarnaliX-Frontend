@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode, type MouseEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { DataTable } from "@/components/shared/DataTable";
@@ -11,9 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { getWithdrawals, approveWithdraw, rejectWithdraw, type ListParams } from "@/api/admin";
 import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
+import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Check, X, Eye, RefreshCw } from "lucide-react";
 
-type PaymentModeDetail = Record<string, unknown> & { name?: string; type_display?: string; wallet_phone?: string; bank_name?: string; bank_branch?: string; bank_account_no?: string; bank_account_holder_name?: string; status_display?: string; qr_image_url?: string };
+type PaymentModeDetail = Record<string, unknown> & { payment_method_name?: string; details?: Record<string, unknown>; status_display?: string; qr_image_url?: string };
 type WithdrawRow = Record<string, unknown> & { id?: number; user_username?: string; user_name?: string; user_phone?: string; user_email?: string; user_whatsapp_number?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; payment_mode_detail?: PaymentModeDetail | null; status?: string; created_at?: string; account_details?: string; accountDetails?: string };
 
 const AdminWithdrawals = () => {
@@ -28,7 +29,7 @@ const AdminWithdrawals = () => {
   if (dateFrom) listParams.date_from = dateFrom;
   if (dateTo) listParams.date_to = dateTo;
   if (statusFilter) listParams.status = statusFilter;
-  const { data: withdrawals = [] } = useQuery({
+  const { data: withdrawals = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-withdrawals", role, listParams],
     queryFn: () => getWithdrawals(role, listParams),
     refetchInterval: autoRefresh ? 10000 : false,
@@ -39,15 +40,20 @@ const AdminWithdrawals = () => {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [selectedW, setSelectedW] = useState<WithdrawRow | null>(null);
+  const [cellView, setCellView] = useState<{ label: string; value: ReactNode } | null>(null);
   const rows = withdrawals as WithdrawRow[];
 
+  const openCell = (label: string, value: ReactNode) => (e: MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    setCellView({ label, value });
+  };
+
   const columns = [
-    { header: "ID", accessor: (row: WithdrawRow) => String(row.id ?? "") },
-    { header: "User", accessor: (row: WithdrawRow) => String(row.user_username ?? row.username ?? "") },
-    { header: "Amount", accessor: (row: WithdrawRow) => `₹${Number(row.amount ?? 0).toLocaleString()}` },
-    { header: "Method", accessor: (row: WithdrawRow) => String(row.payment_mode ?? "") },
-    { header: "Status", accessor: (row: WithdrawRow) => <StatusBadge status={String(row.status ?? "pending")} /> },
-    { header: "Date", accessor: (row: WithdrawRow) => row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "" },
+    { header: "username", sortKey: "user_username", accessor: (row: WithdrawRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Username", String(row.user_username ?? row.username ?? ""))}>{String(row.user_username ?? row.username ?? "")}</span> },
+    { header: "payment details", sortKey: "payment_mode_name", accessor: (row: WithdrawRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Payment details", String(row.account_details ?? row.accountDetails ?? row.payment_mode_name ?? row.payment_mode ?? "—"))}>{String(row.account_details ?? row.accountDetails ?? row.payment_mode_name ?? row.payment_mode ?? "—")}</span> },
+    { header: "Status", sortKey: "status", accessor: (row: WithdrawRow) => <span className="cursor-pointer" onClick={openCell("Status", <StatusBadge status={String(row.status ?? "pending")} />)}><StatusBadge status={String(row.status ?? "pending")} /></span> },
+    { header: "Amount", sortKey: "amount", accessor: (row: WithdrawRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Amount", `₹${Number(row.amount ?? 0).toLocaleString()}`)}>₹{Number(row.amount ?? 0).toLocaleString()}</span> },
+    { header: "Date", sortKey: "created_at", accessor: (row: WithdrawRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Date", row.created_at ? new Date(String(row.created_at)).toLocaleString() : "—")}>{row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : ""}</span> },
     {
       header: "Actions",
       accessor: (row: WithdrawRow) => (
@@ -67,9 +73,14 @@ const AdminWithdrawals = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Withdrawals</h2>
+      <ListDateRangeToolbar
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateChange={({ dateFrom: f, dateTo: t }) => { setDateFrom(f); setDateTo(t); }}
+        onLoad={() => refetch()}
+        loading={isLoading}
+      />
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="date" className="w-40 h-9 text-sm" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-        <Input type="date" className="w-40 h-9 text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         <select className="h-9 rounded-md border border-border bg-background px-3 text-sm w-32" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All status</option>
           <option value="pending">Pending</option>
@@ -81,7 +92,16 @@ const AdminWithdrawals = () => {
           <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
         </label>
       </div>
-      <DataTable data={rows} columns={columns} searchKey="user_username" searchPlaceholder="Search withdrawals..." />
+      <DataTable data={rows} columns={columns} searchKey="user_username" searchPlaceholder="Search withdrawals..." variant="adminListing" />
+
+      {/* View-only cell modal */}
+      <Dialog open={!!cellView} onOpenChange={(open) => { if (!open) setCellView(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="font-display text-base">View — {cellView?.label}</DialogTitle></DialogHeader>
+          {cellView && <div className="py-2 text-sm">{cellView.value}</div>}
+          <DialogFooter><Button variant="outline" onClick={() => setCellView(null)}>Close</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* View */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
@@ -117,14 +137,13 @@ const AdminWithdrawals = () => {
                 <div className="border-t pt-3 mt-3 space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">Payment mode details</p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-muted-foreground text-xs">Name</span><p className="font-medium">{String(selectedW.payment_mode_detail.name ?? "")}</p></div>
-                    <div><span className="text-muted-foreground text-xs">Type</span><p className="font-medium">{String(selectedW.payment_mode_detail.type_display ?? selectedW.payment_mode_detail.type ?? "")}</p></div>
-                    {selectedW.payment_mode_detail.wallet_phone && <div className="col-span-2"><span className="text-muted-foreground text-xs">Wallet / Phone</span><p className="font-mono font-medium">{String(selectedW.payment_mode_detail.wallet_phone)}</p></div>}
-                    {selectedW.payment_mode_detail.bank_name && <div><span className="text-muted-foreground text-xs">Bank</span><p className="font-medium">{String(selectedW.payment_mode_detail.bank_name)}</p></div>}
-                    {selectedW.payment_mode_detail.bank_branch && <div><span className="text-muted-foreground text-xs">Branch</span><p className="font-medium">{String(selectedW.payment_mode_detail.bank_branch)}</p></div>}
-                    {selectedW.payment_mode_detail.bank_account_no && <div><span className="text-muted-foreground text-xs">Account no</span><p className="font-mono font-medium">{String(selectedW.payment_mode_detail.bank_account_no)}</p></div>}
-                    {selectedW.payment_mode_detail.bank_account_holder_name && <div><span className="text-muted-foreground text-xs">Account holder</span><p className="font-medium">{String(selectedW.payment_mode_detail.bank_account_holder_name)}</p></div>}
+                    <div><span className="text-muted-foreground text-xs">Name</span><p className="font-medium">{String(selectedW.payment_mode_detail.payment_method_name ?? "")}</p></div>
                     <div><span className="text-muted-foreground text-xs">Status</span><p className="font-medium">{String(selectedW.payment_mode_detail.status_display ?? selectedW.payment_mode_detail.status ?? "")}</p></div>
+                    {selectedW.payment_mode_detail.details != null && typeof selectedW.payment_mode_detail.details === "object" && Object.keys(selectedW.payment_mode_detail.details).length > 0 && (
+                      Object.entries(selectedW.payment_mode_detail.details as Record<string, unknown>).map(([k, v]) => (
+                        <div key={k} className={k.length > 12 ? "col-span-2" : ""}><span className="text-muted-foreground text-xs capitalize">{k.replace(/_/g, " ")}</span><p className="font-medium">{String(v ?? "")}</p></div>
+                      ))
+                    )}
                   </div>
                   {selectedW.payment_mode_detail.qr_image_url && (
                     <div>

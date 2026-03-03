@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { apiPost, apiGet } from "@/lib/api";
+import { authGoogle, authGoogleComplete } from "@/api/auth";
 
 export type UserRole = "powerhouse" | "super" | "master" | "player";
 
@@ -21,6 +22,7 @@ export interface User {
   kyc_status?: string;
   parent?: number | null;
   whatsapp_number?: string;
+  country_code?: string;
 }
 
 interface AuthState {
@@ -29,9 +31,13 @@ interface AuthState {
   loading: boolean;
 }
 
+export type GoogleNeedsUsername = { needs_username: true; email: string; name: string };
+
 interface AuthContextValue extends AuthState {
-  login: (username: string, password: string) => Promise<User>;
-  register: (data: { signup_token: string; phone: string; name: string; password: string; referral_code?: string }) => Promise<void>;
+  login: (username: string, password: string, countryCode?: string) => Promise<User>;
+  register: (data: { signup_token: string; phone: string; name: string; password: string; referral_code?: string; country_code?: string }) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<User | GoogleNeedsUsername>;
+  googleComplete: (idToken: string, username: string) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -99,11 +105,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("auth-logout", onLogout);
   }, []);
 
-  const login = useCallback(async (username: string, password: string): Promise<User> => {
-    const res = await apiPost<{ token: string; user: User }>("/public/auth/login/", {
-      username,
-      password,
-    });
+  const login = useCallback(async (username: string, password: string, countryCode?: string): Promise<User> => {
+    const body: { username: string; password: string; country_code?: string } = { username, password };
+    if (countryCode) body.country_code = countryCode;
+    const res = await apiPost<{ token: string; user: User }>("/public/auth/login/", body);
     const data = res as unknown as { token: string; user: User };
     if (!data.token || !data.user) throw new Error("Invalid response");
     localStorage.setItem(TOKEN_KEY, data.token);
@@ -119,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name: string;
       password: string;
       referral_code?: string;
+      country_code?: string;
     }) => {
       const res = await apiPost<{ token: string; user: User }>("/public/auth/register/", data);
       const out = res as unknown as { token: string; user: User };
@@ -131,6 +137,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const loginWithGoogle = useCallback(async (idToken: string): Promise<User | GoogleNeedsUsername> => {
+    const res = await authGoogle(idToken);
+    if ("needs_username" in res && res.needs_username) {
+      return { needs_username: true, email: res.email, name: res.name };
+    }
+    const data = res as { token: string; user: User };
+    if (!data.token || !data.user) throw new Error("Invalid response");
+    localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    setState({ user: data.user, token: data.token, loading: false });
+    return data.user;
+  }, []);
+
+  const googleComplete = useCallback(async (idToken: string, username: string): Promise<User> => {
+    const res = await authGoogleComplete(idToken, username);
+    if (!res.token || !res.user) throw new Error("Invalid response");
+    localStorage.setItem(TOKEN_KEY, res.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+    setState({ user: res.user, token: res.token, loading: false });
+    return res.user;
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -141,6 +169,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ...state,
     login,
     register,
+    loginWithGoogle,
+    googleComplete,
     logout,
     refreshUser,
   };

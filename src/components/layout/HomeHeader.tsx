@@ -36,8 +36,8 @@ const navItems = [
 function getDashboardPath(role: string): string {
   switch (role) {
     case "powerhouse": return "/powerhouse";
-    case "super": return "/super";
-    case "master": return "/master";
+    case "super": return "/super/masters";
+    case "master": return "/master/players";
     case "player":
     default: return "/player";
   }

@@ -17,18 +17,12 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 type PaymentModeRow = Record<string, unknown> & {
   id?: number;
-  name?: string;
-  type?: string;
-  type_display?: string;
+  payment_method_name?: string;
+  details?: Record<string, unknown>;
   status?: string;
   status_display?: string;
   user?: number;
   user_username?: string;
-  wallet_phone?: string;
-  bank_name?: string;
-  bank_branch?: string;
-  bank_account_no?: string;
-  bank_account_holder_name?: string;
   qr_image_url?: string;
   reject_reason?: string;
   action_by?: number;
@@ -52,13 +46,14 @@ const AdminPaymentModeVerification = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [selected, setSelected] = useState<PaymentModeRow | null>(null);
 
+  const displayName = (row: PaymentModeRow) => String(row.payment_method_name ?? "—");
+
   const columns = [
-    { header: "ID", accessor: (row: PaymentModeRow) => String(row.id ?? "") },
-    { header: "Name", accessor: (row: PaymentModeRow) => String(row.name ?? "") },
-    { header: "Type", accessor: (row: PaymentModeRow) => String(row.type ?? "") },
-    { header: "Owner", accessor: (row: PaymentModeRow) => String((row as { user_username?: string }).user_username ?? row.user ?? "") },
-    { header: "Status", accessor: (row: PaymentModeRow) => <StatusBadge status={String(row.status ?? "pending")} /> },
-    { header: "Created", accessor: (row: PaymentModeRow) => row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "" },
+    { header: "ID", sortKey: "id", accessor: (row: PaymentModeRow) => String(row.id ?? "") },
+    { header: "Name", sortKey: "payment_method_name", accessor: (row: PaymentModeRow) => displayName(row) },
+    { header: "Owner", sortKey: "user_username", accessor: (row: PaymentModeRow) => String((row as { user_username?: string }).user_username ?? row.user ?? "") },
+    { header: "Status", sortKey: "status", accessor: (row: PaymentModeRow) => <StatusBadge status={String(row.status ?? "pending")} /> },
+    { header: "Created", sortKey: "created_at", accessor: (row: PaymentModeRow) => row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "" },
     {
       header: "Actions",
       accessor: (row: PaymentModeRow) => (
@@ -123,8 +118,9 @@ const AdminPaymentModeVerification = () => {
       <DataTable
         data={rows}
         columns={columns}
-        searchKey="name"
-        searchPlaceholder="Search payment methods..."
+        searchKey="user_username"
+        searchPlaceholder="Search by username..."
+        variant="adminListing"
       />
 
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
@@ -133,20 +129,18 @@ const AdminPaymentModeVerification = () => {
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                <div><span className="text-muted-foreground text-xs block">Name</span><p className="font-medium">{String(selected.name ?? "")}</p></div>
+                <div><span className="text-muted-foreground text-xs block">Name</span><p className="font-medium">{displayName(selected)}</p></div>
                 <div><span className="text-muted-foreground text-xs block">Owner</span><p className="font-medium">{String(selected.user_username ?? selected.user ?? "")}</p></div>
-                <div><span className="text-muted-foreground text-xs block">Type</span><p className="font-medium">{String(selected.type_display ?? selected.type ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs block">Status</span><p><StatusBadge status={String(selected.status ?? "pending")} /></p></div>
-                {selected.wallet_phone != null && String(selected.wallet_phone).trim() !== "" && (
-                  <div className="col-span-2"><span className="text-muted-foreground text-xs block">Wallet / Phone</span><p className="font-mono font-medium">{String(selected.wallet_phone)}</p></div>
-                )}
-                {selected.bank_name != null && String(selected.bank_name).trim() !== "" && (
-                  <>
-                    <div><span className="text-muted-foreground text-xs block">Bank name</span><p className="font-medium">{String(selected.bank_name)}</p></div>
-                    <div><span className="text-muted-foreground text-xs block">Branch</span><p className="font-medium">{String(selected.bank_branch ?? "")}</p></div>
-                    <div><span className="text-muted-foreground text-xs block">Account number</span><p className="font-mono font-medium">{String(selected.bank_account_no ?? "")}</p></div>
-                    <div><span className="text-muted-foreground text-xs block">Account holder</span><p className="font-medium">{String(selected.bank_account_holder_name ?? "")}</p></div>
-                  </>
+                {selected.details != null && typeof selected.details === "object" && Object.keys(selected.details).length > 0 && (
+                  <div className="col-span-2 space-y-1">
+                    <span className="text-muted-foreground text-xs block">Details</span>
+                    <div className="flex flex-col gap-0.5">
+                      {Object.entries(selected.details as Record<string, unknown>).map(([k, v]) => (
+                        <p key={k} className="font-medium"><span className="text-muted-foreground capitalize">{k.replace(/_/g, " ")}:</span> {String(v ?? "")}</p>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {selected.reject_reason != null && String(selected.reject_reason).trim() !== "" && (
                   <div className="col-span-2"><span className="text-muted-foreground text-xs block">Reject reason</span><p className="font-medium">{String(selected.reject_reason)}</p></div>

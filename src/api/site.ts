@@ -5,6 +5,28 @@ export async function getSiteSetting() {
   return (res as Record<string, unknown>) ?? {};
 }
 
+/** Site setting shape for WhatsApp/phones (whatsapp_number, phones array). */
+export type SiteSettingRecord = Record<string, unknown> & {
+  whatsapp_number?: string;
+  phones?: string[];
+};
+
+/**
+ * Build WhatsApp chat link from site setting.
+ * Uses whatsapp_number if set, else first entry in phones. Normalizes to digits; 9–10 digits get 977 prefix.
+ */
+export function getWhatsAppLink(siteSetting: SiteSettingRecord | undefined | null): string | null {
+  if (!siteSetting) return null;
+  const raw =
+    (siteSetting.whatsapp_number && String(siteSetting.whatsapp_number).trim()) ||
+    (Array.isArray(siteSetting.phones) && siteSetting.phones[0] ? String(siteSetting.phones[0]).trim() : null);
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 9) return null;
+  const number = digits.length <= 10 ? "977" + digits : digits;
+  return `https://wa.me/${number}`;
+}
+
 export async function getCmsFooterPages() {
   const res = await apiGet("/public/cms/footer/");
   return (res as unknown as Array<Record<string, unknown>>) ?? [];
@@ -75,7 +97,10 @@ export interface PublicPaymentMethod {
   id: number;
   name: string;
   image_url?: string | null;
+  /** Field keys and optional labels for dynamic payment mode details form. */
+  fields?: Record<string, string>;
   order: number;
+  is_active?: boolean;
 }
 
 export async function getPublicPaymentMethods(): Promise<PublicPaymentMethod[]> {

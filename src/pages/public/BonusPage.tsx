@@ -214,7 +214,13 @@ const BonusPage = () => {
                         <div className="shrink-0 flex flex-col items-end gap-2">
                           {!isPlayer ? (
                             <Button variant="outline" size="lg" className="bg-white/10 border-white/30 text-white hover:bg-white/20" asChild>
-                              <Link to="/login">Login to claim</Link>
+                              <Link to={type === "referral" ? "/login?next=/player/referral" : "/login"}>
+                                Login to claim
+                              </Link>
+                            </Button>
+                          ) : type === "referral" ? (
+                            <Button variant="gold" size="lg" className="text-white border-0" asChild>
+                              <Link to="/player/referral">Go to Refer &amp; Earn</Link>
                             </Button>
                           ) : isApprovedForType ? (
                             <span className="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium bg-white/20 text-white">

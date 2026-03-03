@@ -1,12 +1,19 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { GoogleLogin } from "@react-oauth/google";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { COUNTRY_CODES } from "@/constants/countryCodes";
+import { getSiteSetting, getWhatsAppLink } from "@/api/site";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { signupCheckPhone, signupSendOtp, signupVerifyOtp } from "@/api/auth";
+
+const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || "";
 
 type Step = "phone" | "otp" | "name" | "password";
 
@@ -19,6 +26,7 @@ const RegisterPage = () => {
   const [searchParams] = useSearchParams();
   const refFromUrl = searchParams.get("ref") ?? "";
   const [step, setStep] = useState<Step>("phone");
+  const [countryCode, setCountryCode] = useState<string>("977");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
@@ -29,8 +37,53 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const [googleUsername, setGoogleUsername] = useState("");
+  const [googleIdToken, setGoogleIdToken] = useState("");
+  const [showGoogleUsernameStep, setShowGoogleUsernameStep] = useState(false);
+  const { register, loginWithGoogle, googleComplete } = useAuth();
   const navigate = useNavigate();
+  const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  const whatsAppLink = getWhatsAppLink(siteSetting as import("@/api/site").SiteSettingRecord | undefined);
+
+  const handleGoogleSuccess = async (credential: string) => {
+    setError("");
+    setLoading(true);
+    try {
+      const result = await loginWithGoogle(credential);
+      if ("needs_username" in result && result.needs_username) {
+        setGoogleIdToken(credential);
+        setShowGoogleUsernameStep(true);
+        setGoogleUsername("");
+      } else {
+        navigate("/player", { replace: true });
+      }
+    } catch (err: unknown) {
+      const detail = (err as { detail?: string })?.detail ?? "Google sign-in failed.";
+      setError(detail);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleUsernameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const u = googleUsername.trim();
+    if (!u || u.length < 3) {
+      setError("Username must be at least 3 characters.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      await googleComplete(googleIdToken, u);
+      navigate("/player", { replace: true });
+    } catch (err: unknown) {
+      const detail = (err as { detail?: string })?.detail ?? "Could not create account.";
+      setError(detail);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (refFromUrl) setReferralCode(refFromUrl);
@@ -38,15 +91,22 @@ const RegisterPage = () => {
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const digits = phone.replace(/\D/g, "");
+    const fullPhone = countryCode + digits;
+    if (!digits || fullPhone.length < 10) {
+      setError("Enter a valid phone number.");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      const { exists } = await signupCheckPhone(phone.trim());
+      const { exists } = await signupCheckPhone(fullPhone);
       if (exists) {
         setError("An account with this phone already exists. Please log in.");
         return;
       }
-      await signupSendOtp(phone.trim());
+      await signupSendOtp(fullPhone);
+      setVerifiedPhone(fullPhone);
       toast({ title: "OTP sent to your phone." });
       setStep("otp");
     } catch (err: unknown) {
@@ -62,9 +122,8 @@ const RegisterPage = () => {
     setError("");
     setLoading(true);
     try {
-      const { signup_token } = await signupVerifyOtp(phone.trim(), otp);
+      const { signup_token } = await signupVerifyOtp(verifiedPhone, otp);
       setSignupToken(signup_token);
-      setVerifiedPhone(phone.trim());
       setStep("name");
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Invalid or expired OTP.";
@@ -99,6 +158,7 @@ const RegisterPage = () => {
         name: name.trim(),
         password,
         referral_code: refFromUrl.trim() || referralCode.trim() || undefined,
+        country_code: countryCode || undefined,
       });
       navigate("/player", { replace: true });
     } catch (err: unknown) {
@@ -127,16 +187,58 @@ const RegisterPage = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
+          {showGoogleUsernameStep ? (
+            <form onSubmit={handleGoogleUsernameSubmit} className="space-y-3">
+              <p className="text-xs text-muted-foreground">Choose a username to finish signing up with Google.</p>
+              {error && <p className="text-xs text-destructive">{error}</p>}
+              <Input
+                placeholder="Username (3–30 characters, letters, numbers, underscores)"
+                className="h-11"
+                value={googleUsername}
+                onChange={(e) => setGoogleUsername(e.target.value)}
+                minLength={3}
+                maxLength={30}
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 h-11"
+                  onClick={() => { setShowGoogleUsernameStep(false); setGoogleIdToken(""); setError(""); }}
+                >
+                  Back
+                </Button>
+                <Button type="submit" className="flex-1 gold-gradient text-primary-foreground font-display font-semibold h-11 neon-glow-sm" disabled={loading}>
+                  {loading ? "Creating account..." : "Continue"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+          <>
           {step === "phone" && (
             <form onSubmit={handlePhoneSubmit} className="space-y-3">
               {error && <p className="text-xs text-destructive">{error}</p>}
-              <Input
-                placeholder="Phone (e.g. 9812345678 or 9779812345678)"
-                className="h-11"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
+              <div className="flex gap-2">
+                <Select value={countryCode} onValueChange={setCountryCode}>
+                  <SelectTrigger className="h-11 w-[120px] shrink-0">
+                    <SelectValue placeholder="Code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRY_CODES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Phone (e.g. 9812345678)"
+                  className="h-11 flex-1"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                  required
+                />
+              </div>
               {refFromUrl ? (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Referral</p>
@@ -160,7 +262,7 @@ const RegisterPage = () => {
 
           {step === "otp" && (
             <form onSubmit={handleOtpSubmit} className="space-y-3">
-              <p className="text-xs text-muted-foreground">Code sent to {maskPhone(phone)}</p>
+              <p className="text-xs text-muted-foreground">Code sent to {maskPhone(verifiedPhone)}</p>
               <Input
                 placeholder="6-digit code"
                 className="h-11"
@@ -208,10 +310,47 @@ const RegisterPage = () => {
             </form>
           )}
 
+          <div className="relative my-4">
+            <span className="bg-card px-2 text-xs text-muted-foreground absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">Or</span>
+            <div className="h-px bg-border" />
+          </div>
+          <div className="flex flex-col gap-2">
+                {googleClientId && (
+                  <div className="flex justify-center [&_iframe]:!min-h-[44px]">
+                    <GoogleLogin
+                      onSuccess={(res) => res.credential && handleGoogleSuccess(res.credential)}
+                      onError={() => setError("Google sign-in was cancelled or failed.")}
+                      useOneTap={false}
+                      theme="filled_black"
+                      size="large"
+                      text="signup_with"
+                      width="320"
+                    />
+                  </div>
+                )}
+                {whatsAppLink && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-11 border-green-600 text-green-600 hover:bg-green-600/10"
+                    onClick={() => window.open(whatsAppLink, "_blank", "noopener,noreferrer")}
+                  >
+                    Login with WhatsApp
+                  </Button>
+                )}
+              </div>
+
           <p className="text-center text-xs text-muted-foreground">
             Already have an account?{" "}
             <Link to="/login" className="text-primary hover:underline font-medium">Sign In</Link>
           </p>
+          <p className="text-center pt-2">
+            <Link to="/" className="text-xs text-muted-foreground hover:text-primary font-medium transition-colors">
+              Back to Home
+            </Link>
+          </p>
+          </>
+          )}
         </CardContent>
       </Card>
     </div>

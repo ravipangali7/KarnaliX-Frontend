@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
-  Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight,
+  Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image,
   Calculator, LayoutPanelTop
 } from "lucide-react";
@@ -15,20 +15,23 @@ interface AdminLayoutProps {
   role: "master" | "super" | "powerhouse";
 }
 
-const getNavItems = (role: string) => {
-  const base = [
-    { label: "Dashboard", path: "", icon: LayoutDashboard },
-    { label: "Messages", path: "/messages", icon: MessageCircle },
-  ];
+type NavLinkItem = { label: string; path: string; icon: typeof Users };
+type NavGroupItem = { label: string; icon: typeof Users; children: NavLinkItem[] };
+type NavItem = NavLinkItem | NavGroupItem;
+function isNavGroup(item: NavItem): item is NavGroupItem {
+  return "children" in item && Array.isArray(item.children);
+}
 
-  const profileItems = [
+const getNavItems = (role: string): NavItem[] => {
+  const profileItems: NavLinkItem[] = [
     { label: "Profile", path: "/profile", icon: User },
     { label: "Change Password", path: "/change-password", icon: Key },
   ];
 
   if (role === "powerhouse") {
     return [
-      ...base,
+      { label: "Dashboard", path: "", icon: LayoutDashboard },
+      { label: "Messages", path: "/messages", icon: MessageCircle },
       ...profileItems,
       { label: "Super Users", path: "/supers", icon: Users },
       { label: "Master Users", path: "/masters", icon: Users },
@@ -58,35 +61,49 @@ const getNavItems = (role: string) => {
 
   if (role === "super") {
     return [
-      ...base,
-      ...profileItems,
-      { label: "Master Users", path: "/masters", icon: Users },
-      { label: "Player Users", path: "/players", icon: Users },
+      { label: "List of Master", path: "/masters", icon: Users },
+      { label: "List of User", path: "/players", icon: Users },
+      { label: "Account Statement", path: "/account-statement", icon: FileText },
+      { label: "Bonus Statement", path: "/bonus-statement", icon: Gift },
+      {
+        label: "Client Request",
+        icon: ArrowDownCircle,
+        children: [
+          { label: "Deposit", path: "/deposits", icon: ArrowDownCircle },
+          { label: "Withdrawal", path: "/withdrawals", icon: ArrowUpCircle },
+          { label: "Total D/W", path: "/client-request/total-dw", icon: Clock },
+          { label: "Super Master D/W", path: "/client-request/super-master-dw", icon: Users },
+          { label: "Super D/W State", path: "/client-request/super-dw-state", icon: Calculator },
+        ],
+      },
       { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
-      { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
-      { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
-      { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
-      { label: "Game Log", path: "/game-log", icon: Gamepad2 },
-      { label: "Transactions", path: "/transactions", icon: Clock },
-      { label: "Accounting", path: "/accounting", icon: Calculator },
-      { label: "Activity Log", path: "/activity", icon: Activity },
+      { label: "Client Activity", path: "/activity", icon: Activity },
+      ...profileItems,
     ];
   }
 
-  return [
-    ...base,
-    ...profileItems,
-    { label: "Player Users", path: "/players", icon: Users },
-    { label: "Payment Methods", path: "/payment-modes", icon: CreditCard },
-    { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
-    { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
-    { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
-    { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
-    { label: "Game Log", path: "/game-log", icon: Gamepad2 },
-    { label: "Transactions", path: "/transactions", icon: Clock },
-    { label: "Accounting", path: "/accounting", icon: Calculator },
-    { label: "Activity Log", path: "/activity", icon: Activity },
-  ];
+  if (role === "master") {
+    return [
+      { label: "List of User", path: "/players", icon: Users },
+      { label: "Account Statement", path: "/account-statement", icon: FileText },
+      { label: "Bonus Statement", path: "/bonus-statement", icon: Gift },
+      {
+        label: "Client Request",
+        icon: ArrowDownCircle,
+        children: [
+          { label: "Deposit", path: "/deposits", icon: ArrowDownCircle },
+          { label: "Withdrawal", path: "/withdrawals", icon: ArrowUpCircle },
+          { label: "Total D/W", path: "/client-request/total-dw", icon: Clock },
+        ],
+      },
+      { label: "Payment method", path: "/payment-modes", icon: CreditCard },
+      { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
+      { label: "Client Activity", path: "/activity", icon: Activity },
+      ...profileItems,
+    ];
+  }
+
+  return [];
 };
 
 const formatBal = (v: string | number | null | undefined) => (v != null ? `₹${Number(v).toLocaleString()}` : "₹0");
@@ -117,6 +134,7 @@ const getBalanceHeaders = (role: string, user: { main_balance?: string; super_ba
 export const AdminLayout = ({ role }: AdminLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>("client-request");
   const location = useLocation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -144,6 +162,10 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
     return path === "" ? location.pathname === prefix || location.pathname === prefix + "/" : location.pathname.startsWith(fullPath);
   };
 
+  const isGroupActive = (group: NavGroupItem) => {
+    return group.children.some((c) => isActive(c.path));
+  };
+
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
   return (
@@ -156,29 +178,76 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={prefix + item.path}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
-                isActive(item.path)
-                  ? "bg-sidebar-accent text-sidebar-primary font-medium neon-glow-sm"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-              }`}
-            >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              {!collapsed && (
-                <>
-                  <span className="truncate">{item.label}</span>
-                  {badgeCounts[item.path] != null && badgeCounts[item.path] > 0 && (
-                    <Badge variant="destructive" className="ml-auto text-[10px] min-w-5 h-5 justify-center px-1">
-                      {badgeCounts[item.path] > 99 ? "99+" : badgeCounts[item.path]}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            if (isNavGroup(item)) {
+              const groupKey = item.label.toLowerCase().replace(/\s+/g, "-");
+              const isOpen = collapsed ? false : expandedGroup === groupKey;
+              const active = isGroupActive(item);
+              return (
+                <div key={groupKey} className="space-y-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedGroup((x) => (x === groupKey ? null : groupKey))}
+                    className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+                      active ? "bg-sidebar-accent/70 text-sidebar-primary font-medium" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    {!collapsed && (
+                      <>
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                        {isOpen ? <ChevronUp className="h-3.5 w-3 flex-shrink-0" /> : <ChevronDown className="h-3.5 w-3 flex-shrink-0" />}
+                      </>
+                    )}
+                  </button>
+                  {!collapsed && isOpen &&
+                    item.children.map((child) => (
+                      <Link
+                        key={child.path}
+                        to={prefix + child.path}
+                        className={`flex items-center gap-3 pl-8 pr-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                          isActive(child.path)
+                            ? "bg-sidebar-accent text-sidebar-primary font-medium neon-glow-sm"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        }`}
+                      >
+                        <child.icon className="h-3.5 w-3 flex-shrink-0" />
+                        <span className="truncate">{child.label}</span>
+                        {badgeCounts[child.path] != null && badgeCounts[child.path] > 0 && (
+                          <Badge variant="destructive" className="ml-auto text-[10px] min-w-5 h-5 justify-center px-1">
+                            {badgeCounts[child.path] > 99 ? "99+" : badgeCounts[child.path]}
+                          </Badge>
+                        )}
+                      </Link>
+                    ))}
+                </div>
+              );
+            }
+            const linkItem = item as NavLinkItem;
+            return (
+              <Link
+                key={linkItem.path}
+                to={prefix + linkItem.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+                  isActive(linkItem.path)
+                    ? "bg-sidebar-accent text-sidebar-primary font-medium neon-glow-sm"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                }`}
+              >
+                <linkItem.icon className="h-4 w-4 flex-shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="truncate">{linkItem.label}</span>
+                    {badgeCounts[linkItem.path] != null && badgeCounts[linkItem.path] > 0 && (
+                      <Badge variant="destructive" className="ml-auto text-[10px] min-w-5 h-5 justify-center px-1">
+                        {badgeCounts[linkItem.path] > 99 ? "99+" : badgeCounts[linkItem.path]}
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Mini accounting: balance summary in sidebar (same as header) */}
@@ -214,26 +283,66 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
               <button onClick={() => setMobileOpen(false)}><X className="h-5 w-5 text-sidebar-foreground" /></button>
             </div>
             <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={prefix + item.path}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                    isActive(item.path)
-                      ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span className="flex-1 truncate">{item.label}</span>
-                  {badgeCounts[item.path] != null && badgeCounts[item.path] > 0 && (
-                    <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
-                      {badgeCounts[item.path] > 99 ? "99+" : badgeCounts[item.path]}
-                    </Badge>
-                  )}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                if (isNavGroup(item)) {
+                  const groupKey = item.label.toLowerCase().replace(/\s+/g, "-");
+                  const isOpen = expandedGroup === groupKey;
+                  const active = isGroupActive(item);
+                  return (
+                    <div key={groupKey} className="space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedGroup((x) => (x === groupKey ? null : groupKey))}
+                        className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                          active ? "bg-sidebar-accent/70 text-sidebar-primary font-medium" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                        }`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="flex-1 truncate text-left">{item.label}</span>
+                        {isOpen ? <ChevronUp className="h-3.5 w-3" /> : <ChevronDown className="h-3.5 w-3" />}
+                      </button>
+                      {isOpen &&
+                        item.children.map((child) => (
+                          <Link
+                            key={child.path}
+                            to={prefix + child.path}
+                            onClick={() => setMobileOpen(false)}
+                            className={`flex items-center gap-3 pl-8 pr-3 py-2 rounded-lg text-sm transition-colors ${
+                              isActive(child.path) ? "bg-sidebar-accent text-sidebar-primary font-medium" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                            }`}
+                          >
+                            <child.icon className="h-3.5 w-3" />
+                            <span className="flex-1 truncate">{child.label}</span>
+                            {badgeCounts[child.path] != null && badgeCounts[child.path] > 0 && (
+                              <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
+                                {badgeCounts[child.path] > 99 ? "99+" : badgeCounts[child.path]}
+                              </Badge>
+                            )}
+                          </Link>
+                        ))}
+                    </div>
+                  );
+                }
+                const linkItem = item as NavLinkItem;
+                return (
+                  <Link
+                    key={linkItem.path}
+                    to={prefix + linkItem.path}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      isActive(linkItem.path) ? "bg-sidebar-accent text-sidebar-primary font-medium" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                    }`}
+                  >
+                    <linkItem.icon className="h-4 w-4" />
+                    <span className="flex-1 truncate">{linkItem.label}</span>
+                    {badgeCounts[linkItem.path] != null && badgeCounts[linkItem.path] > 0 && (
+                      <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
+                        {badgeCounts[linkItem.path] > 99 ? "99+" : badgeCounts[linkItem.path]}
+                      </Badge>
+                    )}
+                  </Link>
+                );
+              })}
             </nav>
             {/* Mini accounting in mobile sidebar */}
             {balances.length > 0 && (
@@ -259,7 +368,7 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
               <button className="md:hidden p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-muted touch-manipulation flex items-center justify-center" onClick={() => setMobileOpen(true)}>
                 <Menu className="h-5 w-5" />
               </button>
-              <h1 className="font-display font-semibold text-lg hidden md:block">{roleLabel} Dashboard</h1>
+              <h1 className="font-display font-semibold text-lg hidden md:block">{role === "super" || role === "master" ? roleLabel : `${roleLabel} Dashboard`}</h1>
             </div>
             <div className="flex items-center gap-3">
               {/* Balance chips */}

@@ -262,6 +262,69 @@ export async function getActivity(role: "powerhouse" | "super" | "master") {
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
 
+// --- Account / Bonus statement (master & super) ---
+export type StatementParams = { date_from?: string; date_to?: string; page?: number; page_size?: number };
+export type StatementResponse = { results: Record<string, unknown>[]; count: number };
+export async function getAccountStatement(
+  role: "master" | "super",
+  params?: StatementParams
+): Promise<StatementResponse> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  if (params?.page != null) q.set("page", String(params.page));
+  if (params?.page_size != null) q.set("page_size", String(params.page_size));
+  const qs = q.toString();
+  const res = await apiGet<StatementResponse>(`${prefix(role)}/account-statement/${qs ? `?${qs}` : ""}`);
+  return res as StatementResponse;
+}
+export async function getBonusStatement(
+  role: "master" | "super",
+  params?: StatementParams
+): Promise<StatementResponse> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  if (params?.page != null) q.set("page", String(params.page));
+  if (params?.page_size != null) q.set("page_size", String(params.page_size));
+  const qs = q.toString();
+  const res = await apiGet<StatementResponse>(`${prefix(role)}/bonus-statement/${qs ? `?${qs}` : ""}`);
+  return res as StatementResponse;
+}
+
+// --- Total D/W, Super Master D/W, Super D/W State ---
+export type DateRangeParams = { date_from?: string; date_to?: string };
+export async function getTotalDW(role: "master" | "super", params?: DateRangeParams): Promise<Record<string, unknown>[]> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  const res = await apiGet<Record<string, unknown>[]>(`${prefix(role)}/client-request/total-dw/${qs ? `?${qs}` : ""}`);
+  return Array.isArray(res) ? res : (res as { data?: Record<string, unknown>[] })?.data ?? [];
+}
+export async function getSuperMasterDW(params?: DateRangeParams): Promise<Record<string, unknown>[]> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  const res = await apiGet<Record<string, unknown>[]>(`${prefix("super")}/client-request/super-master-dw/${qs ? `?${qs}` : ""}`);
+  return Array.isArray(res) ? res : (res as { data?: Record<string, unknown>[] })?.data ?? [];
+}
+export async function getSuperDWState(params?: DateRangeParams): Promise<Record<string, unknown>[]> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  const res = await apiGet<Record<string, unknown>[]>(`${prefix("super")}/client-request/super-dw-state/${qs ? `?${qs}` : ""}`);
+  return Array.isArray(res) ? res : (res as { data?: Record<string, unknown>[] })?.data ?? [];
+}
+
+// --- Payment method list (super: same as payment-mode-verification) ---
+export async function getPaymentMethodList(): Promise<Record<string, unknown>[]> {
+  const res = await apiGet(`${prefix("super")}/payment-method/`);
+  return asList(res);
+}
+
 // --- Accounting report (master & super only) ---
 export type AccountingReportParams = { date_from?: string; date_to?: string };
 export type AccountingSummary = {

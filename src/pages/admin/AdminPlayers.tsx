@@ -12,6 +12,7 @@ import { getMasters, getPlayers, createPlayer, updatePlayer, togglePlayerActive,
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
+import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Switch } from "@/components/ui/switch";
 
 type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; is_active?: boolean; status?: string; created_at?: string; phone?: string; total_balance?: string | number; total_win_loss?: string | number };
@@ -52,13 +53,17 @@ const AdminPlayers = () => {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [cellEdit, setCellEdit] = useState<{ row: PlayerRow; field: string; label: string; value: unknown; editable: boolean } | null>(null);
+  const [cellEditValue, setCellEditValue] = useState("");
+  const [cellEditSaving, setCellEditSaving] = useState(false);
+  const [pendingCellSave, setPendingCellSave] = useState<{ id: number; field: string; value: string } | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
   const listParams: ListParams = {};
   if (dateFrom) listParams.date_from = dateFrom;
   if (dateTo) listParams.date_to = dateTo;
-  const { data: players = [] } = useQuery({
+  const { data: players = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-players", role, listParams],
     queryFn: () => getPlayers(role, listParams),
     refetchInterval: autoRefresh ? 10000 : false,
@@ -71,14 +76,53 @@ const AdminPlayers = () => {
   });
   const rows = players as PlayerRow[];
 
+  const openCell = (row: PlayerRow, field: string, label: string, value: unknown, editable: boolean) => {
+    setCellEdit({ row, field, label, value, editable });
+    setCellEditValue(String(value ?? ""));
+  };
+
   const columns = [
-    { header: "Username", accessor: (row: PlayerRow) => String(row.username ?? "") },
-    { header: "Balance", accessor: (row: PlayerRow) => `₹${Number(row.main_balance ?? 0).toLocaleString()}` },
-    { header: "Bonus", accessor: (row: PlayerRow) => `₹${Number(row.bonus_balance ?? 0).toLocaleString()}` },
-    { header: "Exposure", accessor: (row: PlayerRow) => `₹${Number(row.exposure_balance ?? 0).toLocaleString()}` },
-    { header: "Total Balance", accessor: (row: PlayerRow) => `₹${Number(row.total_balance ?? 0).toLocaleString()}` },
-    { header: "Win/Loss", accessor: (row: PlayerRow) => `₹${Number(row.total_win_loss ?? 0).toLocaleString()}` },
-    { header: "Exp Limit", accessor: (row: PlayerRow) => `₹${Number(row.exposure_limit ?? 0).toLocaleString()}` },
+    {
+      header: "Username",
+      sortKey: "username",
+      accessor: (row: PlayerRow) => (
+        <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "username", "Username", row.username, false)}>
+          {String(row.username ?? "")}
+        </span>
+      ),
+    },
+    {
+      header: "Name",
+      sortKey: "name",
+      accessor: (row: PlayerRow) => (
+        <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "name", "Name", row.name, true)}>
+          {String(row.name ?? "—")}
+        </span>
+      ),
+    },
+    {
+      header: "Phone",
+      sortKey: "phone",
+      accessor: (row: PlayerRow) => (
+        <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "phone", "Phone", row.phone, true)}>
+          {String(row.phone ?? "—")}
+        </span>
+      ),
+    },
+    {
+      header: "Balance",
+      sortKey: "main_balance",
+      accessor: (row: PlayerRow) => (
+        <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "main_balance", "Balance", row.main_balance, false)}>
+          ₹{Number(row.main_balance ?? 0).toLocaleString()}
+        </span>
+      ),
+    },
+    { header: "Bonus", sortKey: "bonus_balance", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "bonus_balance", "Bonus", row.bonus_balance, false)}>₹{Number(row.bonus_balance ?? 0).toLocaleString()}</span> },
+    { header: "Exposure", sortKey: "exposure_balance", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "exposure_balance", "Exposure", row.exposure_balance, false)}>₹{Number(row.exposure_balance ?? 0).toLocaleString()}</span> },
+    { header: "Total Balance", sortKey: "total_balance", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "total_balance", "Total Balance", row.total_balance, false)}>₹{Number(row.total_balance ?? 0).toLocaleString()}</span> },
+    { header: "Win/Loss", sortKey: "total_win_loss", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "total_win_loss", "Win/Loss", row.total_win_loss, false)}>₹{Number(row.total_win_loss ?? 0).toLocaleString()}</span> },
+    { header: "Exp Limit", sortKey: "exposure_limit", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "exposure_limit", "Exp Limit", row.exposure_limit, false)}>₹{Number(row.exposure_limit ?? 0).toLocaleString()}</span> },
     {
       header: "Status",
       accessor: (row: PlayerRow) => {
@@ -93,12 +137,15 @@ const AdminPlayers = () => {
                 setTogglePinOpen(true);
               }}
             />
-            <span className="text-xs font-medium whitespace-nowrap">{label}</span>
+            <span className="text-xs font-medium whitespace-nowrap cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "is_active", "Status", label, false)}>{label}</span>
           </div>
         );
       },
     },
-    { header: "Joined", accessor: (row: PlayerRow) => row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "" },
+    { header: "Joined", accessor: (row: PlayerRow) => {
+      const val = row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "";
+      return <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "created_at", "Joined", val, false)}>{val || "—"}</span>;
+    } },
     {
       header: "Actions",
       accessor: (row: PlayerRow) => (
@@ -116,15 +163,83 @@ const AdminPlayers = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Player Users</h2>
+      <ListDateRangeToolbar
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateChange={({ dateFrom: f, dateTo: t }) => { setDateFrom(f); setDateTo(t); }}
+        onLoad={() => refetch()}
+        loading={isLoading}
+      />
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="date" className="w-40 h-9 text-sm" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-        <Input type="date" className="w-40 h-9 text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
           <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
         </label>
       </div>
-      <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search players..." onAdd={() => setCreateOpen(true)} addLabel="Add Player" />
+      <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search players..." onAdd={() => setCreateOpen(true)} addLabel="Add Player" variant="adminListing" />
+
+      {/* Single-field cell edit / view modal */}
+      <Dialog
+        open={!!cellEdit}
+        onOpenChange={(open) => {
+          if (!open) setCellEdit(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-base">
+              {cellEdit?.editable ? "Edit" : "View"} — {cellEdit?.label}
+            </DialogTitle>
+            {cellEdit && <p className="text-xs text-muted-foreground">{cellEdit.row.username}</p>}
+          </DialogHeader>
+          {cellEdit && (
+            <div className="py-2">
+              {cellEdit.editable ? (
+                <Input
+                  value={cellEditValue}
+                  onChange={(e) => setCellEditValue(e.target.value)}
+                  placeholder={cellEdit.label}
+                />
+              ) : (
+                <p className="text-sm break-all">{String(cellEdit.value ?? "—")}</p>
+              )}
+            </div>
+          )}
+          {cellEdit?.editable && (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCellEdit(null)} disabled={cellEditSaving}>Cancel</Button>
+              <Button
+                className="gold-gradient text-primary-foreground"
+                disabled={cellEditSaving}
+                onClick={async () => {
+                  if (!cellEdit?.row?.id) return;
+                  const value = cellEditValue.trim();
+                  if (role === "master" || role === "super") {
+                    setPendingCellSave({ id: cellEdit.row.id as number, field: cellEdit.field, value });
+                    setCellEdit(null);
+                    setPinOpen(true);
+                    return;
+                  }
+                  setCellEditSaving(true);
+                  try {
+                    await updatePlayer(cellEdit.row.id as number, { [cellEdit.field]: value }, role);
+                    queryClient.invalidateQueries({ queryKey: ["admin-players", role] });
+                    toast({ title: `${cellEdit.label} updated.` });
+                    setCellEdit(null);
+                  } catch (e) {
+                    const msg = (e as { detail?: string })?.detail ?? "Failed to update";
+                    toast({ title: msg, variant: "destructive" });
+                  } finally {
+                    setCellEditSaving(false);
+                  }
+                }}
+              >
+                {cellEditSaving ? "Saving…" : "Save"}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Create Player */}
       <Dialog open={createOpen} onOpenChange={(open) => {
@@ -357,9 +472,18 @@ const AdminPlayers = () => {
           setPinOpen(false);
           setPendingAction(null);
           setPendingPayload({});
+          setPendingCellSave(null);
         }}
         onConfirm={async (pin) => {
           try {
+            if (pendingCellSave) {
+              await updatePlayer(pendingCellSave.id, { [pendingCellSave.field]: pendingCellSave.value, pin }, role);
+              queryClient.invalidateQueries({ queryKey: ["admin-players", role] });
+              toast({ title: "Updated." });
+              setPendingCellSave(null);
+              setPinOpen(false);
+              return;
+            }
             if (pendingAction === "deposit") {
               const userId = pendingPayload.userId as number;
               const amount = pendingPayload.amount as string;

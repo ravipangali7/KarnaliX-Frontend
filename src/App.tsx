@@ -1,13 +1,16 @@
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { getSiteSetting } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+
+const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || "";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SiteThemeApplier } from "@/components/SiteThemeApplier";
 
@@ -39,6 +42,7 @@ import PlayerPaymentModes from "@/pages/player/PlayerPaymentModes";
 import PlayerChangePassword from "@/pages/player/PlayerChangePassword";
 import PlayerProfile from "@/pages/player/PlayerProfile";
 import PlayerReferralPage from "@/pages/player/PlayerReferralPage";
+import PlayerReferralDetailPage from "@/pages/player/PlayerReferralDetailPage";
 
 // Admin Pages (shared across roles)
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -59,6 +63,12 @@ import AdminProfile from "@/pages/admin/AdminProfile";
 import AdminChangePassword from "@/pages/admin/AdminChangePassword";
 import AdminPlayerReport from "@/pages/admin/AdminPlayerReport";
 import AdminAccounting from "@/pages/admin/AdminAccounting";
+import AdminAccountStatement from "@/pages/admin/AdminAccountStatement";
+import AdminBonusStatement from "@/pages/admin/AdminBonusStatement";
+import AdminTotalDW from "@/pages/admin/AdminTotalDW";
+import AdminSuperMasterDW from "@/pages/admin/AdminSuperMasterDW";
+import AdminSuperDWState from "@/pages/admin/AdminSuperDWState";
+import AdminPaymentMethod from "@/pages/admin/AdminPaymentMethod";
 
 // Powerhouse-only Pages
 import PowerhouseCategories from "@/pages/admin/PowerhouseCategories";
@@ -124,7 +134,8 @@ function HomePageSwitch() {
   );
 }
 
-const App = () => (
+const App = () => {
+  const content = (
   <ThemeProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
@@ -168,44 +179,42 @@ const App = () => (
                 <Route path="change-password" element={<PlayerChangePassword />} />
                 <Route path="profile" element={<PlayerProfile />} />
                 <Route path="referral" element={<PlayerReferralPage />} />
+                <Route path="referral/:id" element={<PlayerReferralDetailPage />} />
               </Route>
             </Route>
 
-            {/* Master Dashboard */}
+            {/* Master Dashboard (no dashboard page: redirect to List of User) */}
             <Route element={<ProtectedRoute allowedRole="master"><AdminLayout role="master" /></ProtectedRoute>}>
-              <Route path="/master" element={<AdminDashboard role="master" />} />
-              <Route path="/master/messages" element={<AdminMessages role="master" />} />
+              <Route path="/master" element={<Navigate to="/master/players" replace />} />
               <Route path="/master/players" element={<AdminPlayers />} />
               <Route path="/master/players/:id/report" element={<AdminPlayerReport />} />
-              <Route path="/master/payment-modes" element={<MasterPaymentModes />} />
-              <Route path="/master/payment-mode-verification" element={<AdminPaymentModeVerification />} />
+              <Route path="/master/account-statement" element={<AdminAccountStatement />} />
+              <Route path="/master/bonus-statement" element={<AdminBonusStatement />} />
               <Route path="/master/deposits" element={<AdminDeposits />} />
               <Route path="/master/withdrawals" element={<AdminWithdrawals />} />
-              <Route path="/master/bonus-requests" element={<AdminBonusRequests />} />
-              <Route path="/master/game-log" element={<AdminGameLog />} />
-              <Route path="/master/game-log/:id" element={<AdminGameLogDetail />} />
-              <Route path="/master/transactions" element={<AdminTransactions />} />
-              <Route path="/master/accounting" element={<AdminAccounting />} />
+              <Route path="/master/client-request/total-dw" element={<AdminTotalDW />} />
+              <Route path="/master/payment-modes" element={<MasterPaymentModes />} />
+              <Route path="/master/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/master/activity" element={<AdminActivityLog />} />
               <Route path="/master/profile" element={<AdminProfile />} />
               <Route path="/master/change-password" element={<AdminChangePassword />} />
             </Route>
 
-            {/* Super Dashboard */}
+            {/* Super Dashboard (no dashboard page: redirect to List of Master) */}
             <Route element={<ProtectedRoute allowedRole="super"><AdminLayout role="super" /></ProtectedRoute>}>
-              <Route path="/super" element={<AdminDashboard role="super" />} />
-              <Route path="/super/messages" element={<AdminMessages role="super" />} />
+              <Route path="/super" element={<Navigate to="/super/masters" replace />} />
               <Route path="/super/masters" element={<AdminMasters />} />
               <Route path="/super/players" element={<AdminPlayers />} />
               <Route path="/super/players/:id/report" element={<AdminPlayerReport />} />
-              <Route path="/super/payment-mode-verification" element={<AdminPaymentModeVerification />} />
+              <Route path="/super/account-statement" element={<AdminAccountStatement />} />
+              <Route path="/super/bonus-statement" element={<AdminBonusStatement />} />
               <Route path="/super/deposits" element={<AdminDeposits />} />
               <Route path="/super/withdrawals" element={<AdminWithdrawals />} />
-              <Route path="/super/bonus-requests" element={<AdminBonusRequests />} />
-              <Route path="/super/game-log" element={<AdminGameLog />} />
-              <Route path="/super/game-log/:id" element={<AdminGameLogDetail />} />
-              <Route path="/super/transactions" element={<AdminTransactions />} />
-              <Route path="/super/accounting" element={<AdminAccounting />} />
+              <Route path="/super/client-request/total-dw" element={<AdminTotalDW />} />
+              <Route path="/super/client-request/super-master-dw" element={<AdminSuperMasterDW />} />
+              <Route path="/super/client-request/super-dw-state" element={<AdminSuperDWState />} />
+              <Route path="/super/payment-method" element={<Navigate to="/super/payment-mode-verification" replace />} />
+              <Route path="/super/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/super/activity" element={<AdminActivityLog />} />
               <Route path="/super/profile" element={<AdminProfile />} />
               <Route path="/super/change-password" element={<AdminChangePassword />} />
@@ -251,6 +260,12 @@ const App = () => (
       </QueryClientProvider>
     </AuthProvider>
   </ThemeProvider>
-);
+  );
+  return googleClientId ? (
+    <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>
+  ) : (
+    content
+  );
+};
 
 export default App;

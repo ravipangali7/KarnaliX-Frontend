@@ -65,6 +65,22 @@ export async function getPlayerGameLogDetail(id: number | string): Promise<GameL
   return res;
 }
 
+export type ReferralItem = {
+  id: number;
+  username: string;
+  name: string;
+  created_at: string;
+};
+
+export async function getPlayerReferrals(): Promise<ReferralItem[]> {
+  const res = await apiGet<ReferralItem[]>(`${P}/referrals/`);
+  return Array.isArray(res) ? res : [];
+}
+
+export async function getPlayerReferralDetail(id: number | string): Promise<ReferralItem> {
+  return apiGet<ReferralItem>(`${P}/referrals/${id}/`);
+}
+
 /** Master's payment modes (for deposit). Use in deposit modal. */
 export async function getDepositPaymentModes() {
   const res = await apiGet(`${P}/deposit-payment-modes/`);

@@ -12,49 +12,59 @@ import {
   updateMasterPaymentModeFormData,
   deleteMasterPaymentMode,
 } from "@/api/admin";
+import { getPublicPaymentMethods, type PublicPaymentMethod } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { Pencil, Trash2, Upload } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { PinDialog } from "@/components/shared/PinDialog";
 
 type PaymentModeRow = Record<string, unknown> & {
   id?: number;
+  payment_method?: number;
+  payment_method_name?: string;
   name?: string;
-  type?: string;
-  wallet_phone?: string;
-  bank_account_no?: string;
+  details?: Record<string, string>;
   status?: string;
   qr_image_url?: string;
 };
 
+function detailsSummary(details: Record<string, unknown> | null | undefined): string {
+  if (!details || typeof details !== "object") return "";
+  const vals = Object.values(details).filter((v) => v != null && String(v).trim() !== "");
+  if (vals.length === 0) return "";
+  const s = String(vals[0]).trim();
+  if (s.length <= 4) return "****";
+  return "****" + s.slice(-4);
+}
+
 const MasterPaymentModes = () => {
   const queryClient = useQueryClient();
-  const { data: modes = [] } = useQuery({
-    queryKey: ["master-payment-modes"],
-    queryFn: getMasterPaymentModes,
-  });
+  const { data: modes = [] } = useQuery({ queryKey: ["master-payment-modes"], queryFn: getMasterPaymentModes });
+  const { data: paymentMethodsList = [] } = useQuery({ queryKey: ["public-payment-methods"], queryFn: getPublicPaymentMethods });
+  const methods = paymentMethodsList as PublicPaymentMethod[];
   const rows = modes as PaymentModeRow[];
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selected, setSelected] = useState<PaymentModeRow | null>(null);
-  const [formName, setFormName] = useState("");
-  const [formType, setFormType] = useState<"ewallet" | "bank">("ewallet");
-  const [formWalletPhone, setFormWalletPhone] = useState("");
-  const [formBankName, setFormBankName] = useState("");
-  const [formBankBranch, setFormBankBranch] = useState("");
-  const [formBankAccountNo, setFormBankAccountNo] = useState("");
-  const [formBankAccountHolderName, setFormBankAccountHolderName] = useState("");
+  const [formMethodId, setFormMethodId] = useState<number | "">("");
+  const [formDetails, setFormDetails] = useState<Record<string, string>>({});
   const [formQrFile, setFormQrFile] = useState<File | null>(null);
   const [formQrPreview, setFormQrPreview] = useState<string | null>(null);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState<{
+    id: number;
+    formMethodId: number | "";
+    formDetails: Record<string, string>;
+    formQrFile: File | null;
+  } | null>(null);
+
+  const selectedMethod = formMethodId ? methods.find((m) => m.id === formMethodId) : null;
+  const fieldEntries = selectedMethod?.fields ? Object.entries(selectedMethod.fields) : [];
 
   const resetForm = () => {
-    setFormName("");
-    setFormType("ewallet");
-    setFormWalletPhone("");
-    setFormBankName("");
-    setFormBankBranch("");
-    setFormBankAccountNo("");
-    setFormBankAccountHolderName("");
+    setFormMethodId("");
+    setFormDetails({});
     setFormQrFile(null);
     setFormQrPreview(null);
     setSelected(null);
@@ -62,35 +72,38 @@ const MasterPaymentModes = () => {
 
   const openEdit = (row: PaymentModeRow) => {
     setSelected(row);
-    setFormName(String(row.name ?? ""));
-    setFormType((row.type as "ewallet" | "bank") || "ewallet");
-    setFormWalletPhone(String(row.wallet_phone ?? ""));
-    setFormBankName(String(row.bank_name ?? ""));
-    setFormBankBranch(String(row.bank_branch ?? ""));
-    setFormBankAccountNo(String(row.bank_account_no ?? ""));
-    setFormBankAccountHolderName(String(row.bank_account_holder_name ?? ""));
+    setFormMethodId((row.payment_method as number) ?? "");
+    setFormDetails((row.details as Record<string, string>) ?? {});
     setFormQrFile(null);
     setFormQrPreview(row.qr_image_url ? getMediaUrl(String(row.qr_image_url)) : null);
     setEditOpen(true);
   };
 
-  const last4 = (s: string | undefined) => {
-    if (!s || s.length < 4) return "-";
-    return "****" + s.slice(-4);
+  const displayName = (row: PaymentModeRow) => (row.payment_method_name as string) ?? "—";
+  const displayDetail = (row: PaymentModeRow) => detailsSummary(row.details as Record<string, unknown>) || "—";
+
+  const buildBody = (forCreate: boolean) => {
+    const body: Record<string, unknown> = {
+      payment_method: formMethodId,
+      details: { ...formDetails },
+    };
+    if (forCreate) body.status = "approved";
+    return body;
+  };
+
+  const buildFormData = (forCreate: boolean) => {
+    const formData = new FormData();
+    formData.append("payment_method", String(formMethodId));
+    formData.append("details", JSON.stringify({ ...formDetails }));
+    if (forCreate) formData.append("status", "approved");
+    if (formQrFile) formData.append("qr_image", formQrFile);
+    return formData;
   };
 
   const columns = [
-    { header: "Name", accessor: (row: PaymentModeRow) => String(row.name ?? "") },
-    { header: "Type", accessor: (row: PaymentModeRow) => String(row.type ?? "") },
-    {
-      header: "Account / Wallet",
-      accessor: (row: PaymentModeRow) =>
-        row.type === "bank" ? last4(row.bank_account_no) : last4(row.wallet_phone),
-    },
-    {
-      header: "Status",
-      accessor: (row: PaymentModeRow) => <StatusBadge status={String(row.status ?? "pending")} />,
-    },
+    { header: "Name", accessor: (row: PaymentModeRow) => displayName(row) },
+    { header: "Details", accessor: (row: PaymentModeRow) => displayDetail(row) },
+    { header: "Status", accessor: (row: PaymentModeRow) => <StatusBadge status={String(row.status ?? "pending")} /> },
     {
       header: "Actions",
       accessor: (row: PaymentModeRow) => (
@@ -104,15 +117,13 @@ const MasterPaymentModes = () => {
             className="h-7 w-7 text-destructive"
             title="Delete"
             onClick={async () => {
-              if (!row.id) return;
-              if (!confirm("Delete this payment method?")) return;
+              if (!row.id || !confirm("Delete this payment method?")) return;
               try {
                 await deleteMasterPaymentMode(row.id);
                 queryClient.invalidateQueries({ queryKey: ["master-payment-modes"] });
                 toast({ title: "Payment method deleted." });
               } catch (e: unknown) {
-                const msg = (e as { detail?: string })?.detail ?? "Failed to delete.";
-                toast({ title: msg, variant: "destructive" });
+                toast({ title: (e as { detail?: string })?.detail ?? "Failed to delete.", variant: "destructive" });
               }
             }}
           >
@@ -123,66 +134,21 @@ const MasterPaymentModes = () => {
     },
   ];
 
-  const buildFormData = (): FormData => {
-    const formData = new FormData();
-    formData.append("name", formName.trim());
-    formData.append("type", formType);
-    formData.append("status", "pending");
-    if (formType === "ewallet") {
-      formData.append("wallet_phone", formWalletPhone.trim());
-      formData.append("bank_name", "");
-      formData.append("bank_branch", "");
-      formData.append("bank_account_no", "");
-      formData.append("bank_account_holder_name", "");
-    } else {
-      formData.append("wallet_phone", "");
-      formData.append("bank_name", formBankName.trim());
-      formData.append("bank_branch", formBankBranch.trim());
-      formData.append("bank_account_no", formBankAccountNo.trim());
-      formData.append("bank_account_holder_name", formBankAccountHolderName.trim());
-    }
-    if (formQrFile) {
-      formData.append("qr_image", formQrFile);
-    }
-    return formData;
-  };
-
-  const buildBody = () => {
-    const body: Record<string, unknown> = {
-      name: formName.trim(),
-      type: formType,
-      status: "pending",
-    };
-    if (formType === "ewallet") {
-      body.wallet_phone = formWalletPhone.trim();
-      body.bank_name = "";
-      body.bank_branch = "";
-      body.bank_account_no = "";
-      body.bank_account_holder_name = "";
-    } else {
-      body.wallet_phone = "";
-      body.bank_name = formBankName.trim();
-      body.bank_branch = formBankBranch.trim();
-      body.bank_account_no = formBankAccountNo.trim();
-      body.bank_account_holder_name = formBankAccountHolderName.trim();
-    }
-    return body;
-  };
-
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Payment Methods</h2>
-      <p className="text-sm text-muted-foreground">Manage payment methods your players use to deposit. New methods start as Pending; approve them in Payment Mode Verification.</p>
+      <p className="text-sm text-muted-foreground">Manage payment methods your players use to deposit. New methods start as Approved for your own account.</p>
       <DataTable
         data={rows}
         columns={columns}
-        searchKey="name"
+        searchKey="payment_method_name"
         searchPlaceholder="Search payment methods..."
         onAdd={() => {
           resetForm();
           setCreateOpen(true);
         }}
         addLabel="Add Payment Method"
+        variant="adminListing"
       />
 
       {/* Create */}
@@ -190,28 +156,43 @@ const MasterPaymentModes = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle className="font-display">Add Payment Method</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <Input placeholder="Name (e.g. Esewa, Bank Transfer)" value={formName} onChange={(e) => setFormName(e.target.value)} />
             <div>
-              <label className="text-xs text-muted-foreground">Type</label>
+              <label className="text-xs text-muted-foreground">Payment method</label>
               <select
                 className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm mt-1"
-                value={formType}
-                onChange={(e) => setFormType(e.target.value as "ewallet" | "bank")}
+                value={formMethodId}
+                onChange={(e) => {
+                  setFormMethodId(e.target.value === "" ? "" : Number(e.target.value));
+                  setFormDetails({});
+                }}
               >
-                <option value="ewallet">E-Wallet</option>
-                <option value="bank">Bank</option>
+                <option value="">Select method</option>
+                {methods.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
               </select>
             </div>
-            {formType === "ewallet" && (
-              <Input placeholder="Wallet / Phone number" value={formWalletPhone} onChange={(e) => setFormWalletPhone(e.target.value)} />
-            )}
-            {formType === "bank" && (
-              <>
-                <Input placeholder="Bank name" value={formBankName} onChange={(e) => setFormBankName(e.target.value)} />
-                <Input placeholder="Branch" value={formBankBranch} onChange={(e) => setFormBankBranch(e.target.value)} />
-                <Input placeholder="Account number" value={formBankAccountNo} onChange={(e) => setFormBankAccountNo(e.target.value)} />
-                <Input placeholder="Account holder name" value={formBankAccountHolderName} onChange={(e) => setFormBankAccountHolderName(e.target.value)} />
-              </>
+            {fieldEntries.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">Details (keys from selected payment method)</p>
+                {fieldEntries.map(([key, label]) => {
+                  const displayLabel = typeof label === "string" ? label : key.replace(/_/g, " ");
+                  return (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs text-muted-foreground block">
+                        {displayLabel}
+                        <span className="ml-1.5 font-mono text-[10px] text-muted-foreground/80">({key})</span>
+                      </label>
+                      <Input
+                        className="mt-1"
+                        placeholder={displayLabel}
+                        value={formDetails[key] ?? ""}
+                        onChange={(e) => setFormDetails((prev) => ({ ...prev, [key]: e.target.value }))}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             )}
             <div>
               <label className="text-xs text-muted-foreground flex items-center gap-1">
@@ -227,9 +208,7 @@ const MasterPaymentModes = () => {
                   setFormQrPreview(f ? URL.createObjectURL(f) : null);
                 }}
               />
-              {formQrPreview && (
-                <img src={formQrPreview} alt="QR preview" className="mt-2 h-24 w-24 object-contain border rounded" />
-              )}
+              {formQrPreview && <img src={formQrPreview} alt="QR preview" className="mt-2 h-24 w-24 object-contain border rounded" />}
             </div>
           </div>
           <DialogFooter>
@@ -237,19 +216,22 @@ const MasterPaymentModes = () => {
             <Button
               className="gold-gradient text-primary-foreground"
               onClick={async () => {
+                if (!formMethodId) {
+                  toast({ title: "Select a payment method", variant: "destructive" });
+                  return;
+                }
                 try {
                   if (formQrFile) {
-                    await createMasterPaymentModeFormData(buildFormData());
+                    await createMasterPaymentModeFormData(buildFormData(true));
                   } else {
-                    await createMasterPaymentMode(buildBody());
+                    await createMasterPaymentMode(buildBody(true));
                   }
                   queryClient.invalidateQueries({ queryKey: ["master-payment-modes"] });
                   toast({ title: "Payment method added." });
                   setCreateOpen(false);
                   resetForm();
                 } catch (e: unknown) {
-                  const msg = (e as { detail?: string })?.detail ?? "Failed to add.";
-                  toast({ title: msg, variant: "destructive" });
+                  toast({ title: (e as { detail?: string })?.detail ?? "Failed to add.", variant: "destructive" });
                 }
               }}
             >
@@ -264,28 +246,45 @@ const MasterPaymentModes = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle className="font-display">Edit Payment Method</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <Input placeholder="Name" value={formName} onChange={(e) => setFormName(e.target.value)} />
             <div>
-              <label className="text-xs text-muted-foreground">Type</label>
+              <label className="text-xs text-muted-foreground">Payment method</label>
               <select
                 className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm mt-1"
-                value={formType}
-                onChange={(e) => setFormType(e.target.value as "ewallet" | "bank")}
+                value={formMethodId}
+                onChange={(e) => {
+                  const id = e.target.value === "" ? "" : Number(e.target.value);
+                  setFormMethodId(id);
+                  const m = id ? methods.find((x) => x.id === id) : null;
+                  setFormDetails(m?.fields ? Object.fromEntries(Object.keys(m.fields).map((k) => [k, formDetails[k] ?? ""])) : {});
+                }}
               >
-                <option value="ewallet">E-Wallet</option>
-                <option value="bank">Bank</option>
+                <option value="">Select method</option>
+                {methods.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
               </select>
             </div>
-            {formType === "ewallet" && (
-              <Input placeholder="Wallet / Phone number" value={formWalletPhone} onChange={(e) => setFormWalletPhone(e.target.value)} />
-            )}
-            {formType === "bank" && (
-              <>
-                <Input placeholder="Bank name" value={formBankName} onChange={(e) => setFormBankName(e.target.value)} />
-                <Input placeholder="Branch" value={formBankBranch} onChange={(e) => setFormBankBranch(e.target.value)} />
-                <Input placeholder="Account number" value={formBankAccountNo} onChange={(e) => setFormBankAccountNo(e.target.value)} />
-                <Input placeholder="Account holder name" value={formBankAccountHolderName} onChange={(e) => setFormBankAccountHolderName(e.target.value)} />
-              </>
+            {fieldEntries.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">Details (keys from selected payment method)</p>
+                {fieldEntries.map(([key, label]) => {
+                  const displayLabel = typeof label === "string" ? label : key.replace(/_/g, " ");
+                  return (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs text-muted-foreground block">
+                        {displayLabel}
+                        <span className="ml-1.5 font-mono text-[10px] text-muted-foreground/80">({key})</span>
+                      </label>
+                      <Input
+                        className="mt-1"
+                        placeholder={displayLabel}
+                        value={formDetails[key] ?? ""}
+                        onChange={(e) => setFormDetails((prev) => ({ ...prev, [key]: e.target.value }))}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             )}
             <div>
               <label className="text-xs text-muted-foreground flex items-center gap-1">
@@ -310,33 +309,16 @@ const MasterPaymentModes = () => {
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button
               className="gold-gradient text-primary-foreground"
-              onClick={async () => {
+              onClick={() => {
                 if (!selected?.id) return;
-                try {
-                  if (formQrFile) {
-                    const fd = buildFormData();
-                    fd.append("name", formName.trim());
-                    fd.append("type", formType);
-                    if (formType === "ewallet") {
-                      fd.set("wallet_phone", formWalletPhone.trim());
-                    } else {
-                      fd.set("bank_name", formBankName.trim());
-                      fd.set("bank_branch", formBankBranch.trim());
-                      fd.set("bank_account_no", formBankAccountNo.trim());
-                      fd.set("bank_account_holder_name", formBankAccountHolderName.trim());
-                    }
-                    await updateMasterPaymentModeFormData(selected.id, fd);
-                  } else {
-                    await updateMasterPaymentMode(selected.id, buildBody());
-                  }
-                  queryClient.invalidateQueries({ queryKey: ["master-payment-modes"] });
-                  toast({ title: "Payment method updated." });
-                  setEditOpen(false);
-                  resetForm();
-                } catch (e: unknown) {
-                  const msg = (e as { detail?: string })?.detail ?? "Failed to update.";
-                  toast({ title: msg, variant: "destructive" });
-                }
+                setPendingUpdate({
+                  id: selected.id,
+                  formMethodId,
+                  formDetails: { ...formDetails },
+                  formQrFile,
+                });
+                setEditOpen(false);
+                setPinOpen(true);
               }}
             >
               Save
@@ -344,6 +326,35 @@ const MasterPaymentModes = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PinDialog
+        open={pinOpen}
+        onClose={() => { setPinOpen(false); setPendingUpdate(null); resetForm(); }}
+        onConfirm={async (pin) => {
+          if (!pendingUpdate) return;
+          try {
+            const { id, formMethodId: fid, formDetails: fdet, formQrFile: fqr } = pendingUpdate;
+            if (fqr) {
+              const fd = new FormData();
+              fd.append("payment_method", String(fid));
+              fd.append("details", JSON.stringify(fdet));
+              fd.append("pin", pin);
+              fd.append("qr_image", fqr);
+              await updateMasterPaymentModeFormData(id, fd);
+            } else {
+              await updateMasterPaymentMode(id, { payment_method: fid, details: fdet, pin });
+            }
+            queryClient.invalidateQueries({ queryKey: ["master-payment-modes"] });
+            toast({ title: "Updated." });
+            setPendingUpdate(null);
+            setPinOpen(false);
+            resetForm();
+          } catch (e) {
+            toast({ title: (e as { detail?: string })?.detail ?? "Failed to update", variant: "destructive" });
+          }
+        }}
+        title="Enter PIN to confirm"
+      />
     </div>
   );
 };

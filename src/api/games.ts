@@ -39,6 +39,7 @@ export interface Game {
   game_uid: string;
   image?: string;
   image_url?: string;
+  coming_soon_image?: string;
   min_bet: string;
   max_bet: string;
   category: number;
@@ -64,8 +65,9 @@ function unwrapSingle<T>(res: unknown): T | null {
   return data ?? null;
 }
 
-/** Resolve game image URL: prefer uploaded media (image), else image_url, else empty. */
+/** Resolve game image URL: prefer coming_soon_image when set, else image, else image_url, else empty. */
 export function getGameImageUrl(game: Game): string {
+  if (game.coming_soon_image?.trim()) return getMediaUrl(game.coming_soon_image.trim());
   if (game.image?.trim()) return getMediaUrl(game.image.trim());
   if (game.image_url?.trim()) return game.image_url.trim();
   return getMediaUrl("");

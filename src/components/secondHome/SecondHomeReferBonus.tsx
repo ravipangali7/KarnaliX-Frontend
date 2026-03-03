@@ -35,6 +35,9 @@ export function SecondHomeReferBonus({ promos: promosProp, sectionTitle, section
 
   if (!primary) return null;
 
+  const referPageHref = user ? "/player/referral" : "/login?next=/player/referral";
+  const primaryWithReferHref = { ...primary, href: referPageHref };
+
   return (
     <section className="container px-4 py-8">
       <div className="flex items-center gap-2 mb-5">
@@ -42,8 +45,8 @@ export function SecondHomeReferBonus({ promos: promosProp, sectionTitle, section
         <h2 className="font-display font-bold text-lg text-foreground">Refer &amp; Earn</h2>
       </div>
 
-      {/* Primary card – shows Claim now when logged in, Login to claim when guest */}
-      <SecondHomeBonusCard promo={primary} />
+      {/* Primary card – click goes to player refer page (or login then refer) */}
+      <SecondHomeBonusCard promo={primaryWithReferHref} />
 
       {/* Steps row */}
       <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] px-6 md:px-8 py-5 grid grid-cols-3 gap-4">

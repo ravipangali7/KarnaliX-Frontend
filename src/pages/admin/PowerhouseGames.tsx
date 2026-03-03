@@ -185,6 +185,8 @@ const PowerhouseGames = () => {
   const [maxBet, setMaxBet] = useState("5000");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [comingSoonImageFile, setComingSoonImageFile] = useState<File | null>(null);
+  const [comingSoonImagePreviewUrl, setComingSoonImagePreviewUrl] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [isComingSoon, setIsComingSoon] = useState(false);
   const [isLobby, setIsLobby] = useState(false);
@@ -200,9 +202,17 @@ const PowerhouseGames = () => {
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
+  useEffect(() => {
+    if (!comingSoonImageFile) { setComingSoonImagePreviewUrl(null); return; }
+    const url = URL.createObjectURL(comingSoonImageFile);
+    setComingSoonImagePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [comingSoonImageFile]);
+
   const resetForm = () => {
     setName(""); setGameUid(""); setCategoryId(""); setProviderId("");
     setMinBet("10"); setMaxBet("5000"); setImageFile(null);
+    setComingSoonImageFile(null); setComingSoonImagePreviewUrl(null);
     setIsActive(true); setIsComingSoon(false); setIsLobby(false);
     setIsTopGame(false); setIsPopularGame(false);
     setComingSoonLaunchDate(""); setComingSoonDescription(""); setEditingGame(null);
@@ -225,6 +235,8 @@ const PowerhouseGames = () => {
     setComingSoonLaunchDate(launchDate ? String(launchDate).slice(0, 10) : "");
     setComingSoonDescription(String(row.coming_soon_description ?? ""));
     setImageFile(null);
+    setComingSoonImageFile(null);
+    setComingSoonImagePreviewUrl(row.coming_soon_image && String(row.coming_soon_image).trim() ? getMediaUrl(String(row.coming_soon_image).trim()) : null);
     setEditOpen(true);
   };
 
@@ -445,6 +457,7 @@ const PowerhouseGames = () => {
     if (p.coming_soon_launch_date) fd.append("coming_soon_launch_date", p.coming_soon_launch_date);
     fd.append("coming_soon_description", p.coming_soon_description);
     if (imageFile) fd.append("image", imageFile);
+    if (comingSoonImageFile) fd.append("coming_soon_image", comingSoonImageFile);
     return fd;
   };
 
@@ -604,7 +617,7 @@ const PowerhouseGames = () => {
             <input type="checkbox" checked={isComingSoon} onChange={(e) => setIsComingSoon(e.target.checked)} className="rounded border-border" />
             Mark as coming soon
           </label>
-          {isComingSoon && (
+            {isComingSoon && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Launch date (optional)</label>
@@ -613,6 +626,24 @@ const PowerhouseGames = () => {
               <div className="sm:col-span-2">
                 <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
                 <Textarea placeholder="Short description for the card" value={comingSoonDescription} onChange={(e) => setComingSoonDescription(e.target.value)} rows={2} className="resize-none" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs text-muted-foreground block mb-1">Coming soon image {isEdit ? "(leave empty to keep current)" : "(optional)"}</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="w-full text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
+                  onChange={(e) => setComingSoonImageFile(e.target.files?.[0] ?? null)}
+                />
+                {(comingSoonImagePreviewUrl || (isEdit && editingGame?.coming_soon_image && typeof editingGame.coming_soon_image === "string" && editingGame.coming_soon_image.trim())) && (
+                  <div className="mt-2 rounded-lg border border-border overflow-hidden bg-muted/30 w-20 h-20">
+                    <img
+                      src={comingSoonImagePreviewUrl ?? getMediaUrl((editingGame?.coming_soon_image as string).trim())}
+                      alt="Coming soon preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

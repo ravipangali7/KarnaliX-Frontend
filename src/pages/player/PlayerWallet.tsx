@@ -197,44 +197,51 @@ const PlayerWallet = () => {
                 {(depositPaymentModes as Record<string, unknown>[]).length === 0 && (
                   <p className="text-xs text-muted-foreground py-2">No payment methods available. Ask your master to add one.</p>
                 )}
-                {(depositPaymentModes as Record<string, unknown>[]).map((pm) => (
-                  <div
-                    key={String(pm.id ?? "")}
-                    onClick={() => setSelectedPM(String(pm.id ?? ""))}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                      selectedPM === String(pm.id ?? "") ? "border-primary neon-glow-sm bg-primary/5" : "border-border hover:border-primary/30"
-                    }`}
-                  >
-                    <div className="h-9 w-9 rounded-lg gold-gradient flex items-center justify-center text-xs font-bold text-primary-foreground">{(String(pm.name ?? ""))[0]}</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{String(pm.name ?? "")}</p>
-                      <p className="text-[10px] text-muted-foreground">{pm.type === "ewallet" ? String(pm.wallet_phone ?? pm.account_id ?? "") : String(pm.bank_account_no ?? pm.account_number ?? "")}</p>
+                {(depositPaymentModes as Record<string, unknown>[]).map((pm) => {
+                  const pmName = String(pm.payment_method_name ?? "");
+                  const pmDetail = pm.details && typeof pm.details === "object" && Object.keys(pm.details as object).length > 0
+                    ? "****" + String(Object.values(pm.details as Record<string, unknown>)[0] ?? "").slice(-4)
+                    : "";
+                  return (
+                    <div
+                      key={String(pm.id ?? "")}
+                      onClick={() => setSelectedPM(String(pm.id ?? ""))}
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                        selectedPM === String(pm.id ?? "") ? "border-primary neon-glow-sm bg-primary/5" : "border-border hover:border-primary/30"
+                      }`}
+                    >
+                      <div className="h-9 w-9 rounded-lg gold-gradient flex items-center justify-center text-xs font-bold text-primary-foreground">{(pmName || "P")[0]}</div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{pmName}</p>
+                        <p className="text-[10px] text-muted-foreground">{pmDetail || "—"}</p>
+                      </div>
+                      {selectedPM === String(pm.id ?? "") && <CheckCircle className="h-4 w-4 text-primary" />}
                     </div>
-                    {selectedPM === String(pm.id ?? "") && <CheckCircle className="h-4 w-4 text-primary" />}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             {/* Step 2: Show selected method details + instructions, then amount & screenshot */}
             {selectedPM && (() => {
               const selectedMode = (depositPaymentModes as Record<string, unknown>[]).find((pm) => String(pm.id) === selectedPM);
-              const isEwallet = selectedMode?.type === "ewallet";
+              const displayName = String(selectedMode?.payment_method_name ?? "");
+              const details = selectedMode?.details as Record<string, unknown> | null | undefined;
+              const hasDetails = details != null && typeof details === "object" && Object.keys(details).length > 0;
               return (
                 <>
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground mb-2">2. Pay to this account</p>
                     <div className="rounded-xl border border-primary/40 bg-primary/5 p-4 space-y-2">
-                      <p className="text-sm font-semibold">{String(selectedMode?.name ?? "")}</p>
-                      {isEwallet ? (
-                        <p className="text-sm">Wallet / Phone: <span className="font-mono font-medium">{String(selectedMode?.wallet_phone ?? selectedMode?.account_id ?? "")}</span></p>
-                      ) : (
+                      <p className="text-sm font-semibold">{displayName}</p>
+                      {hasDetails ? (
                         <div className="text-sm space-y-1">
-                          {selectedMode?.bank_name && <p>Bank: {String(selectedMode.bank_name)}</p>}
-                          {selectedMode?.bank_branch && <p>Branch: {String(selectedMode.bank_branch)}</p>}
-                          {selectedMode?.bank_account_no && <p>Account No: <span className="font-mono font-medium">{String(selectedMode.bank_account_no)}</span></p>}
-                          {selectedMode?.bank_account_holder_name && <p>Account Holder: {String(selectedMode.bank_account_holder_name)}</p>}
+                          {Object.entries(details).map(([k, v]) => (
+                            <p key={k}>{k.replace(/_/g, " ")}: <span className="font-mono font-medium">{String(v ?? "")}</span></p>
+                          ))}
                         </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No details</p>
                       )}
                       {selectedMode?.qr_image_url && (
                         <div className="mt-2">
@@ -346,22 +353,28 @@ const PlayerWallet = () => {
                 {withdrawPaymentModes.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-2">No approved payout methods. Add a payment method and ask your master to approve it.</p>
                 ) : (
-                  withdrawPaymentModes.map((pm) => (
-                    <div
-                      key={String(pm.id ?? "")}
-                      onClick={() => setSelectedPM(String(pm.id ?? ""))}
-                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                        selectedPM === String(pm.id ?? "") ? "border-accent bg-accent/5" : "border-border hover:border-accent/30"
-                      }`}
-                    >
-                      <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">{(String(pm.name ?? ""))[0]}</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{String(pm.name ?? "")}</p>
-                        <p className="text-[10px] text-muted-foreground">{pm.type === "ewallet" ? String(pm.wallet_phone ?? pm.account_id ?? "") : String(pm.bank_account_no ?? pm.account_number ?? "")}</p>
+                  withdrawPaymentModes.map((pm) => {
+                    const wName = String(pm.payment_method_name ?? "");
+                    const wDetail = pm.details && typeof pm.details === "object" && Object.keys(pm.details as object).length > 0
+                      ? "****" + String(Object.values(pm.details as Record<string, unknown>)[0] ?? "").slice(-4)
+                      : "";
+                    return (
+                      <div
+                        key={String(pm.id ?? "")}
+                        onClick={() => setSelectedPM(String(pm.id ?? ""))}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                          selectedPM === String(pm.id ?? "") ? "border-accent bg-accent/5" : "border-border hover:border-accent/30"
+                        }`}
+                      >
+                        <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">{(wName || "P")[0]}</div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{wName}</p>
+                          <p className="text-[10px] text-muted-foreground">{wDetail || "—"}</p>
+                        </div>
+                        {selectedPM === String(pm.id ?? "") && <CheckCircle className="h-4 w-4 text-accent" />}
                       </div>
-                      {selectedPM === String(pm.id ?? "") && <CheckCircle className="h-4 w-4 text-accent" />}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
