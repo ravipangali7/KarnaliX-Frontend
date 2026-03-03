@@ -26,7 +26,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, sectionS
         }
         {sectionTitle ? sectionTitle : <>Trusted <span className="gradient-text-gold">Game Providers</span></>}
       </h2>
-      <p className="text-sm text-muted-foreground mb-6">Play games from the best providers in the industry</p>
+      {/* <p className="text-sm text-muted-foreground mb-6">Play games from the best providers in the industry</p> */}
       <div className="grid grid-cols-3 gap-2 pb-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
         {providers.map((p) => (
           <Link
@@ -52,7 +52,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, sectionS
                 <span>{p.logo}</span>
               )}
             </div>
-            <span className="font-semibold text-sm text-foreground text-center">{p.name}</span>
+            {/* <span className="font-semibold text-sm text-foreground text-center">{p.name}</span> */}
           </Link>
         ))}
       </div>
