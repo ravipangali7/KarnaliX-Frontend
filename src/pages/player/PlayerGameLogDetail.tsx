@@ -1,5 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { getCurrencySymbol } from "@/utils/currency";
 import { getPlayerGameLogDetail } from "@/api/player";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,11 +67,11 @@ const PlayerGameLogDetail = () => {
           {row("Wallet", String(log.wallet_display ?? log.wallet ?? "—"))}
           {row("Round", String(log.round ?? "—"))}
           {row("Match", String(log.match ?? "—"))}
-          {row("Bet amount", `₹${Number(log.bet_amount ?? 0).toLocaleString()}`)}
-          {row("Win amount", `₹${Number(log.win_amount ?? 0).toLocaleString()}`)}
-          {row("Lose amount", `₹${Number(log.lose_amount ?? 0).toLocaleString()}`)}
-          {row("Balance before", `₹${Number(log.before_balance ?? 0).toLocaleString()}`)}
-          {row("Balance after", `₹${Number(log.after_balance ?? 0).toLocaleString()}`)}
+          {row("Bet amount", `${symbol}${Number(log.bet_amount ?? 0).toLocaleString()}`)}
+          {row("Win amount", `${symbol}${Number(log.win_amount ?? 0).toLocaleString()}`)}
+          {row("Lose amount", `${symbol}${Number(log.lose_amount ?? 0).toLocaleString()}`)}
+          {row("Balance before", `${symbol}${Number(log.before_balance ?? 0).toLocaleString()}`)}
+          {row("Balance after", `${symbol}${Number(log.after_balance ?? 0).toLocaleString()}`)}
           {row("Created", log.created_at ? new Date(String(log.created_at)).toLocaleString() : "—")}
           {row("Updated", log.updated_at ? new Date(String(log.updated_at)).toLocaleString() : "—")}
           {log.provider_raw_data && Object.keys(log.provider_raw_data as object).length > 0 && (
@@ -82,7 +84,7 @@ const PlayerGameLogDetail = () => {
                     key === "timestamp" && val
                       ? new Date(String(val)).toLocaleString()
                       : (key === "bet_amount" || key === "win_amount" || key === "wallet_before" || key === "wallet_after" || key === "change") && val !== "" && val != null
-                        ? `₹${Number(val).toLocaleString()}`
+                        ? `${symbol}${Number(val).toLocaleString()}`
                         : String(val ?? "—");
                   return (
                     <div key={key} className="flex justify-between py-1.5 text-sm border-b border-border/40 last:border-0">
@@ -109,10 +111,10 @@ const PlayerGameLogDetail = () => {
             <div className="space-y-1">
               {row("Action", String(tx.action_type ?? "—"))}
               {row("Type", String(tx.transaction_type_display ?? tx.transaction_type ?? "—"))}
-              {row("Amount", `₹${Number(tx.amount ?? 0).toLocaleString()}`)}
+              {row("Amount", `${symbol}${Number(tx.amount ?? 0).toLocaleString()}`)}
               {row("Status", String(tx.status_display ?? tx.status ?? "—"))}
-              {row("Balance before", tx.balance_before != null ? `₹${Number(tx.balance_before).toLocaleString()}` : "—")}
-              {row("Balance after", tx.balance_after != null ? `₹${Number(tx.balance_after).toLocaleString()}` : "—")}
+              {row("Balance before", tx.balance_before != null ? `${symbol}${Number(tx.balance_before).toLocaleString()}` : "—")}
+              {row("Balance after", tx.balance_after != null ? `${symbol}${Number(tx.balance_after).toLocaleString()}` : "—")}
               {row("Remarks", String(tx.remarks ?? "—"))}
               {row("Created", tx.created_at ? new Date(String(tx.created_at)).toLocaleString() : "—")}
             </div>

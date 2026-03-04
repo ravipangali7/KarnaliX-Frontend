@@ -2,6 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { getCurrencySymbol } from "@/utils/currency";
 import { User, Phone, Mail, Key, CreditCard, Gamepad2, ChevronRight, LogOut, BarChart3, Clock, Edit } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -14,6 +16,8 @@ const profileLinks = [
 ];
 
 const PlayerProfile = () => {
+  const { user } = useAuth();
+  const symbol = getCurrencySymbol(user);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("Ram Sharma");
   const [phone, setPhone] = useState("+977-9841234567");
@@ -41,11 +45,11 @@ const PlayerProfile = () => {
           <p className="text-xs text-muted-foreground">@player1</p>
           <div className="flex justify-center gap-4 mt-3">
             <div className="text-center">
-              <p className="font-gaming font-bold text-sm text-primary">₹25,000</p>
+              <p className="font-gaming font-bold text-sm text-primary">{symbol}25,000</p>
               <p className="text-[9px] text-muted-foreground">Balance</p>
             </div>
             <div className="text-center">
-              <p className="font-gaming font-bold text-sm text-accent">₹2,500</p>
+              <p className="font-gaming font-bold text-sm text-accent">{symbol}2,500</p>
               <p className="text-[9px] text-muted-foreground">Bonus</p>
             </div>
             <div className="text-center">

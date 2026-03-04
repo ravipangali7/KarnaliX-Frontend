@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSiteSetting, getWhatsAppLink } from "@/api/site";
+import { getSiteSetting, getWhatsAppLink, getPublicCountries } from "@/api/site";
 import { COUNTRY_CODES } from "@/constants/countryCodes";
 import { Eye, EyeOff, Gamepad2 } from "lucide-react";
 
-const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || "";
+const googleClientId = "386184793784-njlhdvqjh0698tnc5tffi79m5pjqpig4.apps.googleusercontent.com";
 
 const roleRedirect: Record<string, string> = {
   powerhouse: "/powerhouse",
@@ -34,6 +34,8 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  const { data: countryOptions } = useQuery({ queryKey: ["public-countries"], queryFn: getPublicCountries });
+  const countries = (countryOptions && countryOptions.length > 0) ? countryOptions : COUNTRY_CODES.map((c) => ({ value: c.value, label: c.label }));
   const whatsAppLink = getWhatsAppLink(siteSetting as import("@/api/site").SiteSettingRecord | undefined);
 
   const handleGoogleSuccess = async (credential: string) => {
@@ -151,7 +153,7 @@ const LoginPage = () => {
                       <SelectValue placeholder="Country" />
                     </SelectTrigger>
                     <SelectContent>
-                      {COUNTRY_CODES.map((c) => (
+                      {countries.map((c) => (
                         <SelectItem key={c.value} value={c.value}>
                           {c.label}
                         </SelectItem>

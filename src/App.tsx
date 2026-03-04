@@ -10,7 +10,7 @@ import { getMediaUrl } from "@/lib/api";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || "";
+const googleClientId = "386184793784-njlhdvqjh0698tnc5tffi79m5pjqpig4.apps.googleusercontent.com";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SiteThemeApplier } from "@/components/SiteThemeApplier";
 
@@ -26,6 +26,7 @@ import GameDetailPage from "@/pages/public/GameDetailPage";
 import ProviderPage from "@/pages/public/ProviderPage";
 import ProvidersPage from "@/pages/public/ProvidersPage";
 import BonusPage from "@/pages/public/BonusPage";
+import PromotionPage from "@/pages/public/PromotionPage";
 import WalletPage from "@/pages/public/WalletPage";
 import LoginPage from "@/pages/public/LoginPage";
 import RegisterPage from "@/pages/public/RegisterPage";
@@ -79,10 +80,12 @@ import PowerhouseSuperSettings from "@/pages/admin/PowerhouseSuperSettings";
 import PowerhouseSiteSettings from "@/pages/admin/PowerhouseSiteSettings";
 import PowerhouseSlider from "@/pages/admin/PowerhouseSlider";
 import PowerhousePopup from "@/pages/admin/PowerhousePopup";
+import PowerhousePromotions from "@/pages/admin/PowerhousePromotions";
 import PowerhouseComingSoonEnrollments from "@/pages/admin/PowerhouseComingSoonEnrollments";
 import PowerhouseCMS from "@/pages/admin/PowerhouseCMS";
 import PowerhouseTestimonials from "@/pages/admin/PowerhouseTestimonials";
 import PowerhousePaymentMethods from "@/pages/admin/PowerhousePaymentMethods";
+import PowerhouseCountries from "@/pages/admin/PowerhouseCountries";
 
 import NotFound from "@/pages/NotFound";
 import { HOME_PAGE_VARIANT } from "@/config";
@@ -155,6 +158,7 @@ const App = () => {
               <Route path="/providers" element={<ProvidersPage />} />
               <Route path="/providers/:id" element={<ProviderPage />} />
             <Route path="/bonus" element={<BonusPage />} />
+            <Route path="/promotions" element={<PromotionPage />} />
             <Route path="/wallet" element={<WalletPage />} />
             </Route>
 
@@ -237,6 +241,7 @@ const App = () => {
               <Route path="/powerhouse/games" element={<PowerhouseGames />} />
               <Route path="/powerhouse/slider" element={<PowerhouseSlider />} />
               <Route path="/powerhouse/popup" element={<PowerhousePopup />} />
+              <Route path="/powerhouse/promotions" element={<PowerhousePromotions />} />
               <Route path="/powerhouse/coming-soon-enrollments" element={<PowerhouseComingSoonEnrollments />} />
               <Route path="/powerhouse/bonus-rules" element={<PowerhouseBonusRules />} />
               <Route path="/powerhouse/game-log" element={<AdminGameLog />} />
@@ -249,6 +254,7 @@ const App = () => {
               <Route path="/powerhouse/cms" element={<PowerhouseCMS />} />
               <Route path="/powerhouse/testimonials" element={<PowerhouseTestimonials />} />
               <Route path="/powerhouse/payment-methods" element={<PowerhousePaymentMethods />} />
+              <Route path="/powerhouse/countries" element={<PowerhouseCountries />} />
               <Route path="/powerhouse/profile" element={<AdminProfile />} />
               <Route path="/powerhouse/change-password" element={<AdminChangePassword />} />
             </Route>

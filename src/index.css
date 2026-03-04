@@ -384,3 +384,21 @@ body::-webkit-scrollbar {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+
+/* Rich text editor (Quill) theme alignment */
+.rich-text-editor .ql-toolbar.ql-snow,
+.rich-text-editor .ql-container.ql-snow {
+  border-color: hsl(var(--border));
+}
+.rich-text-editor .ql-toolbar.ql-snow {
+  background: hsl(var(--muted));
+  border-radius: 6px 6px 0 0;
+}
+.rich-text-editor .ql-container.ql-snow {
+  border-radius: 0 0 6px 6px;
+  background: hsl(var(--background));
+}
+.rich-text-editor .ql-editor {
+  color: hsl(var(--foreground));
+  min-height: var(--min-height, 120px);
+}

@@ -51,8 +51,10 @@ export async function signupCheckPhone(phone: string): Promise<{ exists: boolean
   return res as unknown as { exists: boolean };
 }
 
-export async function signupSendOtp(phone: string): Promise<void> {
-  await apiPost("/public/auth/signup/send-otp/", { phone });
+export type SignupOtpChannel = "sms" | "whatsapp";
+
+export async function signupSendOtp(phone: string, channel: SignupOtpChannel = "sms"): Promise<void> {
+  await apiPost("/public/auth/signup/send-otp/", { phone, channel });
 }
 
 export async function signupVerifyOtp(phone: string, otp: string): Promise<{ signup_token: string }> {

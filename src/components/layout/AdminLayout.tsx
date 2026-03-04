@@ -5,7 +5,7 @@ import {
   LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
   Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image,
-  Calculator, LayoutPanelTop
+  Calculator, LayoutPanelTop, Megaphone, MapPin
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDashboard, getUnreadMessageCount } from "@/api/admin";
@@ -45,6 +45,7 @@ const getNavItems = (role: string): NavItem[] => {
       { label: "Games", path: "/games", icon: Gamepad2 },
       { label: "Slider", path: "/slider", icon: Image },
       { label: "Popup", path: "/popup", icon: LayoutPanelTop },
+      { label: "Promotion", path: "/promotions", icon: Megaphone },
       { label: "Coming Soon Enrollments", path: "/coming-soon-enrollments", icon: Clock },
       { label: "Bonus Rules", path: "/bonus-rules", icon: Gift },
       { label: "Game Log", path: "/game-log", icon: Gamepad2 },
@@ -53,6 +54,7 @@ const getNavItems = (role: string): NavItem[] => {
       { label: "Activity Log", path: "/activity", icon: Activity },
       { label: "Super Settings", path: "/super-settings", icon: Settings },
       { label: "Site Settings", path: "/site-settings", icon: Globe },
+      { label: "Countries", path: "/countries", icon: MapPin },
       { label: "Payment Methods", path: "/payment-methods", icon: CreditCard },
       { label: "CMS Pages", path: "/cms", icon: FileText },
       { label: "Testimonials", path: "/testimonials", icon: Star },

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { getCurrencySymbol } from "@/utils/currency";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/shared/StatCard";
 import { Wallet, TrendingUp, Eye, Gamepad2, ArrowDownCircle, ArrowUpCircle, Shield, Send, Trophy, Clock, Flame, Radio } from "lucide-react";
@@ -15,6 +16,7 @@ import { motion } from "framer-motion";
 
 const PlayerDashboard = () => {
   const { user } = useAuth();
+  const symbol = getCurrencySymbol(user);
   const { data: dashboard = {} } = useQuery({ queryKey: ["player-dashboard"], queryFn: getPlayerDashboard });
   const { data: transactions = [] } = useQuery({ queryKey: ["player-transactions"], queryFn: getPlayerTransactions });
   const { data: gamesResp } = useQuery({ queryKey: ["games", "dashboard"], queryFn: () => getGames(undefined, undefined, 1, 50) });
@@ -44,9 +46,9 @@ const PlayerDashboard = () => {
 
       {/* Balance Cards - 3 cols; compact on small screens */}
       <div className="grid grid-cols-3 gap-2 mobile:gap-3 md:gap-4 min-w-0">
-        <StatCard title="Main Balance" value={`₹${Number(mainBalance).toLocaleString()}`} icon={Wallet} />
-        <StatCard title="Bonus" value={`₹${Number(bonusBalance).toLocaleString()}`} icon={TrendingUp} />
-        <StatCard title="Exposure" value={`₹${Number(exposureBalance).toLocaleString()}`} icon={Eye} />
+        <StatCard title="Main Balance" value={`${symbol}${Number(mainBalance).toLocaleString()}`} icon={Wallet} />
+        <StatCard title="Bonus" value={`${symbol}${Number(bonusBalance).toLocaleString()}`} icon={TrendingUp} />
+        <StatCard title="Exposure" value={`${symbol}${Number(exposureBalance).toLocaleString()}`} icon={Eye} />
       </div>
 
       {/* Quick Actions - 2x2 on tiny, 4 in a row on mobile+ */}
@@ -107,7 +109,7 @@ const PlayerDashboard = () => {
                     <p className="text-[10px] text-muted-foreground">{t.created_at ? new Date(String(t.created_at)).toLocaleDateString() : ""}</p>
                   </div>
                   <span className={`font-gaming font-bold text-xs mobile:text-sm flex-shrink-0 ${["deposit", "win", "bonus"].includes(String(t.transaction_type ?? t.type ?? "")) ? "text-success" : "text-accent"}`}>
-                    {["deposit", "win", "bonus"].includes(String(t.transaction_type ?? t.type ?? "")) ? "+" : "-"}₹{Number(t.amount ?? 0).toLocaleString()}
+                    {["deposit", "win", "bonus"].includes(String(t.transaction_type ?? t.type ?? "")) ? "+" : "-"}{symbol}{Number(t.amount ?? 0).toLocaleString()}
                   </span>
                 </CardContent>
               </Card>
@@ -141,7 +143,7 @@ const PlayerDashboard = () => {
             </div>
             <div>
               <label className="text-xs text-muted-foreground">Amount</label>
-              <Input type="number" placeholder="₹0" />
+              <Input type="number" placeholder={`${symbol}0`} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground">Your Password (to confirm)</label>

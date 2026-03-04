@@ -23,6 +23,7 @@ export interface User {
   parent?: number | null;
   whatsapp_number?: string;
   country_code?: string;
+  currency_symbol?: string;
 }
 
 interface AuthState {

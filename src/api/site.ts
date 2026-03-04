@@ -5,6 +5,33 @@ export async function getSiteSetting() {
   return (res as Record<string, unknown>) ?? {};
 }
 
+/** Active country for register/login dropdown (from DB). */
+export interface PublicCountry {
+  id: number;
+  name: string;
+  country_code: string;
+  currency_symbol: string;
+}
+
+/** Shape for country code dropdown: value (country_code) and label (e.g. "Nepal (+977)"). */
+export interface CountryOption {
+  value: string;
+  label: string;
+}
+
+export async function getPublicCountries(): Promise<CountryOption[]> {
+  try {
+    const res = await apiGet<PublicCountry[]>("/public/countries/");
+    const list = Array.isArray(res) ? res : [];
+    return list.map((c) => ({
+      value: String(c.country_code ?? "").trim(),
+      label: `${c.name ?? ""} (+${c.country_code ?? ""})`.trim(),
+    })).filter((o) => o.value && o.label);
+  } catch {
+    return [];
+  }
+}
+
 /** Site setting shape for WhatsApp/phones (whatsapp_number, phones array). */
 export type SiteSettingRecord = Record<string, unknown> & {
   whatsapp_number?: string;
@@ -91,6 +118,23 @@ export interface PopupApi {
 export async function getActivePopups(): Promise<PopupApi[]> {
   const res = await apiGet("/public/popups/");
   return (Array.isArray(res) ? res : []) as PopupApi[];
+}
+
+export interface PromotionApi {
+  id: number;
+  title: string;
+  image?: string | null;
+  image_url?: string | null;
+  description: string;
+  is_active: boolean;
+  order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function getPromotions(): Promise<PromotionApi[]> {
+  const res = await apiGet("/public/promotions/");
+  return (Array.isArray(res) ? res : []) as PromotionApi[];
 }
 
 export interface PublicPaymentMethod {

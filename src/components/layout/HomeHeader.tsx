@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Menu, X, Bell, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { getCurrencySymbol } from "@/utils/currency";
 import { getSiteSetting, getLiveBettingSections } from "@/api/site";
 import { getPlayerUnreadMessageCount } from "@/api/player";
 import { getMediaUrl } from "@/lib/api";
@@ -33,6 +34,7 @@ function mapLiveBettingToTickerRows(sections: { events?: { team1: string; team2:
 const navItems = [
   { label: "Home", path: "/" },
   { label: "Games", path: "/games" },
+  { label: "Promotion", path: "/promotions" },
 ];
 
 function getDashboardPath(role: string): string {
@@ -53,7 +55,8 @@ export const HomeHeader = () => {
   const isLoggedIn = !!user;
   const dashboardPath = user?.role ? getDashboardPath(user.role) : "/player";
   const messagesPath = isLoggedIn ? `${dashboardPath}/messages` : "/login";
-  const walletBalance = user?.total_balance != null ? `₹${Number(user.total_balance).toLocaleString()}` : "₹0.00";
+  const symbol = getCurrencySymbol(user);
+  const walletBalance = user?.total_balance != null ? `${symbol}${Number(user.total_balance).toLocaleString()}` : `${symbol}0.00`;
 
   const isPlayer = user?.role === "player";
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });

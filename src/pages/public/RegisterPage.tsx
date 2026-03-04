@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { COUNTRY_CODES } from "@/constants/countryCodes";
-import { getSiteSetting, getWhatsAppLink } from "@/api/site";
+import { getSiteSetting, getPublicCountries } from "@/api/site";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { signupCheckPhone, signupSendOtp, signupVerifyOtp } from "@/api/auth";
 
-const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || "";
+const googleClientId = "386184793784-njlhdvqjh0698tnc5tffi79m5pjqpig4.apps.googleusercontent.com";
 
 type Step = "phone" | "otp" | "name" | "password";
 
@@ -42,8 +42,13 @@ const RegisterPage = () => {
   const [showGoogleUsernameStep, setShowGoogleUsernameStep] = useState(false);
   const { register, loginWithGoogle, googleComplete } = useAuth();
   const navigate = useNavigate();
-  const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
-  const whatsAppLink = getWhatsAppLink(siteSetting as import("@/api/site").SiteSettingRecord | undefined);
+  const [otpChannel, setOtpChannel] = useState<"sms" | "whatsapp">("sms");
+  useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  const { data: countryOptions } = useQuery({
+    queryKey: ["public-countries"],
+    queryFn: getPublicCountries,
+  });
+  const countries = (countryOptions && countryOptions.length > 0) ? countryOptions : COUNTRY_CODES.map((c) => ({ value: c.value, label: c.label }));
 
   const handleGoogleSuccess = async (credential: string) => {
     setError("");
@@ -105,13 +110,16 @@ const RegisterPage = () => {
         setError("An account with this phone already exists. Please log in.");
         return;
       }
-      await signupSendOtp(fullPhone);
+      await signupSendOtp(fullPhone, otpChannel);
       setVerifiedPhone(fullPhone);
-      toast({ title: "OTP sent to your phone." });
+      toast({ title: otpChannel === "whatsapp" ? "OTP sent via WhatsApp." : "OTP sent to your phone." });
       setStep("otp");
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Failed. Try again.";
       setError(detail);
+      if (detail.toLowerCase().includes("whatsapp") && detail.toLowerCase().includes("not configured")) {
+        toast({ title: "WhatsApp not available. Try SMS.", variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }
@@ -224,7 +232,7 @@ const RegisterPage = () => {
                     <SelectValue placeholder="Code" />
                   </SelectTrigger>
                   <SelectContent>
-                    {COUNTRY_CODES.map((c) => (
+                    {countries.map((c) => (
                       <SelectItem key={c.value} value={c.value}>
                         {c.label}
                       </SelectItem>
@@ -238,6 +246,29 @@ const RegisterPage = () => {
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">OTP via</p>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={otpChannel === "sms" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 h-10"
+                    onClick={() => setOtpChannel("sms")}
+                  >
+                    SMS
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={otpChannel === "whatsapp" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600/10 hover:text-green-600 data-[state=active]:bg-green-600/20"
+                    onClick={() => setOtpChannel("whatsapp")}
+                  >
+                    WhatsApp
+                  </Button>
+                </div>
               </div>
               {refFromUrl ? (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">
@@ -255,7 +286,7 @@ const RegisterPage = () => {
                 )
               )}
               <Button type="submit" className="w-full gold-gradient text-primary-foreground font-display font-semibold h-11 neon-glow-sm" disabled={loading}>
-                {loading ? "Checking..." : "Continue"}
+                {loading ? "Sending OTP..." : "Continue"}
               </Button>
             </form>
           )}
@@ -327,16 +358,6 @@ const RegisterPage = () => {
                       width="320"
                     />
                   </div>
-                )}
-                {whatsAppLink && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11 border-green-600 text-green-600 hover:bg-green-600/10"
-                    onClick={() => window.open(whatsAppLink, "_blank", "noopener,noreferrer")}
-                  >
-                    Login with WhatsApp
-                  </Button>
                 )}
               </div>
 

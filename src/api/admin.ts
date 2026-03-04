@@ -649,6 +649,27 @@ export async function updatePopupForm(id: number, formData: FormData) {
   return apiPatchForm(`${prefix("powerhouse")}/popup/${id}/`, formData);
 }
 
+// --- Promotion (powerhouse CRUD) ---
+export async function getPromotionsAdmin() {
+  const res = await apiGet(`${prefix("powerhouse")}/promotions/`);
+  return (res as unknown as Record<string, unknown>[]) ?? [];
+}
+export async function createPromotion(body: { title: string; description?: string; is_active?: boolean; order?: number }) {
+  return apiPost(`${prefix("powerhouse")}/promotions/`, body);
+}
+export async function updatePromotion(id: number, body: Partial<{ title: string; description: string; is_active: boolean; order: number }>) {
+  return apiPatch(`${prefix("powerhouse")}/promotions/${id}/`, body);
+}
+export async function deletePromotion(id: number) {
+  return apiDelete(`${prefix("powerhouse")}/promotions/${id}/`);
+}
+export async function createPromotionForm(formData: FormData) {
+  return apiPostForm(`${prefix("powerhouse")}/promotions/`, formData);
+}
+export async function updatePromotionForm(id: number, formData: FormData) {
+  return apiPatchForm(`${prefix("powerhouse")}/promotions/${id}/`, formData);
+}
+
 // --- Coming Soon Enrollments (powerhouse view only) ---
 export async function getComingSoonEnrollments() {
   const res = await apiGet(`${prefix("powerhouse")}/coming-soon-enrollments/`);
@@ -764,4 +785,28 @@ export async function updatePaymentMethodForm(id: number, formData: FormData) {
 }
 export async function deletePaymentMethod(id: number) {
   return apiDelete(`${prefix("powerhouse")}/payment-methods/${id}/`);
+}
+
+// --- Countries (powerhouse) ---
+export interface CountryAdmin {
+  id: number;
+  name: string;
+  country_code: string;
+  currency_symbol: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+export async function getCountries(): Promise<CountryAdmin[]> {
+  const res = await apiGet(`${prefix("powerhouse")}/countries/`);
+  return asList<CountryAdmin>(res);
+}
+export async function createCountry(body: { name: string; country_code: string; currency_symbol: string; is_active?: boolean }) {
+  return apiPost(`${prefix("powerhouse")}/countries/`, body);
+}
+export async function updateCountry(id: number, body: Partial<{ name: string; country_code: string; currency_symbol: string; is_active: boolean }>) {
+  return apiPatch(`${prefix("powerhouse")}/countries/${id}/`, body);
+}
+export async function deleteCountry(id: number) {
+  return apiDelete(`${prefix("powerhouse")}/countries/${id}/`);
 }

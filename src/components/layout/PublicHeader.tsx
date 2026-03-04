@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Gamepad2, Gift, Wallet, User, Menu, X, LogOut, MessageCircle, Clock, BarChart3, CreditCard, Key } from "lucide-react";
+import { Home, Gamepad2, Gift, Megaphone, Wallet, User, Menu, X, LogOut, MessageCircle, Clock, BarChart3, CreditCard, Key } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { getCurrencySymbol } from "@/utils/currency";
 import { getSiteSetting } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 const baseNavItems = [
   { label: "Home", path: "/", icon: Home },
   { label: "Games", path: "/games", icon: Gamepad2 },
+  { label: "Promotion", path: "/promotions", icon: Megaphone },
   { label: "Bonus", path: "/bonus", icon: Gift },
   { label: "Wallet", path: "/wallet", icon: Wallet },
 ];
@@ -48,8 +50,9 @@ export const PublicHeader = () => {
   );
   const isPlayerDashboard = location.pathname.startsWith("/player") && user?.role === "player";
   const mobileNavItems = isPlayerDashboard ? playerMobileNavItems : publicNavItems;
+  const symbol = getCurrencySymbol(user);
   const playerBalance =
-    user?.total_balance != null ? `₹${Number(user.total_balance).toLocaleString()}` : "₹0";
+    user?.total_balance != null ? `${symbol}${Number(user.total_balance).toLocaleString()}` : `${symbol}0`;
 
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const logo = (siteSetting as { logo?: string } | undefined)?.logo;

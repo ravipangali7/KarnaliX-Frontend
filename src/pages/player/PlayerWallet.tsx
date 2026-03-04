@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { getCurrencySymbol } from "@/utils/currency";
 import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
 import { getPublicPaymentMethods } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
@@ -18,6 +19,7 @@ const quickAmounts = [500, 1000, 2000, 5000, 10000, 25000];
 
 const PlayerWallet = () => {
   const { user } = useAuth();
+  const symbol = getCurrencySymbol(user);
   const queryClient = useQueryClient();
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -69,7 +71,7 @@ const PlayerWallet = () => {
             <CardContent className="p-2 mobile:p-4">
               <Wallet className="h-4 w-4 mobile:h-5 mobile:w-5 mx-auto mb-1 text-primary" />
               <p className="text-[10px] text-muted-foreground">Main Balance</p>
-              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl truncate">₹{mainBalance.toLocaleString()}</p>
+              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl truncate">{symbol}{mainBalance.toLocaleString()}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -78,7 +80,7 @@ const PlayerWallet = () => {
             <CardContent className="p-2 mobile:p-4">
               <Sparkles className="h-4 w-4 mobile:h-5 mobile:w-5 mx-auto mb-1 text-accent" />
               <p className="text-[10px] text-muted-foreground">Bonus</p>
-              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl text-accent truncate">₹{bonusBalance.toLocaleString()}</p>
+              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl text-accent truncate">{symbol}{bonusBalance.toLocaleString()}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -87,7 +89,7 @@ const PlayerWallet = () => {
             <CardContent className="p-2 mobile:p-4">
               <TrendingUp className="h-4 w-4 mobile:h-5 mobile:w-5 mx-auto mb-1 text-neon" />
               <p className="text-[10px] text-muted-foreground">Total</p>
-              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl neon-text truncate">₹{(mainBalance + bonusBalance).toLocaleString()}</p>
+              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl neon-text truncate">{symbol}{(mainBalance + bonusBalance).toLocaleString()}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -125,13 +127,13 @@ const PlayerWallet = () => {
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center justify-between md:hidden">
                   <div>
-                    <p className="text-sm font-bold">₹{Number(d.amount ?? 0).toLocaleString()}</p>
+                    <p className="text-sm font-bold">{symbol}{Number(d.amount ?? 0).toLocaleString()}</p>
                     <p className="text-[10px] text-muted-foreground">{String(d.payment_mode ?? "")} • {d.created_at ? new Date(String(d.created_at)).toLocaleDateString() : ""}</p>
                   </div>
                   <StatusBadge status={String(d.status ?? "pending")} />
                 </div>
                 <div className="hidden md:grid grid-cols-5 gap-2 items-center">
-                  <span className="font-bold text-sm">₹{Number(d.amount ?? 0).toLocaleString()}</span>
+                  <span className="font-bold text-sm">{symbol}{Number(d.amount ?? 0).toLocaleString()}</span>
                   <span className="text-sm">{String(d.payment_mode ?? "")}</span>
                   <span className="text-xs text-muted-foreground">{d.created_at ? new Date(String(d.created_at)).toLocaleDateString() : ""}</span>
                   <span className="text-xs text-muted-foreground">{String(d.processed_by ?? "-")}</span>
@@ -152,13 +154,13 @@ const PlayerWallet = () => {
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center justify-between md:hidden">
                   <div>
-                    <p className="text-sm font-bold">₹{Number(w.amount ?? 0).toLocaleString()}</p>
+                    <p className="text-sm font-bold">{symbol}{Number(w.amount ?? 0).toLocaleString()}</p>
                     <p className="text-[10px] text-muted-foreground">{String(w.payment_mode ?? "")} • {w.created_at ? new Date(String(w.created_at)).toLocaleDateString() : ""}</p>
                   </div>
                   <StatusBadge status={String(w.status ?? "pending")} />
                 </div>
                 <div className="hidden md:grid grid-cols-5 gap-2 items-center">
-                  <span className="font-bold text-sm">₹{Number(w.amount ?? 0).toLocaleString()}</span>
+                  <span className="font-bold text-sm">{symbol}{Number(w.amount ?? 0).toLocaleString()}</span>
                   <span className="text-sm">{String(w.payment_mode ?? "")}</span>
                   <span className="text-xs text-muted-foreground">{w.created_at ? new Date(String(w.created_at)).toLocaleDateString() : ""}</span>
                   <span className="text-xs text-muted-foreground">{String(w.account_details ?? "-")}</span>
@@ -179,13 +181,13 @@ const PlayerWallet = () => {
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center justify-between md:hidden">
                   <div>
-                    <p className="text-sm font-bold">₹{Number(br.amount ?? 0).toLocaleString()}</p>
+                    <p className="text-sm font-bold">{symbol}{Number(br.amount ?? 0).toLocaleString()}</p>
                     <p className="text-[10px] text-muted-foreground">{String(br.bonus_type_display ?? br.bonus_type ?? "")} • {br.created_at ? new Date(String(br.created_at)).toLocaleDateString() : ""}</p>
                   </div>
                   <StatusBadge status={String(br.status ?? "pending")} />
                 </div>
                 <div className="hidden md:grid grid-cols-4 gap-2 items-center">
-                  <span className="font-bold text-sm">₹{Number(br.amount ?? 0).toLocaleString()}</span>
+                  <span className="font-bold text-sm">{symbol}{Number(br.amount ?? 0).toLocaleString()}</span>
                   <span className="text-sm">{String(br.bonus_type_display ?? br.bonus_type ?? "")}</span>
                   <span className="text-xs text-muted-foreground">{br.created_at ? new Date(String(br.created_at)).toLocaleDateString() : ""}</span>
                   <span className="text-right"><StatusBadge status={String(br.status ?? "pending")} /></span>
@@ -284,7 +286,7 @@ const PlayerWallet = () => {
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {quickAmounts.map((a) => (
                       <Button key={a} variant="outline" size="sm" onClick={() => setAmount(String(a))} className={`text-xs font-gaming ${amount === String(a) ? "border-primary text-primary" : ""}`}>
-                        ₹{a >= 1000 ? `${a / 1000}K` : a}
+                        {symbol}{a >= 1000 ? `${a / 1000}K` : a}
                       </Button>
                     ))}
                   </div>

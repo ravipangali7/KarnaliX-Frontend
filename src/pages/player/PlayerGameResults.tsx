@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { getCurrencySymbol } from "@/utils/currency";
 import { getPlayerGameLog, getPlayerWallet } from "@/api/player";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useState } from "react";
@@ -10,6 +12,8 @@ import { Gamepad2, Trophy, TrendingDown, Wallet, Radio, ExternalLink } from "luc
 const POLL_INTERVAL_MS = 3000;
 
 const PlayerGameResults = () => {
+  const { user } = useAuth();
+  const symbol = getCurrencySymbol(user);
   const { data: wallet, dataUpdatedAt: walletUpdatedAt } = useQuery({
     queryKey: ["playerWallet"],
     queryFn: getPlayerWallet,
@@ -62,15 +66,15 @@ const PlayerGameResults = () => {
           <div className="grid grid-cols-3 gap-2 mobile:gap-4 mt-2 mobile:mt-3 min-w-0">
             <div>
               <p className="text-[10px] text-muted-foreground">Main</p>
-              <p className="font-gaming font-bold text-lg">₹{mainBalance.toLocaleString()}</p>
+              <p className="font-gaming font-bold text-lg">{symbol}{mainBalance.toLocaleString()}</p>
             </div>
             <div>
               <p className="text-[10px] text-muted-foreground">Bonus</p>
-              <p className="font-gaming font-bold text-lg text-primary">₹{bonusBalance.toLocaleString()}</p>
+              <p className="font-gaming font-bold text-lg text-primary">{symbol}{bonusBalance.toLocaleString()}</p>
             </div>
             <div>
               <p className="text-[10px] text-muted-foreground">Total</p>
-              <p className="font-gaming font-bold text-lg gold-gradient bg-clip-text text-transparent">₹{totalBalance.toLocaleString()}</p>
+              <p className="font-gaming font-bold text-lg gold-gradient bg-clip-text text-transparent">{symbol}{totalBalance.toLocaleString()}</p>
             </div>
           </div>
         </CardContent>
@@ -88,14 +92,14 @@ const PlayerGameResults = () => {
         <Card className="gaming-card min-w-0">
           <CardContent className="p-2 mobile:p-3 text-center">
             <Trophy className="h-4 w-4 mx-auto text-success mb-1" />
-            <p className="font-gaming font-bold text-xs mobile:text-sm text-success truncate">₹{totalWin.toLocaleString()}</p>
+            <p className="font-gaming font-bold text-xs mobile:text-sm text-success truncate">{symbol}{totalWin.toLocaleString()}</p>
             <p className="text-[9px] text-muted-foreground">Total Won</p>
           </CardContent>
         </Card>
         <Card className="gaming-card min-w-0">
           <CardContent className="p-2 mobile:p-3 text-center">
             <TrendingDown className="h-4 w-4 mx-auto text-accent mb-1" />
-            <p className="font-gaming font-bold text-xs mobile:text-sm truncate">₹{totalBet.toLocaleString()}</p>
+            <p className="font-gaming font-bold text-xs mobile:text-sm truncate">{symbol}{totalBet.toLocaleString()}</p>
             <p className="text-[9px] text-muted-foreground">Total Bet</p>
           </CardContent>
         </Card>
@@ -136,9 +140,9 @@ const PlayerGameResults = () => {
                   <StatusBadge status={result} />
                 </div>
                 <div className="flex justify-between mt-2 text-xs text-muted-foreground items-center">
-                  <span>Bet: ₹{betAmount}</span>
+                  <span>Bet: {symbol}{betAmount}</span>
                   <div className="flex items-center gap-2">
-                    {winAmount > 0 && <span className="text-success font-bold">Won: ₹{winAmount}</span>}
+                    {winAmount > 0 && <span className="text-success font-bold">Won: {symbol}{winAmount}</span>}
                     {log.id != null && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" asChild>
                         <Link to={`/player/game-results/${log.id}`}>View <ExternalLink className="h-3 w-3" /></Link>
@@ -153,9 +157,9 @@ const PlayerGameResults = () => {
                   <p className="text-[10px] text-muted-foreground">{playedAt ? new Date(String(playedAt)).toLocaleString() : ""}</p>
                 </div>
                 <span className="text-xs">{category}</span>
-                <span className="text-xs font-medium">₹{betAmount}</span>
+                <span className="text-xs font-medium">{symbol}{betAmount}</span>
                 <span className={`text-xs font-bold ${winAmount > 0 ? "text-success" : "text-muted-foreground"}`}>
-                  {winAmount > 0 ? `₹${winAmount}` : "-"}
+                  {winAmount > 0 ? `${symbol}${winAmount}` : "-"}
                 </span>
                 <span className="text-right"><StatusBadge status={result} /></span>
                 <span className="text-right">

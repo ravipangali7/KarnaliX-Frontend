@@ -1,5 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { getCurrencySymbol } from "@/utils/currency";
 import { getPlayerTransactions } from "@/api/player";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -16,6 +18,8 @@ const typeColors: Record<string, string> = {
 };
 
 const PlayerTransactions = () => {
+  const { user } = useAuth();
+  const symbol = getCurrencySymbol(user);
   const { data: transactions = [] } = useQuery({ queryKey: ["player-transactions"], queryFn: getPlayerTransactions });
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -72,16 +76,16 @@ const PlayerTransactions = () => {
                   <p className="text-[10px] text-muted-foreground">{t.created_at ? new Date(String(t.created_at)).toLocaleString() : ""}</p>
                 </div>
                 <span className={`font-gaming font-bold text-sm ${isIn ? "text-success" : "text-accent"}`}>
-                  {isIn ? "+" : "-"}₹{Number(t.amount ?? 0).toLocaleString()}
+                  {isIn ? "+" : "-"}{symbol}{Number(t.amount ?? 0).toLocaleString()}
                 </span>
               </div>
               <div className="hidden md:grid grid-cols-5 gap-2 items-center">
                 <span className={`text-xs font-gaming font-bold uppercase ${typeColors[type] || "text-foreground"}`}>{type || "—"}</span>
                 <span className="text-sm">{String(t.description ?? "")}</span>
                 <span className="text-xs text-muted-foreground">{t.created_at ? new Date(String(t.created_at)).toLocaleString() : ""}</span>
-                <span className="text-xs text-muted-foreground text-right">₹{Number(t.balance_before ?? 0).toLocaleString()} → ₹{Number(t.balance_after ?? 0).toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground text-right">{symbol}{Number(t.balance_before ?? 0).toLocaleString()} → {symbol}{Number(t.balance_after ?? 0).toLocaleString()}</span>
                 <span className={`font-gaming font-bold text-sm text-right ${isIn ? "text-success" : "text-accent"}`}>
-                  {isIn ? "+" : "-"}₹{Number(t.amount ?? 0).toLocaleString()}
+                  {isIn ? "+" : "-"}{symbol}{Number(t.amount ?? 0).toLocaleString()}
                 </span>
               </div>
             </CardContent>
