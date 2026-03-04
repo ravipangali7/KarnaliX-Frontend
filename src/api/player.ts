@@ -145,12 +145,33 @@ export async function bonusRequestCreate(body: { amount: number | string; bonus_
   return apiPost(`${P}/bonus-request/`, body);
 }
 
-export async function getProfile() {
-  return apiGet(`${P}/profile/`);
+export type PlayerProfileResponse = {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp_number?: string;
+  main_balance?: string;
+  bonus_balance?: string;
+  role?: string;
+  role_display?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export async function getProfile(): Promise<PlayerProfileResponse> {
+  const res = await apiGet<PlayerProfileResponse>(`${P}/profile/`);
+  return res as unknown as PlayerProfileResponse;
 }
 
-export async function updateProfile(body: unknown) {
-  return apiPost(`${P}/profile/update/`, body);
+export async function updateProfile(body: {
+  name?: string;
+  phone?: string;
+  email?: string;
+  whatsapp_number?: string;
+}) {
+  return apiPatch<PlayerProfileResponse>(`${P}/profile/update/`, body);
 }
 
 export async function changePassword(body: { old_password: string; new_password: string }) {
