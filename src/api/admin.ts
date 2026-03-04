@@ -379,6 +379,10 @@ export async function getMessageContacts(role: "powerhouse" | "super" | "master"
 export async function sendMessage(body: unknown, role: "powerhouse" | "super" | "master") {
   return apiPost(`${prefix(role)}/messages/send/`, body);
 }
+/** Send message with optional file/image (multipart/form-data). FormData keys: receiver, message, file?, image? */
+export async function sendMessageForm(formData: FormData, role: "powerhouse" | "super" | "master") {
+  return apiPostForm(`${prefix(role)}/messages/send/`, formData);
+}
 
 // --- Settlement (super only) ---
 export async function settleMaster(masterId: number, body: { pin: string }) {

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChatInterface, type ApiMessage } from "@/components/shared/ChatInterface";
-import { getMessages, getMessageContacts, sendMessage } from "@/api/admin";
+import { ChatInterface, type ApiMessage, type SendPayload } from "@/components/shared/ChatInterface";
+import { getMessages, getMessageContacts, sendMessage, sendMessageForm } from "@/api/admin";
 import { useMessageSocket } from "@/hooks/useMessageSocket";
 import { toast } from "sonner";
 
@@ -43,11 +43,21 @@ const AdminMessages = ({ role, embedded = false }: AdminMessagesProps) => {
 
   const [sending, setSending] = useState(false);
 
-  const handleSend = async (message: string) => {
+  const handleSend = async (messageOrPayload: string | SendPayload) => {
     if (selectedContactId == null) return;
     setSending(true);
     try {
-      await sendMessage({ receiver: selectedContactId, message }, role);
+      if (typeof messageOrPayload === "string") {
+        await sendMessage({ receiver: selectedContactId, message: messageOrPayload }, role);
+      } else {
+        const { message, file, image } = messageOrPayload;
+        const formData = new FormData();
+        formData.append("receiver", String(selectedContactId));
+        formData.append("message", message);
+        if (file) formData.append("file", file);
+        if (image) formData.append("image", image);
+        await sendMessageForm(formData, role);
+      }
       await queryClient.invalidateQueries({ queryKey: ["admin-messages", role, selectedContactId] });
     } catch (e) {
       const err = e as { detail?: string };
