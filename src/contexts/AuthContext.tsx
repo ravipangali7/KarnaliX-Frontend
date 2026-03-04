@@ -38,7 +38,7 @@ interface AuthContextValue extends AuthState {
   login: (username: string, password: string, countryCode?: string) => Promise<User>;
   register: (data: { signup_token: string; phone: string; name: string; password: string; referral_code?: string; country_code?: string }) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<User | GoogleNeedsUsername>;
-  googleComplete: (idToken: string, username: string) => Promise<User>;
+  googleComplete: (idToken: string, username: string, password: string) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -151,8 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data.user;
   }, []);
 
-  const googleComplete = useCallback(async (idToken: string, username: string): Promise<User> => {
-    const res = await authGoogleComplete(idToken, username);
+  const googleComplete = useCallback(async (idToken: string, username: string, password: string): Promise<User> => {
+    const res = await authGoogleComplete(idToken, username, password);
     if (!res.token || !res.user) throw new Error("Invalid response");
     localStorage.setItem(TOKEN_KEY, res.token);
     localStorage.setItem(USER_KEY, JSON.stringify(res.user));

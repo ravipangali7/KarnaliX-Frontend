@@ -52,11 +52,11 @@ export default function GamePlayPage() {
     enabled: !!id && /^\d+$/.test(id),
   });
 
-  const fullViewport = "fixed inset-0 w-screen h-screen overflow-hidden";
+  const gameContainerClass = "fixed top-0 left-0 w-[100vw] h-[98vh] overflow-hidden";
 
   if (!id) {
     return (
-      <div className={`${fullViewport} flex items-center justify-center p-4`}>
+      <div className={`${gameContainerClass} flex items-center justify-center p-4`}>
         <p className="text-muted-foreground">Invalid game.</p>
         <Button variant="link" onClick={() => navigate("/games")}>Back to games</Button>
       </div>
@@ -65,7 +65,7 @@ export default function GamePlayPage() {
 
   if (isLoading) {
     return (
-      <div className={`${fullViewport} flex items-center justify-center p-4`}>
+      <div className={`${gameContainerClass} flex items-center justify-center p-4`}>
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           <p className="text-sm text-muted-foreground">Loading game...</p>
@@ -77,7 +77,7 @@ export default function GamePlayPage() {
   if (isError || !launchUrl) {
     const err = error as { detail?: string } | undefined;
     return (
-      <div className={`${fullViewport} flex flex-col items-center justify-center gap-4 p-4`}>
+      <div className={`${gameContainerClass} flex flex-col items-center justify-center gap-4 p-4`}>
         <p className="text-muted-foreground">{err?.detail ?? "Could not load game."}</p>
         <Button variant="outline" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -88,7 +88,7 @@ export default function GamePlayPage() {
   }
 
   return (
-    <div className={fullViewport}>
+    <div className={gameContainerClass}>
       <iframe
         title="Game"
         src={launchUrl}

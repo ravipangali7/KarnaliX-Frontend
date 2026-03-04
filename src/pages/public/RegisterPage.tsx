@@ -38,6 +38,9 @@ const RegisterPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleUsername, setGoogleUsername] = useState("");
+  const [googlePassword, setGooglePassword] = useState("");
+  const [googleConfirmPassword, setGoogleConfirmPassword] = useState("");
+  const [showGooglePassword, setShowGooglePassword] = useState(false);
   const [googleIdToken, setGoogleIdToken] = useState("");
   const [showGoogleUsernameStep, setShowGoogleUsernameStep] = useState(false);
   const { register, loginWithGoogle, googleComplete } = useAuth();
@@ -59,6 +62,8 @@ const RegisterPage = () => {
         setGoogleIdToken(credential);
         setShowGoogleUsernameStep(true);
         setGoogleUsername("");
+        setGooglePassword("");
+        setGoogleConfirmPassword("");
       } else {
         navigate("/player", { replace: true });
       }
@@ -77,10 +82,18 @@ const RegisterPage = () => {
       setError("Username must be at least 3 characters.");
       return;
     }
+    if (!googlePassword || googlePassword.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (googlePassword !== googleConfirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      await googleComplete(googleIdToken, u);
+      await googleComplete(googleIdToken, u, googlePassword);
       navigate("/player", { replace: true });
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Could not create account.";
@@ -197,7 +210,7 @@ const RegisterPage = () => {
         <CardContent className="space-y-3">
           {showGoogleUsernameStep ? (
             <form onSubmit={handleGoogleUsernameSubmit} className="space-y-3">
-              <p className="text-xs text-muted-foreground">Choose a username to finish signing up with Google.</p>
+              <p className="text-xs text-muted-foreground">Choose a username and password to finish signing up with Google.</p>
               {error && <p className="text-xs text-destructive">{error}</p>}
               <Input
                 placeholder="Username (3–30 characters, letters, numbers, underscores)"
@@ -207,12 +220,38 @@ const RegisterPage = () => {
                 minLength={3}
                 maxLength={30}
               />
+              <div className="relative">
+                <Input
+                  type={showGooglePassword ? "text" : "password"}
+                  placeholder="Password (min 6 characters)"
+                  className="h-11 pr-10"
+                  value={googlePassword}
+                  onChange={(e) => setGooglePassword(e.target.value)}
+                  minLength={6}
+                />
+                <button type="button" onClick={() => setShowGooglePassword(!showGooglePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {showGooglePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <div className="relative">
+                <Input
+                  type={showGooglePassword ? "text" : "password"}
+                  placeholder="Confirm password"
+                  className="h-11 pr-10"
+                  value={googleConfirmPassword}
+                  onChange={(e) => setGoogleConfirmPassword(e.target.value)}
+                  minLength={6}
+                />
+                <button type="button" onClick={() => setShowGooglePassword(!showGooglePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {showGooglePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   className="flex-1 h-11"
-                  onClick={() => { setShowGoogleUsernameStep(false); setGoogleIdToken(""); setError(""); }}
+                  onClick={() => { setShowGoogleUsernameStep(false); setGoogleIdToken(""); setGooglePassword(""); setGoogleConfirmPassword(""); setError(""); }}
                 >
                   Back
                 </Button>

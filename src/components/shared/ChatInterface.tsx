@@ -64,19 +64,8 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messageList = Array.isArray(messages) ? messages : [];
-
-  useEffect(() => {
-    if (!pendingImage) {
-      setImagePreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(pendingImage);
-    setImagePreviewUrl(url);
-    return () => {
-      URL.revokeObjectURL(url);
-    };
-  }, [pendingImage]);
 
   const list = messageList
     .filter(
@@ -89,6 +78,26 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     )
     .map((m) => normalizeMessage(m, currentUserId));
+
+  useEffect(() => {
+    if (list.length === 0) return;
+    scrollContainerRef.current?.scrollTo({
+      top: scrollContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [list.length, list[list.length - 1]?.id]);
+
+  useEffect(() => {
+    if (!pendingImage) {
+      setImagePreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(pendingImage);
+    setImagePreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [pendingImage]);
 
   const hasPayload = newMessage.trim() || pendingFile || pendingImage;
   const canSend = hasPayload && partnerId != null && !sending;
@@ -117,7 +126,7 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-3 space-y-3">
         {list.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-8">No messages yet. Start the conversation!</p>
         )}

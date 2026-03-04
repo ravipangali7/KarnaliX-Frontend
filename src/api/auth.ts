@@ -75,11 +75,12 @@ export async function authGoogle(idToken: string): Promise<GoogleLoginSuccess | 
 
 export async function authGoogleComplete(
   idToken: string,
-  username: string
+  username: string,
+  password: string
 ): Promise<{ token: string; user: import("@/contexts/AuthContext").User }> {
   const res = await apiPost<{ token: string; user: import("@/contexts/AuthContext").User }>(
     "/public/auth/google/complete/",
-    { id_token: idToken, username }
+    { id_token: idToken, username, password }
   );
   return res as unknown as { token: string; user: import("@/contexts/AuthContext").User };
 }
