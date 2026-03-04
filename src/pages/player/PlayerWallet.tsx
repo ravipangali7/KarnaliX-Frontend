@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -20,6 +21,7 @@ const quickAmounts = [500, 1000, 2000, 5000, 10000, 25000];
 const PlayerWallet = () => {
   const { user } = useAuth();
   const symbol = getCurrencySymbol(user);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -40,7 +42,6 @@ const PlayerWallet = () => {
   const { data: playerPaymentModes = [] } = useQuery({
     queryKey: ["player-payment-modes"],
     queryFn: getPaymentModes,
-    enabled: withdrawOpen,
   });
   const { data: publicPaymentMethods = [] } = useQuery({
     queryKey: ["publicPaymentMethods"],
@@ -102,7 +103,14 @@ const PlayerWallet = () => {
         </Button>
         <Button
           className="bg-accent text-accent-foreground font-gaming h-11 mobile:h-12 text-xs mobile:text-sm tracking-wider touch-manipulation min-h-[44px]"
-          onClick={() => setWithdrawOpen(true)}
+          onClick={() => {
+            if (withdrawPaymentModes.length === 0) {
+              toast({ title: "Add a payment method first, then ask your master to approve it.", variant: "destructive" });
+              navigate("/player/payment-modes");
+              return;
+            }
+            setWithdrawOpen(true);
+          }}
         >
           <ArrowUpCircle className="h-3.5 w-3.5 mobile:h-4 mobile:w-4 mr-1.5 mobile:mr-2" /> WITHDRAW
         </Button>
