@@ -6,6 +6,7 @@ import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { getActivity } from "@/api/admin";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type ActivityRow = Record<string, unknown> & { id?: number; user_username?: string; username?: string; action?: string; details?: string; remarks?: string; ip_address?: string; ip?: string; ipAddress?: string; created_at?: string };
 
@@ -24,7 +25,7 @@ const AdminActivityLog = () => {
 
   const columns = [
     { header: "username", sortKey: "user_username", accessor: (row: ActivityRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Username", String(row.user_username ?? row.username ?? ""))}>{String(row.user_username ?? row.username ?? "")}</span> },
-    { header: "action", sortKey: "action", accessor: (row: ActivityRow) => <span className="cursor-pointer hover:underline text-primary capitalize" onClick={openCell("Action", String(row.action ?? "").replace(/_/g, " "))}>{String(row.action ?? "").replace(/_/g, " ")}</span> },
+    { header: "action", sortKey: "action", accessor: (row: ActivityRow) => <TableBadge variant="action" onClick={openCell("Action", String(row.action ?? "").replace(/_/g, " "))}>{String(row.action ?? "").replace(/_/g, " ")}</TableBadge> },
     { header: "ip", sortKey: "ip_address", accessor: (row: ActivityRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("IP", String(row.ip ?? row.ip_address ?? row.ipAddress ?? ""))}>{String(row.ip ?? row.ip_address ?? row.ipAddress ?? "")}</span> },
     { header: "details", sortKey: "remarks", accessor: (row: ActivityRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Details", String(row.remarks ?? row.details ?? ""))}>{String(row.remarks ?? row.details ?? "")}</span> },
     { header: "date", sortKey: "created_at", accessor: (row: ActivityRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Date", row.created_at ? new Date(String(row.created_at)).toLocaleString() : "")}>{row.created_at ? new Date(String(row.created_at)).toLocaleString() : ""}</span> },
