@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChatInterface, type ApiMessage } from "@/components/shared/ChatInterface";
+import { ChatInterface, type ApiMessage, type SendPayload } from "@/components/shared/ChatInterface";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPlayerMessages, sendPlayerMessage } from "@/api/player";
+import { getPlayerMessages, sendPlayerMessage, sendPlayerMessageForm } from "@/api/player";
 import { useMessageSocket } from "@/hooks/useMessageSocket";
 import { toast } from "sonner";
 
@@ -30,11 +30,21 @@ const PlayerMessages = () => {
 
   const [sending, setSending] = useState(false);
 
-  const handleSend = async (message: string) => {
+  const handleSend = async (messageOrPayload: string | SendPayload) => {
     if (partnerId == null) return;
     setSending(true);
     try {
-      await sendPlayerMessage({ receiver: partnerId, message });
+      if (typeof messageOrPayload === "string") {
+        await sendPlayerMessage({ receiver: partnerId, message: messageOrPayload });
+      } else {
+        const { message, file, image } = messageOrPayload;
+        const formData = new FormData();
+        formData.append("receiver", String(partnerId));
+        formData.append("message", message);
+        if (file) formData.append("file", file);
+        if (image) formData.append("image", image);
+        await sendPlayerMessageForm(formData);
+      }
       await queryClient.invalidateQueries({ queryKey: ["player-messages", partnerId] });
     } catch (e) {
       const err = e as { detail?: string };

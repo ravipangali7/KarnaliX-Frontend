@@ -169,6 +169,11 @@ export async function sendPlayerMessage(body: unknown) {
   return apiPost(`${P}/messages/send/`, body);
 }
 
+/** Send message with optional file/image (multipart/form-data). FormData keys: receiver, message, file?, image? */
+export async function sendPlayerMessageForm(formData: FormData) {
+  return apiPostForm(`${P}/messages/send/`, formData);
+}
+
 export async function transfer(body: { username: string; amount: string; password: string }) {
   return apiPost(`${P}/transfer/`, body);
 }
