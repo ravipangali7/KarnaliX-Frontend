@@ -4,6 +4,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSuperMasterDW, type DateRangeParams } from "@/api/admin";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type Row = Record<string, unknown> & {
   id?: number;
@@ -57,35 +58,35 @@ export default function AdminSuperMasterDW() {
         header: "No of withdrawal",
         sortKey: "no_of_withdrawal",
         accessor: (row: Row) => (
-          <CellClick value={row.no_of_withdrawal ?? ""} onClick={() => setEditModal({ row, field: "no_of_withdrawal", value: row.no_of_withdrawal })} />
+          <TableBadge variant="players">{row.no_of_withdrawal ?? "—"}</TableBadge>
         ),
       },
       {
         header: "Withdrawal",
         sortKey: "withdrawal",
         accessor: (row: Row) => (
-          <CellClick value={String(row.withdrawal ?? "")} onClick={() => setEditModal({ row, field: "withdrawal", value: row.withdrawal })} />
+          <TableBadge variant="amountRed">{String(row.withdrawal ?? "—")}</TableBadge>
         ),
       },
       {
         header: "No of Deposit",
         sortKey: "no_of_deposit",
         accessor: (row: Row) => (
-          <CellClick value={row.no_of_deposit ?? ""} onClick={() => setEditModal({ row, field: "no_of_deposit", value: row.no_of_deposit })} />
+          <TableBadge variant="players">{row.no_of_deposit ?? "—"}</TableBadge>
         ),
       },
       {
         header: "Deposit",
         sortKey: "deposit",
         accessor: (row: Row) => (
-          <CellClick value={String(row.deposit ?? "")} onClick={() => setEditModal({ row, field: "deposit", value: row.deposit })} />
+          <TableBadge variant="amountGreen">{String(row.deposit ?? "—")}</TableBadge>
         ),
       },
       {
         header: "Total",
         sortKey: "total",
         accessor: (row: Row) => (
-          <CellClick value={String(row.total ?? "")} onClick={() => setEditModal({ row, field: "total", value: row.total })} />
+          <TableBadge variant="total">{String(row.total ?? "—")}</TableBadge>
         ),
       },
     ],

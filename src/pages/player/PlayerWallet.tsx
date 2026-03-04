@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
+import { getPublicPaymentMethods } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp, Gift } from "lucide-react";
@@ -39,6 +40,18 @@ const PlayerWallet = () => {
     queryFn: getPaymentModes,
     enabled: withdrawOpen,
   });
+  const { data: publicPaymentMethods = [] } = useQuery({
+    queryKey: ["publicPaymentMethods"],
+    queryFn: getPublicPaymentMethods,
+    enabled: depositOpen || withdrawOpen,
+  });
+  const paymentMethodImageMap = (publicPaymentMethods as { id: number; name: string; image_url?: string | null }[]).reduce(
+    (acc, pm) => {
+      if (pm.image_url) acc[pm.id] = pm.image_url;
+      return acc;
+    },
+    {} as Record<number, string>
+  );
   const withdrawPaymentModes = (playerPaymentModes as Record<string, unknown>[]).filter((pm) => pm.status === "approved");
   const w = wallet as Record<string, unknown> & { recent_deposits?: unknown[]; recent_withdrawals?: unknown[]; bonus_requests?: unknown[]; main_balance?: string; bonus_balance?: string };
   const myDeposits = w.deposits ?? w.recent_deposits ?? [];
@@ -48,54 +61,54 @@ const PlayerWallet = () => {
   const bonusBalance = Number(w.bonus_balance ?? 0);
 
   return (
-    <div className="p-4 md:p-6 space-y-5 max-w-4xl mx-auto">
+    <div className="p-2 mobile:p-4 md:p-6 space-y-4 mobile:space-y-5 max-w-4xl mx-auto min-w-0">
       {/* Balance Cards */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="text-center gaming-card hover:neon-glow-sm transition-all">
-            <CardContent className="p-4">
-              <Wallet className="h-5 w-5 mx-auto mb-1 text-primary" />
+      <div className="grid grid-cols-3 gap-2 mobile:gap-3 md:gap-4 min-w-0">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="min-w-0">
+          <Card className="text-center gaming-card hover:neon-glow-sm transition-all min-w-0">
+            <CardContent className="p-2 mobile:p-4">
+              <Wallet className="h-4 w-4 mobile:h-5 mobile:w-5 mx-auto mb-1 text-primary" />
               <p className="text-[10px] text-muted-foreground">Main Balance</p>
-              <p className="font-gaming font-bold text-lg md:text-2xl">₹{mainBalance.toLocaleString()}</p>
+              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl truncate">₹{mainBalance.toLocaleString()}</p>
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="text-center gaming-card hover:neon-glow-sm transition-all">
-            <CardContent className="p-4">
-              <Sparkles className="h-5 w-5 mx-auto mb-1 text-accent" />
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="min-w-0">
+          <Card className="text-center gaming-card hover:neon-glow-sm transition-all min-w-0">
+            <CardContent className="p-2 mobile:p-4">
+              <Sparkles className="h-4 w-4 mobile:h-5 mobile:w-5 mx-auto mb-1 text-accent" />
               <p className="text-[10px] text-muted-foreground">Bonus</p>
-              <p className="font-gaming font-bold text-lg md:text-2xl text-accent">₹{bonusBalance.toLocaleString()}</p>
+              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl text-accent truncate">₹{bonusBalance.toLocaleString()}</p>
             </CardContent>
           </Card>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="text-center gaming-card neon-glow-sm">
-            <CardContent className="p-4">
-              <TrendingUp className="h-5 w-5 mx-auto mb-1 text-neon" />
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="min-w-0">
+          <Card className="text-center gaming-card neon-glow-sm min-w-0">
+            <CardContent className="p-2 mobile:p-4">
+              <TrendingUp className="h-4 w-4 mobile:h-5 mobile:w-5 mx-auto mb-1 text-neon" />
               <p className="text-[10px] text-muted-foreground">Total</p>
-              <p className="font-gaming font-bold text-lg md:text-2xl neon-text">₹{(mainBalance + bonusBalance).toLocaleString()}</p>
+              <p className="font-gaming font-bold text-sm mobile:text-lg md:text-2xl neon-text truncate">₹{(mainBalance + bonusBalance).toLocaleString()}</p>
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3">
-        <Button className="gold-gradient text-primary-foreground font-gaming h-12 text-sm tracking-wider neon-glow-sm" onClick={() => setDepositOpen(true)}>
-          <ArrowDownCircle className="h-4 w-4 mr-2" /> DEPOSIT
+      {/* Action Buttons - touch-friendly */}
+      <div className="grid grid-cols-2 gap-2 mobile:gap-3 min-w-0">
+        <Button className="gold-gradient text-primary-foreground font-gaming h-11 mobile:h-12 text-xs mobile:text-sm tracking-wider neon-glow-sm touch-manipulation min-h-[44px]" onClick={() => setDepositOpen(true)}>
+          <ArrowDownCircle className="h-3.5 w-3.5 mobile:h-4 mobile:w-4 mr-1.5 mobile:mr-2" /> DEPOSIT
         </Button>
         <Button
-          className="bg-accent text-accent-foreground font-gaming h-12 text-sm tracking-wider"
+          className="bg-accent text-accent-foreground font-gaming h-11 mobile:h-12 text-xs mobile:text-sm tracking-wider touch-manipulation min-h-[44px]"
           onClick={() => setWithdrawOpen(true)}
         >
-          <ArrowUpCircle className="h-4 w-4 mr-2" /> WITHDRAW
+          <ArrowUpCircle className="h-3.5 w-3.5 mobile:h-4 mobile:w-4 mr-1.5 mobile:mr-2" /> WITHDRAW
         </Button>
       </div>
 
       {/* History Tabs */}
-      <Tabs defaultValue="deposits">
-        <TabsList className="w-full grid grid-cols-3">
+      <Tabs defaultValue="deposits" className="min-w-0">
+        <TabsList className="w-full grid grid-cols-3 min-h-[44px] touch-manipulation">
           <TabsTrigger value="deposits" className="gap-1 font-display text-xs"><ArrowDownCircle className="h-3 w-3" /> Deposits</TabsTrigger>
           <TabsTrigger value="withdrawals" className="gap-1 font-display text-xs"><ArrowUpCircle className="h-3 w-3" /> Withdrawals</TabsTrigger>
           <TabsTrigger value="bonus-requests" className="gap-1 font-display text-xs"><Gift className="h-3 w-3" /> Bonus Requests</TabsTrigger>
@@ -185,51 +198,58 @@ const PlayerWallet = () => {
 
       {/* Deposit Modal */}
       <Dialog open={depositOpen} onOpenChange={(open) => { setDepositOpen(open); if (!open) setDepositScreenshot(null); }}>
-        <DialogContent className="max-w-md gaming-card">
+        <DialogContent className="max-w-[calc(100vw-2rem)] mobile:max-w-2xl gaming-card w-full">
           <DialogHeader>
             <DialogTitle className="font-gaming text-lg neon-text tracking-wider">DEPOSIT FUNDS</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            {/* Step 1: Select payment method */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">1. Select Payment Method (Master)</p>
-              <div className="space-y-2">
-                {(depositPaymentModes as Record<string, unknown>[]).length === 0 && (
-                  <p className="text-xs text-muted-foreground py-2">No payment methods available. Ask your master to add one.</p>
-                )}
-                {(depositPaymentModes as Record<string, unknown>[]).map((pm) => {
-                  const pmName = String(pm.payment_method_name ?? "");
-                  const pmDetail = pm.details && typeof pm.details === "object" && Object.keys(pm.details as object).length > 0
-                    ? "****" + String(Object.values(pm.details as Record<string, unknown>)[0] ?? "").slice(-4)
-                    : "";
-                  return (
-                    <div
-                      key={String(pm.id ?? "")}
-                      onClick={() => setSelectedPM(String(pm.id ?? ""))}
-                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                        selectedPM === String(pm.id ?? "") ? "border-primary neon-glow-sm bg-primary/5" : "border-border hover:border-primary/30"
-                      }`}
-                    >
-                      <div className="h-9 w-9 rounded-lg gold-gradient flex items-center justify-center text-xs font-bold text-primary-foreground">{(pmName || "P")[0]}</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{pmName}</p>
-                        <p className="text-[10px] text-muted-foreground">{pmDetail || "—"}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left: Step 1 + Step 2 (payment method list + pay to account) */}
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">1. Select Payment Method (Master)</p>
+                <div className="space-y-2">
+                  {(depositPaymentModes as Record<string, unknown>[]).length === 0 && (
+                    <p className="text-xs text-muted-foreground py-2">No payment methods available. Ask your master to add one.</p>
+                  )}
+                  {(depositPaymentModes as Record<string, unknown>[]).map((pm) => {
+                    const pmName = String(pm.payment_method_name ?? "");
+                    const pmDetail = pm.details && typeof pm.details === "object" && Object.keys(pm.details as object).length > 0
+                      ? "****" + String(Object.values(pm.details as Record<string, unknown>)[0] ?? "").slice(-4)
+                      : "";
+                    const pmMethodId = pm.payment_method != null ? Number(pm.payment_method) : null;
+                    const pmImageUrl = pmMethodId != null ? paymentMethodImageMap[pmMethodId] : null;
+                    return (
+                      <div
+                        key={String(pm.id ?? "")}
+                        onClick={() => setSelectedPM(String(pm.id ?? ""))}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                          selectedPM === String(pm.id ?? "") ? "border-primary neon-glow-sm bg-primary/5" : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-muted/30 border border-border">
+                          {pmImageUrl ? (
+                            <img src={getMediaUrl(pmImageUrl)} alt={pmName} className="h-full w-full object-contain" />
+                          ) : (
+                            <span className="gold-gradient flex h-full w-full items-center justify-center text-xs font-bold text-primary-foreground">{(pmName || "P")[0]}</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{pmName}</p>
+                          <p className="text-[10px] text-muted-foreground">{pmDetail || "—"}</p>
+                        </div>
+                        {selectedPM === String(pm.id ?? "") && <CheckCircle className="h-4 w-4 text-primary" />}
                       </div>
-                      {selectedPM === String(pm.id ?? "") && <CheckCircle className="h-4 w-4 text-primary" />}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Step 2: Show selected method details + instructions, then amount & screenshot */}
-            {selectedPM && (() => {
-              const selectedMode = (depositPaymentModes as Record<string, unknown>[]).find((pm) => String(pm.id) === selectedPM);
-              const displayName = String(selectedMode?.payment_method_name ?? "");
-              const details = selectedMode?.details as Record<string, unknown> | null | undefined;
-              const hasDetails = details != null && typeof details === "object" && Object.keys(details).length > 0;
-              return (
-                <>
+              {selectedPM && (() => {
+                const selectedMode = (depositPaymentModes as Record<string, unknown>[]).find((pm) => String(pm.id) === selectedPM);
+                const displayName = String(selectedMode?.payment_method_name ?? "");
+                const details = selectedMode?.details as Record<string, unknown> | null | undefined;
+                const hasDetails = details != null && typeof details === "object" && Object.keys(details).length > 0;
+                return (
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground mb-2">2. Pay to this account</p>
                     <div className="rounded-xl border border-primary/40 bg-primary/5 p-4 space-y-2">
@@ -249,48 +269,53 @@ const PlayerWallet = () => {
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Transfer the amount to the account above. Then enter the amount and upload your payment screenshot below.</p>
+                    <p className="text-xs text-muted-foreground mt-2">Transfer the amount to the account above. Then enter the amount and upload your payment screenshot in the right column.</p>
                   </div>
+                );
+              })()}
+            </div>
 
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">3. Enter amount you paid</p>
-                    <Input type="number" placeholder="Enter deposit amount" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-12 text-lg font-gaming" />
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      {quickAmounts.map((a) => (
-                        <Button key={a} variant="outline" size="sm" onClick={() => setAmount(String(a))} className={`text-xs font-gaming ${amount === String(a) ? "border-primary text-primary" : ""}`}>
-                          ₹{a >= 1000 ? `${a / 1000}K` : a}
-                        </Button>
-                      ))}
-                    </div>
+            {/* Right: Step 3 + 4 (amount, remarks, screenshot) — only when method selected */}
+            {selectedPM && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">3. Enter amount you paid</p>
+                  <Input type="number" placeholder="Enter deposit amount" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-12 text-lg font-gaming" />
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {quickAmounts.map((a) => (
+                      <Button key={a} variant="outline" size="sm" onClick={() => setAmount(String(a))} className={`text-xs font-gaming ${amount === String(a) ? "border-primary text-primary" : ""}`}>
+                        ₹{a >= 1000 ? `${a / 1000}K` : a}
+                      </Button>
+                    ))}
                   </div>
+                </div>
 
-                  <Input placeholder="Remarks (optional)" value={depositRemarks} onChange={(e) => setDepositRemarks(e.target.value)} className="text-sm" />
+                <Input placeholder="Remarks (optional)" value={depositRemarks} onChange={(e) => setDepositRemarks(e.target.value)} className="text-sm" />
 
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">4. Upload payment screenshot</p>
-                    <input
-                      ref={screenshotInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => setDepositScreenshot(e.target.files?.[0] ?? null)}
-                    />
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => screenshotInputRef.current?.click()}
-                      onKeyDown={(e) => e.key === "Enter" && screenshotInputRef.current?.click()}
-                      className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                    >
-                      <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">
-                        {depositScreenshot ? depositScreenshot.name : "Click to upload payment screenshot"}
-                      </p>
-                    </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">4. Upload payment screenshot</p>
+                  <input
+                    ref={screenshotInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => setDepositScreenshot(e.target.files?.[0] ?? null)}
+                  />
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => screenshotInputRef.current?.click()}
+                    onKeyDown={(e) => e.key === "Enter" && screenshotInputRef.current?.click()}
+                    className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground">
+                      {depositScreenshot ? depositScreenshot.name : "Click to upload payment screenshot"}
+                    </p>
                   </div>
-                </>
-              );
-            })()}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDepositOpen(false)}>Cancel</Button>
@@ -342,7 +367,7 @@ const PlayerWallet = () => {
 
       {/* Withdraw Modal — only reachable when KYC approved */}
       <Dialog open={withdrawOpen} onOpenChange={(open) => { setWithdrawOpen(open); if (!open) { setAmount(""); setWithdrawPassword(""); setSelectedPM(null); } }}>
-        <DialogContent className="max-w-md gaming-card">
+        <DialogContent className="max-w-[calc(100vw-2rem)] mobile:max-w-md gaming-card w-full">
           <DialogHeader>
             <DialogTitle className="font-gaming text-lg neon-text tracking-wider">WITHDRAW FUNDS</DialogTitle>
           </DialogHeader>
@@ -358,6 +383,8 @@ const PlayerWallet = () => {
                     const wDetail = pm.details && typeof pm.details === "object" && Object.keys(pm.details as object).length > 0
                       ? "****" + String(Object.values(pm.details as Record<string, unknown>)[0] ?? "").slice(-4)
                       : "";
+                    const wMethodId = pm.payment_method != null ? Number(pm.payment_method) : null;
+                    const wImageUrl = wMethodId != null ? paymentMethodImageMap[wMethodId] : null;
                     return (
                       <div
                         key={String(pm.id ?? "")}
@@ -366,7 +393,13 @@ const PlayerWallet = () => {
                           selectedPM === String(pm.id ?? "") ? "border-accent bg-accent/5" : "border-border hover:border-accent/30"
                         }`}
                       >
-                        <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">{(wName || "P")[0]}</div>
+                        <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-muted/30 border border-border">
+                          {wImageUrl ? (
+                            <img src={getMediaUrl(wImageUrl)} alt={wName} className="h-full w-full object-contain" />
+                          ) : (
+                            <span className="flex h-full w-full items-center justify-center bg-accent/10 text-xs font-bold text-accent">{(wName || "P")[0]}</span>
+                          )}
+                        </div>
                         <div className="flex-1">
                           <p className="text-sm font-medium">{wName}</p>
                           <p className="text-[10px] text-muted-foreground">{wDetail || "—"}</p>

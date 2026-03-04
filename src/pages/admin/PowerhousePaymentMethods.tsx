@@ -302,7 +302,7 @@ const PowerhousePaymentMethods = () => {
 
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetForm(); }}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-display">Add payment method</DialogTitle>
           </DialogHeader>
@@ -316,7 +316,7 @@ const PowerhousePaymentMethods = () => {
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) resetForm(); }}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-display">Edit payment method</DialogTitle>
           </DialogHeader>

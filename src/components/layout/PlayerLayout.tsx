@@ -1,41 +1,24 @@
 import { useEffect } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { Home, MessageCircle, Wallet, Clock, User, Gamepad2, Key, CreditCard, BarChart3, LogOut, Users } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPlayerUnreadMessageCount } from "@/api/player";
-import { Badge } from "@/components/ui/badge";
-
-const sidebarLinks = [
-  { label: "Dashboard", path: "/player", icon: Home },
-  { label: "Wallet", path: "/player/wallet", icon: Wallet },
-  { label: "Messages", path: "/player/messages", icon: MessageCircle },
-  { label: "Transactions", path: "/player/transactions", icon: Clock },
-  { label: "Game Results", path: "/player/game-results", icon: BarChart3 },
-  { label: "Payment Modes", path: "/player/payment-modes", icon: CreditCard },
-  { label: "Refer", path: "/player/referral", icon: Users },
-  { label: "Change Password", path: "/player/change-password", icon: Key },
-  { label: "Profile", path: "/player/profile", icon: User },
-];
+import { PlayerSidebarContent } from "./PlayerSidebarContent";
 
 const formatBal = (v: string | number | null | undefined) => (v != null ? `₹${Number(v).toLocaleString()}` : "₹0");
 
 export const PlayerLayout = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, logout, refreshUser } = useAuth();
   const total = user?.total_balance != null ? formatBal(user.total_balance) : "₹0";
-  const main = formatBal(user?.main_balance);
-  const bonus = formatBal(user?.bonus_balance);
 
   const { data: unreadMessages = 0 } = useQuery({
     queryKey: ["player-messages-unread"],
     queryFn: getPlayerUnreadMessageCount,
   });
   const messageBadge = Number(unreadMessages) || 0;
-
-  const isActive = (path: string) => location.pathname === path;
 
   // When user returns from game tab (visibility or focus), refetch wallet and auth so header/sidebar balance updates
   useEffect(() => {
@@ -65,83 +48,42 @@ export const PlayerLayout = () => {
   }, [queryClient, refreshUser]);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background">
-      {/* Desktop Sidebar (no logo – site header shows branding) */}
-      <aside className="hidden md:flex flex-col w-64 bg-card text-foreground border-r border-border flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
-        {/* Balance card in sidebar */}
-        <div className="p-4">
-          <div className="rounded-xl gold-gradient p-4 neon-glow-sm">
-            <p className="text-primary-foreground/60 text-[10px] font-medium">Total Balance</p>
-            <p className="font-gaming font-bold text-2xl text-primary-foreground">{total}</p>
-            <div className="flex gap-3 mt-2 text-[10px] text-primary-foreground/70">
-              <span>Main: {main}</span>
-              <span>Bonus: {bonus}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Nav items */}
-        <nav className="flex-1 px-3 py-2 space-y-1">
-          {sidebarLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive(link.path)
-                  ? "bg-primary/10 text-primary neon-glow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <link.icon className={`h-4 w-4 ${isActive(link.path) ? "text-primary" : ""}`} />
-              <span className="flex-1 truncate">{link.label}</span>
-              {link.path === "/player/messages" && messageBadge > 0 && (
-                <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
-                  {messageBadge > 99 ? "99+" : messageBadge}
-                </Badge>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-border space-y-2">
-          <Link to="/" className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <Gamepad2 className="h-4 w-4" />
-            <span>Play Games</span>
-          </Link>
-          <button onClick={() => { logout(); navigate("/login"); }} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors">
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
-          </button>
-        </div>
+    <div className="min-h-screen flex flex-col mobile:flex-row bg-background">
+      {/* Desktop Sidebar (visible from 450px up; below that, sidebar is in header hamburger) */}
+      <aside className="hidden mobile:flex flex-col w-64 bg-card text-foreground border-r border-border flex-shrink-0 sticky top-0 h-screen overflow-y-auto min-w-0">
+        <PlayerSidebarContent
+          user={user}
+          logout={logout}
+          messageBadge={messageBadge}
+          currentPath={location.pathname}
+        />
       </aside>
 
-      {/* Main Content Area (mobile: no extra top bar – logo + balance live in PublicHeader) */}
-      <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
+      {/* Main Content Area (mobile: no extra top bar – logo + balance live in header) */}
+      <div className="flex-1 flex flex-col min-h-screen mobile:min-h-0 min-w-0">
         {/* Desktop top bar – same horizontal spacing as site header/footer */}
-        <header className="hidden md:flex sticky top-0 z-50 glass-card border-b border-border/50 h-14 items-center justify-between container px-4 mx-auto w-full max-w-[100%]">
-          <div>
-            <h1 className="font-display font-bold text-lg capitalize">
+        <header className="hidden mobile:flex sticky top-0 z-50 glass-card border-b border-border/50 h-14 items-center justify-between container px-2 mobile:px-4 mx-auto w-full max-w-[100%]">
+          <div className="min-w-0">
+            <h1 className="font-display font-bold text-lg capitalize truncate">
               {location.pathname.split("/").pop()?.replace(/-/g, " ") || "Dashboard"}
             </h1>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50">
+          <div className="flex items-center gap-2 mobile:gap-4 flex-shrink-0">
+            <div className="flex items-center gap-2 px-2 mobile:px-3 py-1.5 rounded-lg bg-muted/50">
               <Wallet className="h-4 w-4 text-primary" />
-              <span className="text-sm font-gaming font-bold text-primary">{total}</span>
+              <span className="text-sm font-gaming font-bold text-primary truncate">{total}</span>
             </div>
-            <div className="h-8 w-8 rounded-full gold-gradient flex items-center justify-center text-xs font-bold text-primary-foreground">P1</div>
+            <div className="h-8 w-8 rounded-full gold-gradient flex items-center justify-center text-xs font-bold text-primary-foreground flex-shrink-0">P1</div>
           </div>
         </header>
 
-        {/* Content – container + px-4 to match header/footer margins */}
-        <main className="flex-1 pb-20 md:pb-6 overflow-y-auto">
-          <div className="container px-4 mx-auto w-full max-w-[100%]">
+        {/* Content – container + responsive px to match header/footer margins */}
+        <main className="flex-1 pb-20 mobile:pb-6 overflow-y-auto overflow-x-hidden min-w-0">
+          <div className="container px-2 mobile:px-4 mx-auto w-full max-w-[100%]">
             <Outlet />
           </div>
         </main>
       </div>
-
     </div>
   );
 };

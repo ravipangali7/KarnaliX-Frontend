@@ -309,7 +309,7 @@ const PowerhousePopup = () => {
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display">Add Popup</DialogTitle>
           </DialogHeader>
@@ -339,7 +339,7 @@ const PowerhousePopup = () => {
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display">Edit Popup</DialogTitle>
           </DialogHeader>

@@ -319,35 +319,37 @@ const PowerhouseProviders = () => {
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle className="font-display">Add Provider</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input placeholder="Provider Name" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Provider Code" value={code} onChange={(e) => setCode(e.target.value)} />
-            <div className="space-y-2 pt-1 border-t border-border">
+            <div className="md:col-span-2 space-y-2 pt-1 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground">API (launch)</p>
               <Input
                 placeholder="Launch URL e.g. https://allapi.online/launch_game1_js"
                 value={apiEndpoint}
                 onChange={(e) => setApiEndpoint(e.target.value)}
               />
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">API secret (optional)</label>
-                <Input
-                  type={showApiSecrets ? "text" : "password"}
-                  placeholder="API secret"
-                  value={apiSecret}
-                  onChange={(e) => setApiSecret(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">API token (optional)</label>
-                <Input
-                  type={showApiSecrets ? "text" : "password"}
-                  placeholder="API token"
-                  value={apiToken}
-                  onChange={(e) => setApiToken(e.target.value)}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">API secret (optional)</label>
+                  <Input
+                    type={showApiSecrets ? "text" : "password"}
+                    placeholder="API secret"
+                    value={apiSecret}
+                    onChange={(e) => setApiSecret(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">API token (optional)</label>
+                  <Input
+                    type={showApiSecrets ? "text" : "password"}
+                    placeholder="API token"
+                    value={apiToken}
+                    onChange={(e) => setApiToken(e.target.value)}
+                  />
+                </div>
               </div>
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <input type="checkbox" checked={showApiSecrets} onChange={(e) => setShowApiSecrets(e.target.checked)} className="rounded border-border" />
@@ -384,7 +386,7 @@ const PowerhouseProviders = () => {
                 </div>
               )}
             </div>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm md:col-span-2">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
               Active
             </label>
@@ -403,35 +405,37 @@ const PowerhouseProviders = () => {
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle className="font-display">Edit Provider</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input placeholder="Provider Name" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Provider Code" value={code} onChange={(e) => setCode(e.target.value)} />
-            <div className="space-y-2 pt-1 border-t border-border">
+            <div className="md:col-span-2 space-y-2 pt-1 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground">API (launch)</p>
               <Input
                 placeholder="Launch URL e.g. https://allapi.online/launch_game1_js"
                 value={apiEndpoint}
                 onChange={(e) => setApiEndpoint(e.target.value)}
               />
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">API secret (optional)</label>
-                <Input
-                  type={showApiSecrets ? "text" : "password"}
-                  placeholder="API secret"
-                  value={apiSecret}
-                  onChange={(e) => setApiSecret(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">API token (optional)</label>
-                <Input
-                  type={showApiSecrets ? "text" : "password"}
-                  placeholder="API token"
-                  value={apiToken}
-                  onChange={(e) => setApiToken(e.target.value)}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">API secret (optional)</label>
+                  <Input
+                    type={showApiSecrets ? "text" : "password"}
+                    placeholder="API secret"
+                    value={apiSecret}
+                    onChange={(e) => setApiSecret(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">API token (optional)</label>
+                  <Input
+                    type={showApiSecrets ? "text" : "password"}
+                    placeholder="API token"
+                    value={apiToken}
+                    onChange={(e) => setApiToken(e.target.value)}
+                  />
+                </div>
               </div>
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <input type="checkbox" checked={showApiSecrets} onChange={(e) => setShowApiSecrets(e.target.checked)} className="rounded border-border" />
@@ -474,7 +478,7 @@ const PowerhouseProviders = () => {
                 </div>
               )}
             </div>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm md:col-span-2">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-border" />
               Active
             </label>

@@ -4,6 +4,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSuperDWState, type DateRangeParams } from "@/api/admin";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type Row = Record<string, unknown> & {
   id?: number;
@@ -58,42 +59,42 @@ export default function AdminSuperDWState() {
         header: "No of Deposit",
         sortKey: "no_of_deposit",
         accessor: (row: Row) => (
-          <CellClick value={row.no_of_deposit ?? ""} onClick={() => setEditModal({ row, field: "no_of_deposit", value: row.no_of_deposit })} />
+          <TableBadge variant="players">{row.no_of_deposit ?? "—"}</TableBadge>
         ),
       },
       {
         header: "Total Deposit",
         sortKey: "total_deposit",
         accessor: (row: Row) => (
-          <CellClick value={String(row.total_deposit ?? "")} onClick={() => setEditModal({ row, field: "total_deposit", value: row.total_deposit })} />
+          <TableBadge variant="amountGreen">{String(row.total_deposit ?? "—")}</TableBadge>
         ),
       },
       {
         header: "No of Withdrawal",
         sortKey: "no_of_withdrawal",
         accessor: (row: Row) => (
-          <CellClick value={row.no_of_withdrawal ?? ""} onClick={() => setEditModal({ row, field: "no_of_withdrawal", value: row.no_of_withdrawal })} />
+          <TableBadge variant="players">{row.no_of_withdrawal ?? "—"}</TableBadge>
         ),
       },
       {
         header: "Total Withdrawal",
         sortKey: "total_withdrawal",
         accessor: (row: Row) => (
-          <CellClick value={String(row.total_withdrawal ?? "")} onClick={() => setEditModal({ row, field: "total_withdrawal", value: row.total_withdrawal })} />
+          <TableBadge variant="amountRed">{String(row.total_withdrawal ?? "—")}</TableBadge>
         ),
       },
       {
         header: "Net D/W",
         sortKey: "net_d_w",
         accessor: (row: Row) => (
-          <CellClick value={String(row.net_d_w ?? "")} onClick={() => setEditModal({ row, field: "net_d_w", value: row.net_d_w })} />
+          <TableBadge variant="total">{String(row.net_d_w ?? "—")}</TableBadge>
         ),
       },
       {
         header: "Total D/W",
         sortKey: "total_d_w",
         accessor: (row: Row) => (
-          <CellClick value={String(row.total_d_w ?? "")} onClick={() => setEditModal({ row, field: "total_d_w", value: row.total_d_w })} />
+          <TableBadge variant="total">{String(row.total_d_w ?? "—")}</TableBadge>
         ),
       },
     ],

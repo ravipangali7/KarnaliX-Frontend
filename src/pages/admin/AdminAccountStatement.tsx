@@ -5,6 +5,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getAccountStatement, type StatementParams } from "@/api/admin";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type StatementRow = Record<string, unknown> & {
   id?: number;
@@ -57,21 +58,21 @@ export default function AdminAccountStatement() {
         header: "debit",
         sortKey: "debit",
         accessor: (row: StatementRow) => (
-          <CellClick value={String(row.debit ?? "")} onClick={() => setEditModal({ row, field: "debit", value: row.debit })} />
+          <TableBadge variant="debit">{String(row.debit ?? "—")}</TableBadge>
         ),
       },
       {
         header: "credit",
         sortKey: "credit",
         accessor: (row: StatementRow) => (
-          <CellClick value={String(row.credit ?? "")} onClick={() => setEditModal({ row, field: "credit", value: row.credit })} />
+          <TableBadge variant="credit">{String(row.credit ?? "—")}</TableBadge>
         ),
       },
       {
         header: "balance",
         sortKey: "balance",
         accessor: (row: StatementRow) => (
-          <CellClick value={String(row.balance ?? "")} onClick={() => setEditModal({ row, field: "balance", value: row.balance })} />
+          <TableBadge variant="total">{String(row.balance ?? "—")}</TableBadge>
         ),
       },
       {

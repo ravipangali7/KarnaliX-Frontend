@@ -13,8 +13,8 @@ export const MobileNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden glass-strong border-t border-border nav-bottom-safe">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 mobile:hidden glass-strong border-t border-border nav-bottom-safe">
+      <div className="flex items-center justify-around h-14 min-h-[56px] px-1 mobile:px-2 gap-0 min-w-0">
         {items.map((item) => {
           const isActive =
             item.path === "/providers"
@@ -28,12 +28,12 @@ export const MobileNav = () => {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-lg min-w-[56px] transition-colors",
+                "flex flex-col items-center justify-center gap-0.5 py-2 px-2 min-w-0 flex-1 rounded-lg min-h-[44px] touch-manipulation transition-colors max-w-[80px]",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              <span className="text-[10px] font-medium truncate w-full text-center">{item.label}</span>
             </Link>
           );
         })}

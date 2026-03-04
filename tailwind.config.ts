@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      screens: {
+        mobile: "450px",
+      },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
         display: ["Rajdhani", "sans-serif"],

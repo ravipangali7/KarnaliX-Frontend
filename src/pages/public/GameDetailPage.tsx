@@ -94,9 +94,9 @@ const GameDetailPage = () => {
   const whatsapp = (siteSetting as { whatsapp_number?: string })?.whatsapp_number ?? "";
 
   return (
-    <div className="container px-4 py-4 space-y-5">
+    <div className="container px-2 mobile:px-4 py-4 space-y-4 mobile:space-y-5 min-w-0 max-w-full">
       {/* Game Hero */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mobile:gap-4 min-w-0">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-3 relative rounded-2xl overflow-hidden aspect-[16/9] lg:aspect-[4/3]">
           <GameImageWithFallback src={getGameImageUrl(g)} alt={g.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />

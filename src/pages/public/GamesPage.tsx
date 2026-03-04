@@ -76,10 +76,10 @@ const GamesPage = () => {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
-    <div className="container px-4 py-6 space-y-4">
-      <div>
-        <h1 className="font-gaming font-bold text-2xl neon-text tracking-wide">ALL GAMES</h1>
-        <p className="text-sm text-muted-foreground mt-1">Discover {totalCount} exciting games to play and win</p>
+    <div className="container px-2 mobile:px-4 py-4 mobile:py-6 space-y-4 min-w-0 max-w-full">
+      <div className="min-w-0">
+        <h1 className="font-gaming font-bold text-xl mobile:text-2xl neon-text tracking-wide truncate">ALL GAMES</h1>
+        <p className="text-xs mobile:text-sm text-muted-foreground mt-1 truncate">Discover {totalCount} exciting games to play and win</p>
       </div>
 
       {/* Search - uses backend API with pagination */}
@@ -88,10 +88,10 @@ const GamesPage = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             type="search"
-            placeholder="Search games by name or provider..."
+            placeholder="Search games..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9 h-10 min-h-[44px]"
+            className="pl-9 h-10 min-h-[44px] touch-manipulation"
             aria-label="Search games"
           />
         </div>
@@ -100,57 +100,52 @@ const GamesPage = () => {
         </Button>
       </form>
 
-      {/* Category row with SVG icon + name, single-row horizontal scroll */}
-      <div
-        className="scrollbar-hide pb-2"
-        style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden", gap: "12px", width: "100%", WebkitOverflowScrolling: "touch" }}
-      >
-        {/* All Games chip — irregular shape like provider, no border/bg */}
+      {/* Category row - horizontal scroll, touch-friendly */}
+      <div className="flex flex-row flex-nowrap gap-2 mobile:gap-3 overflow-x-auto overflow-y-hidden pb-2 scrollbar-hide w-full min-w-0 -mx-2 mobile:mx-0 px-2 mobile:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
         <button
+          type="button"
           onClick={() => setFilters({ category: "all", page: 1 })}
-          className={`transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0, flexGrow: 0, width: "64px", minWidth: "64px" }}
+          className={`flex flex-col items-center gap-1 flex-shrink-0 w-14 mobile:w-16 min-h-[44px] touch-manipulation transition-all focus:outline-none focus:ring-0 focus-visible:outline-none ${categoryParam === "all" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+          style={{ borderRadius: IRREGULAR_SHAPE }}
         >
-          <div className="h-14 w-14 flex items-center justify-center overflow-hidden transition-all" style={{ borderRadius: IRREGULAR_SHAPE }}>
-            <LayoutGrid className={`h-6 w-6 ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} />
+          <div className="h-12 w-12 mobile:h-14 mobile:w-14 flex items-center justify-center overflow-hidden transition-all" style={{ borderRadius: IRREGULAR_SHAPE }}>
+            <LayoutGrid className={`h-5 w-5 mobile:h-6 mobile:w-6 ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} />
           </div>
-          <span className={`text-[10px] font-medium text-center ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>All</span>
+          <span className={`text-[10px] font-medium text-center truncate w-full max-w-[56px] mobile:max-w-[64px] ${categoryParam === "all" ? "text-primary" : "text-muted-foreground"}`}>All</span>
         </button>
         {(categories as GameCategory[]).map((cat) => (
           <button
             key={cat.id}
+            type="button"
             onClick={() => setFilters({ category: String(cat.id), page: 1 })}
-            className={`transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0, flexGrow: 0, width: "64px", minWidth: "64px" }}
+            className={`flex flex-col items-center gap-1 flex-shrink-0 w-14 mobile:w-16 min-h-[44px] touch-manipulation transition-all focus:outline-none focus:ring-0 focus-visible:outline-none ${categoryParam === String(cat.id) ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+            style={{ borderRadius: IRREGULAR_SHAPE }}
           >
-            <div className="h-14 w-14 flex items-center justify-center overflow-hidden transition-all" style={{ borderRadius: IRREGULAR_SHAPE }}>
+            <div className="h-12 w-12 mobile:h-14 mobile:w-14 flex items-center justify-center overflow-hidden transition-all" style={{ borderRadius: IRREGULAR_SHAPE }}>
               <CategoryIcon cat={cat} name={cat.name} />
             </div>
-            <span className={`text-[10px] font-medium text-center ${categoryParam === String(cat.id) ? "text-primary" : "text-muted-foreground"}`} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>{cat.name}</span>
+            <span className={`text-[10px] font-medium text-center truncate w-full max-w-[56px] mobile:max-w-[64px] ${categoryParam === String(cat.id) ? "text-primary" : "text-muted-foreground"}`}>{cat.name}</span>
           </button>
         ))}
       </div>
 
       {/* Loading / error for games */}
       {gamesLoading && (
-        <p className="text-center text-muted-foreground py-8">Loading games…</p>
+        <p className="text-center text-muted-foreground py-8 text-sm">Loading games…</p>
       )}
       {gamesError && !gamesLoading && (
         <div className="text-center py-8 space-y-2">
-          <p className="text-muted-foreground">Could not load games.</p>
-          <Button variant="outline" size="sm" onClick={() => refetchGames()}>Retry</Button>
+          <p className="text-muted-foreground text-sm">Could not load games.</p>
+          <Button variant="outline" size="sm" className="touch-manipulation min-h-[44px]" onClick={() => refetchGames()}>Retry</Button>
         </div>
       )}
 
-      {/* Games — single-row horizontal scroll, never wraps */}
+      {/* Games - responsive grid on mobile, horizontal scroll optional; use grid for native feel */}
       {!gamesLoading && !gamesError && (
-        <div
-          className="scrollbar-hide pb-2"
-          style={{ display: "flex", flexDirection: "row", justifyContent: "space-evenly", flexWrap: "wrap", overflowX: "auto", overflowY: "hidden", gap: "12px", width: "100%", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory" }}
-        >
+        <div className="grid grid-cols-2 mobile:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2 mobile:gap-3 min-w-0">
           {results.map((game: Game) => (
-            <div key={game.id} style={{ flexShrink: 0, flexGrow: 0, width: "150px", minWidth: "150px", scrollSnapAlign: "start" }}>
-              <Link to={`/games/${game.id}`}>
+            <div key={game.id} className="min-w-0 w-full">
+              <Link to={`/games/${game.id}`} className="block min-w-0">
                 <GameCard image={getGameImageUrl(game)} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
               </Link>
             </div>
@@ -159,23 +154,23 @@ const GamesPage = () => {
       )}
 
       {!gamesLoading && !gamesError && results.length === 0 && (
-        <p className="text-center text-muted-foreground py-12">No games found</p>
+        <p className="text-center text-muted-foreground py-12 text-sm">No games found</p>
       )}
 
-      {/* Pagination */}
+      {/* Pagination - touch-friendly */}
       {!gamesLoading && !gamesError && totalPages > 1 && (
         <Pagination className="pt-4">
-          <PaginationContent className="gap-2">
+          <PaginationContent className="gap-1 mobile:gap-2 flex-wrap">
             <PaginationItem>
               <PaginationPrevious
                 href="#"
                 onClick={(e) => { e.preventDefault(); setFilters({ page: currentPage - 1 }); }}
-                className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                className={`min-h-[44px] touch-manipulation ${currentPage <= 1 ? "pointer-events-none opacity-50" : ""}`}
                 aria-disabled={currentPage <= 1}
               />
             </PaginationItem>
             <PaginationItem>
-              <span className="px-3 py-2 text-sm text-muted-foreground">
+              <span className="px-2 mobile:px-3 py-2 text-xs mobile:text-sm text-muted-foreground whitespace-nowrap">
                 Page {currentPage} of {totalPages}
               </span>
             </PaginationItem>
@@ -183,7 +178,7 @@ const GamesPage = () => {
               <PaginationNext
                 href="#"
                 onClick={(e) => { e.preventDefault(); setFilters({ page: currentPage + 1 }); }}
-                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                className={`min-h-[44px] touch-manipulation ${currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}`}
                 aria-disabled={currentPage >= totalPages}
               />
             </PaginationItem>

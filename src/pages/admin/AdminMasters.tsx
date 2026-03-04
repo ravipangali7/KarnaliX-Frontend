@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { DataTable } from "@/components/shared/DataTable";
@@ -54,6 +54,10 @@ function InlineEditModal({
   const [value, setValue] = useState<unknown>(state?.value ?? null);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    setValue(state?.value ?? null);
+  }, [state?.row?.id, state?.field, state?.value]);
+
   if (!state) return null;
 
   const handleSave = async () => {
@@ -69,6 +73,8 @@ function InlineEditModal({
     }
   };
 
+  const isStatus = state.field === "status";
+
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-sm">
@@ -79,11 +85,22 @@ function InlineEditModal({
           <p className="text-xs text-muted-foreground">{state.label}</p>
         </DialogHeader>
         <div className="py-2">
-          <Input
-            type={typeof state.value === "number" ? "number" : "text"}
-            value={String(value ?? "")}
-            onChange={(e) => setValue(e.target.value)}
-          />
+          {isStatus ? (
+            <select
+              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+              value={String(value ?? "active")}
+              onChange={(e) => setValue(e.target.value)}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          ) : (
+            <Input
+              type={typeof state.value === "number" ? "number" : "text"}
+              value={String(value ?? "")}
+              onChange={(e) => setValue(e.target.value)}
+            />
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
@@ -155,6 +172,7 @@ const AdminMasters = () => {
     total_win_loss: "Win/Loss",
     users_balance: "Users Bal",
     commission_percentage: "Commission %",
+    status: "Status",
   };
 
   const handleCellClick = (row: MasterRow, field: string) => {
@@ -300,7 +318,14 @@ const AdminMasters = () => {
     },
     {
       header: "Status",
-      accessor: (row: MasterRow) => <StatusBadge status={String(row.status ?? "active")} />,
+      accessor: (row: MasterRow) => (
+        <span
+          className="cursor-pointer hover:opacity-90 inline-block"
+          onClick={() => handleCellClick(row, "status")}
+        >
+          <StatusBadge status={String(row.status ?? "active")} />
+        </span>
+      ),
       sortKey: "status",
     },
     {

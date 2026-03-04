@@ -45,14 +45,35 @@ const AdminPaymentModeVerification = () => {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [selected, setSelected] = useState<PaymentModeRow | null>(null);
+  const [statusEdit, setStatusEdit] = useState<PaymentModeRow | null>(null);
+  const [statusEditValue, setStatusEditValue] = useState("");
+  const [statusEditRejectReason, setStatusEditRejectReason] = useState("");
+  const [statusEditSaving, setStatusEditSaving] = useState(false);
 
   const displayName = (row: PaymentModeRow) => String(row.payment_method_name ?? "—");
+
+  const openStatusEdit = (row: PaymentModeRow) => {
+    setStatusEdit(row);
+    setStatusEditValue(String(row.status ?? "pending"));
+    setStatusEditRejectReason("");
+  };
 
   const columns = [
     { header: "ID", sortKey: "id", accessor: (row: PaymentModeRow) => String(row.id ?? "") },
     { header: "Name", sortKey: "payment_method_name", accessor: (row: PaymentModeRow) => displayName(row) },
     { header: "Owner", sortKey: "user_username", accessor: (row: PaymentModeRow) => String((row as { user_username?: string }).user_username ?? row.user ?? "") },
-    { header: "Status", sortKey: "status", accessor: (row: PaymentModeRow) => <StatusBadge status={String(row.status ?? "pending")} /> },
+    {
+      header: "Status",
+      sortKey: "status",
+      accessor: (row: PaymentModeRow) => (
+        <span
+          className="cursor-pointer inline-block text-xs px-2 py-0.5 rounded border bg-muted/50 border-border hover:bg-muted"
+          onClick={() => openStatusEdit(row)}
+        >
+          <StatusBadge status={String(row.status ?? "pending")} />
+        </span>
+      ),
+    },
     { header: "Created", sortKey: "created_at", accessor: (row: PaymentModeRow) => row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "" },
     {
       header: "Actions",
@@ -123,8 +144,69 @@ const AdminPaymentModeVerification = () => {
         variant="adminListing"
       />
 
+      {/* Edit status (approve/reject via modal) */}
+      <Dialog open={!!statusEdit} onOpenChange={(open) => { if (!open) setStatusEdit(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-base">Edit Status</DialogTitle>
+            {statusEdit && <p className="text-xs text-muted-foreground">ID: {statusEdit.id} — {displayName(statusEdit)}</p>}
+          </DialogHeader>
+          {statusEdit && (
+            <div className="py-2 space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Status</label>
+                <select
+                  className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                  value={statusEditValue}
+                  onChange={(e) => setStatusEditValue(e.target.value)}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+              {statusEditValue === "rejected" && (
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Reject reason (optional)</label>
+                  <Textarea placeholder="Reason..." rows={2} value={statusEditRejectReason} onChange={(e) => setStatusEditRejectReason(e.target.value)} />
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusEdit(null)} disabled={statusEditSaving}>Cancel</Button>
+            <Button
+              className="gold-gradient text-primary-foreground"
+              disabled={statusEditSaving || (statusEditValue !== "approved" && statusEditValue !== "rejected")}
+              onClick={async () => {
+                if (!statusEdit?.id) return;
+                setStatusEditSaving(true);
+                try {
+                  if (statusEditValue === "approved") {
+                    await approvePaymentModeVerification(statusEdit.id, role);
+                    toast({ title: "Payment method approved." });
+                  } else if (statusEditValue === "rejected") {
+                    await rejectPaymentModeVerification(statusEdit.id, { reject_reason: statusEditRejectReason }, role);
+                    toast({ title: "Payment method rejected." });
+                  }
+                  queryClient.invalidateQueries({ queryKey: ["payment-mode-verification", role, statusFilter] });
+                  setStatusEdit(null);
+                } catch (e: unknown) {
+                  const msg = (e as { detail?: string })?.detail ?? "Failed.";
+                  toast({ title: msg, variant: "destructive" });
+                } finally {
+                  setStatusEditSaving(false);
+                }
+              }}
+            >
+              {statusEditSaving ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="font-display">Payment Method – Full Details</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-4 text-sm">

@@ -26,27 +26,27 @@ const PlayerTransactions = () => {
     .filter((t) => String(t.description ?? "").toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h2 className="font-gaming font-bold text-xl neon-text tracking-wider">TRANSACTIONS</h2>
-        <Button variant="outline" size="sm" className="gap-1 text-xs">
+    <div className="p-2 mobile:p-4 md:p-6 space-y-4 max-w-4xl mx-auto min-w-0">
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <h2 className="font-gaming font-bold text-lg mobile:text-xl neon-text tracking-wider truncate">TRANSACTIONS</h2>
+        <Button variant="outline" size="sm" className="gap-1 text-xs shrink-0 min-h-[44px] touch-manipulation">
           <Download className="h-3 w-3" /> Export
         </Button>
       </div>
 
-      <div className="flex gap-3 flex-col md:flex-row">
-        <div className="relative flex-1">
+      <div className="flex gap-2 mobile:gap-3 flex-col md:flex-row min-w-0">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search transactions..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-10" />
+          <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-10 min-h-[44px] touch-manipulation" />
         </div>
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide min-w-0 pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
           {types.map((t) => (
             <Button
               key={t}
               variant={typeFilter === t ? "default" : "outline"}
               size="sm"
               onClick={() => setTypeFilter(t)}
-              className={`text-xs capitalize whitespace-nowrap ${typeFilter === t ? "gold-gradient text-primary-foreground" : ""}`}
+              className={`text-xs capitalize whitespace-nowrap shrink-0 min-h-[40px] touch-manipulation ${typeFilter === t ? "gold-gradient text-primary-foreground" : ""}`}
             >
               {t}
             </Button>

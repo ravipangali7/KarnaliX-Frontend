@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { getSiteSetting, getCmsFooterPages, getPublicPaymentMethods } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { Phone, Mail, MessageCircle, Shield, Award, Headphones } from "lucide-react";
@@ -10,9 +11,15 @@ import {
 } from "@/data/homePageMockData";
 
 export function SecondHomeFooter() {
+  const { user } = useAuth();
   const { data: siteSetting = {} } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: cmsPages = [] } = useQuery({ queryKey: ["cmsFooter"], queryFn: getCmsFooterPages });
   const { data: paymentMethodsApi = [] } = useQuery({ queryKey: ["publicPaymentMethods"], queryFn: getPublicPaymentMethods });
+
+  const gamesLinks =
+    user?.role === "player"
+      ? [{ label: "Game Result", href: "/player/game-results" }, ...defaultFooterLinks.games]
+      : defaultFooterLinks.games;
 
   const s = siteSetting as {
     logo?: string;
@@ -130,7 +137,7 @@ export function SecondHomeFooter() {
 
           {/* Links */}
           {[
-            { title: "Games", links: defaultFooterLinks.games },
+            { title: "Games", links: gamesLinks },
             { title: "Support", links: defaultFooterLinks.support },
           ].map(({ title, links }) => (
             <div key={title}>
@@ -150,24 +157,11 @@ export function SecondHomeFooter() {
             </div>
           ))}
 
-          {/* Legal (CMS) + About combined */}
+          {/* Legal (CMS) */}
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-4">Legal</p>
-            <ul className="space-y-2.5 mb-6">
-              {legalLinks.map((l) => (
-                <li key={l.href}>
-                  <Link
-                    to={l.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
-                  >
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-4">Company</p>
             <ul className="space-y-2.5">
-              {defaultFooterLinks.about.map((l) => (
+              {legalLinks.map((l) => (
                 <li key={l.href}>
                   <Link
                     to={l.href}

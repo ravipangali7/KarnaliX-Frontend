@@ -176,6 +176,12 @@ const PlayerPaymentModes = () => {
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>
+              {selectedMethod?.image_url && (
+                <div className="mt-2 flex items-center gap-2">
+                  <img src={getMediaUrl(selectedMethod.image_url)} alt={selectedMethod.name} className="h-8 w-auto max-w-16 object-contain rounded border border-border" />
+                  <span className="text-xs text-muted-foreground">{selectedMethod.name}</span>
+                </div>
+              )}
             </div>
             {fieldEntries.length > 0 && (
               <div className="space-y-2">

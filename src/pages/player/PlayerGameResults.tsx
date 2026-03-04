@@ -36,9 +36,9 @@ const PlayerGameResults = () => {
   const lastUpdated = Math.max(walletUpdatedAt ?? 0, gameLogUpdatedAt ?? 0);
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-4xl mx-auto">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-gaming font-bold text-xl neon-text tracking-wider">GAME RESULTS</h2>
+    <div className="p-2 mobile:p-4 md:p-6 space-y-4 max-w-4xl mx-auto min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
+        <h2 className="font-gaming font-bold text-lg mobile:text-xl neon-text tracking-wider truncate">GAME RESULTS</h2>
         <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <Radio className="h-3 w-3 animate-pulse text-primary" />
           Live — updates every 3s
@@ -46,20 +46,20 @@ const PlayerGameResults = () => {
       </div>
 
       {/* Wallet (real-time) */}
-      <Card className="gaming-card border-primary/30">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-primary" />
-              <span className="text-sm font-semibold text-muted-foreground">Current balance</span>
+      <Card className="gaming-card border-primary/30 min-w-0">
+        <CardContent className="p-3 mobile:p-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Wallet className="h-4 w-4 mobile:h-5 mobile:w-5 text-primary flex-shrink-0" />
+              <span className="text-xs mobile:text-sm font-semibold text-muted-foreground truncate">Current balance</span>
             </div>
             {lastUpdated > 0 && (
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[10px] text-muted-foreground flex-shrink-0">
                 Updated {new Date(lastUpdated).toLocaleTimeString()}
               </span>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-4 mt-3">
+          <div className="grid grid-cols-3 gap-2 mobile:gap-4 mt-2 mobile:mt-3 min-w-0">
             <div>
               <p className="text-[10px] text-muted-foreground">Main</p>
               <p className="font-gaming font-bold text-lg">₹{mainBalance.toLocaleString()}</p>
@@ -77,35 +77,35 @@ const PlayerGameResults = () => {
       </Card>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="gaming-card">
-          <CardContent className="p-3 text-center">
+      <div className="grid grid-cols-3 gap-2 mobile:gap-3 min-w-0">
+        <Card className="gaming-card min-w-0">
+          <CardContent className="p-2 mobile:p-3 text-center">
             <Gamepad2 className="h-4 w-4 mx-auto text-primary mb-1" />
             <p className="font-gaming font-bold text-sm">{filtered.length}</p>
             <p className="text-[9px] text-muted-foreground">Total Games</p>
           </CardContent>
         </Card>
-        <Card className="gaming-card">
-          <CardContent className="p-3 text-center">
+        <Card className="gaming-card min-w-0">
+          <CardContent className="p-2 mobile:p-3 text-center">
             <Trophy className="h-4 w-4 mx-auto text-success mb-1" />
-            <p className="font-gaming font-bold text-sm text-success">₹{totalWin.toLocaleString()}</p>
+            <p className="font-gaming font-bold text-xs mobile:text-sm text-success truncate">₹{totalWin.toLocaleString()}</p>
             <p className="text-[9px] text-muted-foreground">Total Won</p>
           </CardContent>
         </Card>
-        <Card className="gaming-card">
-          <CardContent className="p-3 text-center">
+        <Card className="gaming-card min-w-0">
+          <CardContent className="p-2 mobile:p-3 text-center">
             <TrendingDown className="h-4 w-4 mx-auto text-accent mb-1" />
-            <p className="font-gaming font-bold text-sm">₹{totalBet.toLocaleString()}</p>
+            <p className="font-gaming font-bold text-xs mobile:text-sm truncate">₹{totalBet.toLocaleString()}</p>
             <p className="text-[9px] text-muted-foreground">Total Bet</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filter (align with API type: win, lose, draw) */}
-      <div className="flex gap-2">
+      {/* Filter (align with API type: win, lose, draw) - touch-friendly */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide min-w-0 pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
         {["all", "win", "lose", "draw"].map((f) => (
           <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)}
-            className={`text-xs capitalize ${filter === f ? "gold-gradient text-primary-foreground" : ""}`}>
+            className={`text-xs capitalize shrink-0 min-h-[40px] touch-manipulation ${filter === f ? "gold-gradient text-primary-foreground" : ""}`}>
             {f === "lose" ? "Loss" : f}
           </Button>
         ))}

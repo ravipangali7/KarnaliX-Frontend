@@ -5,9 +5,11 @@ import { Menu, X, Bell, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSiteSetting, getLiveBettingSections } from "@/api/site";
+import { getPlayerUnreadMessageCount } from "@/api/player";
 import { getMediaUrl } from "@/lib/api";
 import { liveOddsTicker as defaultLiveOddsTicker } from "@/data/homePageMockData";
 import { cn } from "@/lib/utils";
+import { PlayerSidebarContent } from "./PlayerSidebarContent";
 
 type TickerRow = { home: string; away: string; odds1: string; odds2: string; live?: boolean };
 
@@ -53,8 +55,15 @@ export const HomeHeader = () => {
   const messagesPath = isLoggedIn ? `${dashboardPath}/messages` : "/login";
   const walletBalance = user?.total_balance != null ? `₹${Number(user.total_balance).toLocaleString()}` : "₹0.00";
 
+  const isPlayer = user?.role === "player";
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: liveBettingSections = [] } = useQuery({ queryKey: ["liveBettingSections"], queryFn: getLiveBettingSections });
+  const { data: unreadMessages = 0 } = useQuery({
+    queryKey: ["player-messages-unread"],
+    queryFn: getPlayerUnreadMessageCount,
+    enabled: isPlayer,
+  });
+  const messageBadge = isPlayer ? Number(unreadMessages) || 0 : 0;
   const tickerRows: TickerRow[] = useMemo(() => {
     const fromApi = mapLiveBettingToTickerRows(liveBettingSections);
     return fromApi.length > 0 ? fromApi : defaultLiveOddsTicker;
@@ -73,14 +82,14 @@ export const HomeHeader = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border">
-      <div className="container flex flex-col">
-        <div className="flex items-center justify-between h-14 px-4">
-          <Link to="/" className="flex items-center gap-2">
+      <div className="container flex flex-col min-w-0">
+        <div className="flex items-center justify-between h-14 px-2 mobile:px-4 gap-2">
+          <Link to="/" className="flex items-center gap-2 min-w-0 flex-shrink-0">
             <img src={logoUrl} alt={siteName} className="h-8 rounded-lg object-contain" />
             {/* <span className="font-gaming font-bold text-lg gradient-text tracking-tight hidden sm:inline">{siteName}</span> */}
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden mobile:flex items-center gap-1">
             {navItems.map((item) => (
               <Link
                 key={item.path}
@@ -135,10 +144,10 @@ export const HomeHeader = () => {
             )}
           </nav>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg glass border border-white/10">
+          <div className="flex items-center gap-1 mobile:gap-2 flex-shrink-0">
+            <div className="hidden sm:flex items-center gap-2 px-2 mobile:px-3 py-1.5 rounded-lg glass border border-white/10">
               <Wallet className="h-4 w-4 text-primary" />
-              <span className="font-roboto-mono text-sm font-semibold text-foreground">{walletBalance}</span>
+              <span className="font-roboto-mono text-sm font-semibold text-foreground truncate max-w-[100px] sm:max-w-none">{walletBalance}</span>
             </div>
             <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
               <Bell className="h-5 w-5" />
@@ -154,7 +163,7 @@ export const HomeHeader = () => {
                 </Link>
               </>
             )}
-            <Button variant="ghost" size="icon" className="lg:hidden min-h-[44px] min-w-[44px] touch-manipulation" onClick={() => setMenuOpen(!menuOpen)}>
+            <Button variant="ghost" size="icon" className="mobile:hidden min-h-[44px] min-w-[44px] touch-manipulation" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
@@ -181,52 +190,69 @@ export const HomeHeader = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu (visible below 450px) */}
       {menuOpen && (
-        <nav className="lg:hidden border-t border-border glass-strong p-4 space-y-1 animate-fade-in">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={() => setMenuOpen(false)}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3.5 rounded-lg text-sm font-medium min-h-[44px] touch-manipulation",
-                location.pathname === item.path ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5"
-              )}
-            >
-              {item.label}
+        <nav className="mobile:hidden border-t border-border glass-strong animate-fade-in flex flex-col max-h-[70vh] overflow-hidden">
+          <div className="p-2 mobile:p-4 space-y-1 overflow-y-auto scrollbar-hide min-h-0">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 mobile:px-4 py-3.5 rounded-lg text-sm font-medium min-h-[44px] touch-manipulation",
+                  location.pathname === item.path ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Link to="/bonus" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-3 mobile:px-4 py-3 rounded-lg text-sm font-medium", location.pathname === "/bonus" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
+              Bonus
             </Link>
-          ))}
-          <Link to="/bonus" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium", location.pathname === "/bonus" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
-            Bonus
-          </Link>
-          <Link to={messagesPath} onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium", location.pathname === messagesPath || location.pathname.startsWith(`${dashboardPath}/messages`) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
-            Message
-          </Link>
-          {isLoggedIn && (
-            <>
-              <Link to={dashboardPath} onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium", location.pathname === dashboardPath || location.pathname.startsWith(`${dashboardPath}/`) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
-                Dashboard
-              </Link>
-              <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-white/5 w-full text-left">
-                Logout
-              </button>
-            </>
-          )}
-          <div className="flex items-center gap-2 pt-2 px-4">
-            <Wallet className="h-4 w-4 text-primary" />
-            <span className="font-roboto-mono text-sm">{walletBalance}</span>
+            {isPlayer ? (
+              <div className="border-t border-border mt-2 pt-2">
+                <PlayerSidebarContent
+                  user={user}
+                  logout={logout}
+                  messageBadge={messageBadge}
+                  currentPath={location.pathname}
+                  onNavigate={() => setMenuOpen(false)}
+                  compact
+                />
+              </div>
+            ) : (
+              <>
+                <Link to={messagesPath} onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-3 mobile:px-4 py-3 rounded-lg text-sm font-medium", location.pathname === messagesPath || location.pathname.startsWith(`${dashboardPath}/messages`) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
+                  Message
+                </Link>
+                {isLoggedIn && (
+                  <>
+                    <Link to={dashboardPath} onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 px-3 mobile:px-4 py-3 rounded-lg text-sm font-medium", location.pathname === dashboardPath || location.pathname.startsWith(`${dashboardPath}/`) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-white/5")}>
+                      Dashboard
+                    </Link>
+                    <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-3 mobile:px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-white/5 w-full text-left min-h-[44px] touch-manipulation">
+                      Logout
+                    </button>
+                  </>
+                )}
+                <div className="flex items-center gap-2 pt-2 px-3 mobile:px-4">
+                  <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="font-roboto-mono text-sm truncate">{walletBalance}</span>
+                </div>
+                {!isLoggedIn && (
+                  <div className="flex gap-2 pt-2">
+                    <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1 min-w-0">
+                      <Button variant="outline" size="sm" className="w-full">Login</Button>
+                    </Link>
+                    <Link to="/register" onClick={() => setMenuOpen(false)} className="flex-1 min-w-0">
+                      <Button variant="neon" size="sm" className="w-full">Sign Up</Button>
+                    </Link>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-          {!isLoggedIn && (
-            <div className="flex gap-2 pt-2">
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1">
-                <Button variant="outline" size="sm" className="w-full">Login</Button>
-              </Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)} className="flex-1">
-                <Button variant="neon" size="sm" className="w-full">Sign Up</Button>
-              </Link>
-            </div>
-          )}
         </nav>
       )}
     </header>

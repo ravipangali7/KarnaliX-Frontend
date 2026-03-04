@@ -14,6 +14,7 @@ import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw } from "lucid
 import { PinDialog } from "@/components/shared/PinDialog";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Switch } from "@/components/ui/switch";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; is_active?: boolean; status?: string; created_at?: string; phone?: string; total_balance?: string | number; total_win_loss?: string | number };
 
@@ -113,16 +114,59 @@ const AdminPlayers = () => {
       header: "Balance",
       sortKey: "main_balance",
       accessor: (row: PlayerRow) => (
-        <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "main_balance", "Balance", row.main_balance, false)}>
+        <TableBadge variant="balance" onClick={() => openCell(row, "main_balance", "Balance", row.main_balance, true)}>
           ₹{Number(row.main_balance ?? 0).toLocaleString()}
-        </span>
+        </TableBadge>
       ),
     },
-    { header: "Bonus", sortKey: "bonus_balance", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "bonus_balance", "Bonus", row.bonus_balance, false)}>₹{Number(row.bonus_balance ?? 0).toLocaleString()}</span> },
-    { header: "Exposure", sortKey: "exposure_balance", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "exposure_balance", "Exposure", row.exposure_balance, false)}>₹{Number(row.exposure_balance ?? 0).toLocaleString()}</span> },
-    { header: "Total Balance", sortKey: "total_balance", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "total_balance", "Total Balance", row.total_balance, false)}>₹{Number(row.total_balance ?? 0).toLocaleString()}</span> },
-    { header: "Win/Loss", sortKey: "total_win_loss", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "total_win_loss", "Win/Loss", row.total_win_loss, false)}>₹{Number(row.total_win_loss ?? 0).toLocaleString()}</span> },
-    { header: "Exp Limit", sortKey: "exposure_limit", accessor: (row: PlayerRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openCell(row, "exposure_limit", "Exp Limit", row.exposure_limit, false)}>₹{Number(row.exposure_limit ?? 0).toLocaleString()}</span> },
+    {
+      header: "Bonus",
+      sortKey: "bonus_balance",
+      accessor: (row: PlayerRow) => (
+        <TableBadge variant="bonus" onClick={() => openCell(row, "bonus_balance", "Bonus", row.bonus_balance, true)}>
+          ₹{Number(row.bonus_balance ?? 0).toLocaleString()}
+        </TableBadge>
+      ),
+    },
+    {
+      header: "Exposure",
+      sortKey: "exposure_balance",
+      accessor: (row: PlayerRow) => (
+        <TableBadge variant="exposure" onClick={() => openCell(row, "exposure_balance", "Exposure", row.exposure_balance, true)}>
+          ₹{Number(row.exposure_balance ?? 0).toLocaleString()}
+        </TableBadge>
+      ),
+    },
+    {
+      header: "Total Balance",
+      sortKey: "total_balance",
+      accessor: (row: PlayerRow) => (
+        <TableBadge variant="total" onClick={() => openCell(row, "total_balance", "Total Balance", row.total_balance, false)}>
+          ₹{Number(row.total_balance ?? 0).toLocaleString()}
+        </TableBadge>
+      ),
+    },
+    {
+      header: "Win/Loss",
+      sortKey: "total_win_loss",
+      accessor: (row: PlayerRow) => {
+        const n = Number(row.total_win_loss ?? 0);
+        return (
+          <TableBadge variant={n >= 0 ? "plPositive" : "plNegative"} onClick={() => openCell(row, "total_win_loss", "Win/Loss", row.total_win_loss, false)}>
+            {n >= 0 ? "+" : ""}₹{n.toLocaleString()}
+          </TableBadge>
+        );
+      },
+    },
+    {
+      header: "Exp Limit",
+      sortKey: "exposure_limit",
+      accessor: (row: PlayerRow) => (
+        <TableBadge variant="commission" onClick={() => openCell(row, "exposure_limit", "Exp Limit", row.exposure_limit, true)}>
+          ₹{Number(row.exposure_limit ?? 0).toLocaleString()}
+        </TableBadge>
+      ),
+    },
     {
       header: "Status",
       accessor: (row: PlayerRow) => {
@@ -248,11 +292,11 @@ const AdminPlayers = () => {
           setCreateName(""); setCreateUsername(""); setCreatePhone(""); setCreateEmail(""); setCreateWhatsApp(""); setCreatePassword(""); setCreateParentId("");
         }
       }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="font-display">Create Player</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {(role === "powerhouse" || role === "super") && (
-              <div>
+              <div className="md:col-span-2">
                 <label className="text-xs text-muted-foreground">Master</label>
                 <select
                   className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm mt-1"
@@ -271,7 +315,7 @@ const AdminPlayers = () => {
             <Input placeholder="Phone" value={createPhone} onChange={(e) => setCreatePhone(e.target.value)} />
             <Input placeholder="Email (optional)" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} />
             <Input placeholder="WhatsApp Number" value={createWhatsApp} onChange={(e) => setCreateWhatsApp(e.target.value)} />
-            <Input type="password" placeholder="Password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} />
+            <Input type="password" placeholder="Password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} className="md:col-span-2" />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
@@ -313,11 +357,11 @@ const AdminPlayers = () => {
 
       {/* View Player */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="font-display">Player Details</DialogTitle></DialogHeader>
           {selectedUser && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground text-xs">Username</span><p className="font-medium">{String(selectedUser.username ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">Full Name</span><p className="font-medium">{String(selectedUser.name ?? "")}</p></div>
                 <div><span className="text-muted-foreground text-xs">Phone</span><p className="font-medium">{String(selectedUser.phone ?? "")}</p></div>
@@ -335,10 +379,10 @@ const AdminPlayers = () => {
 
       {/* Edit Player */}
       <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) setEditSaving(false); }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="font-display">Edit Player</DialogTitle></DialogHeader>
           {selectedUser && (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Full Name" />
               <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Phone" />
             </div>

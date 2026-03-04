@@ -1,12 +1,19 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { getSiteSetting, getCmsFooterPages } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { footerContact as defaultFooterContact, footerLinks as defaultFooterLinks, paymentMethods as defaultPaymentMethods } from "@/data/homePageMockData";
 
 export const HomeFooter = () => {
+  const { user } = useAuth();
   const { data: siteSetting = {} } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: cmsPages = [] } = useQuery({ queryKey: ["cmsFooter"], queryFn: getCmsFooterPages });
+
+  const gamesLinks =
+    user?.role === "player"
+      ? [{ label: "Game Result", href: "/player/game-results" }, ...defaultFooterLinks.games]
+      : defaultFooterLinks.games;
 
   const s = siteSetting as { logo?: string; name?: string; phones?: string[]; emails?: string[]; whatsapp_number?: string; footer_description?: string };
   const logoUrl = s?.logo?.trim() ? getMediaUrl(s.logo.trim()) : "/karnali-logo.png";
@@ -44,7 +51,7 @@ export const HomeFooter = () => {
           <div>
             <h4 className="font-semibold text-sm mb-3 text-foreground">Games</h4>
             <ul className="space-y-2">
-              {defaultFooterLinks.games.map((l) => (
+              {gamesLinks.map((l) => (
                 <li key={l.href}>
                   <Link to={l.href} className="text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 block touch-manipulation">{l.label}</Link>
                 </li>
@@ -65,16 +72,6 @@ export const HomeFooter = () => {
             <h4 className="font-semibold text-sm mb-3 text-foreground">Legal</h4>
             <ul className="space-y-2">
               {legalLinks.map((l) => (
-                <li key={l.href}>
-                  <Link to={l.href} className="text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 block touch-manipulation">{l.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold text-sm mb-3 text-foreground">About</h4>
-            <ul className="space-y-2">
-              {defaultFooterLinks.about.map((l) => (
                 <li key={l.href}>
                   <Link to={l.href} className="text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 block touch-manipulation">{l.label}</Link>
                 </li>

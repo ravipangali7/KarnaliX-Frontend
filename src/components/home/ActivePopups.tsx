@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -35,14 +35,15 @@ export function ActivePopups() {
     queryFn: getActivePopups,
   });
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [unseen, setUnseen] = useState<PopupApi[]>([]);
+
+  const unseen = useMemo(() => {
+    const seen = getSeenIds();
+    return (popups as PopupApi[]).filter((p) => !seen.includes(p.id));
+  }, [popups]);
 
   useEffect(() => {
-    const seen = getSeenIds();
-    const list = (popups as PopupApi[]).filter((p) => !seen.includes(p.id));
-    setUnseen(list);
     setCurrentIndex(0);
-  }, [popups]);
+  }, [unseen.length, unseen[0]?.id]);
 
   const current = unseen[currentIndex];
   const open = Boolean(current);
@@ -50,12 +51,7 @@ export function ActivePopups() {
   const handleClose = () => {
     if (current) {
       markSeen(current.id);
-      if (currentIndex + 1 < unseen.length) {
-        setCurrentIndex((i) => i + 1);
-      } else {
-        setCurrentIndex(0);
-        setUnseen([]);
-      }
+      setCurrentIndex(0);
     }
   };
 

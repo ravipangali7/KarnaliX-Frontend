@@ -68,24 +68,24 @@ const ProviderPage = () => {
 
   if (!id || !Number.isInteger(providerId) || providerId <= 0) {
     return (
-      <div className="container px-4 py-6">
-        <p className="text-muted-foreground">Invalid provider.</p>
-        <Link to="/games" className="text-primary hover:underline mt-2 inline-block">Back to games</Link>
+      <div className="container px-2 mobile:px-4 py-6 min-w-0">
+        <p className="text-muted-foreground text-sm">Invalid provider.</p>
+        <Link to="/games" className="text-primary hover:underline mt-2 inline-block text-sm">Back to games</Link>
       </div>
     );
   }
 
   if (providerError || (provider && !providerLoading && !provider)) {
     return (
-      <div className="container px-4 py-6">
-        <p className="text-muted-foreground">Provider not found.</p>
-        <Link to="/games" className="text-primary hover:underline mt-2 inline-block">Back to games</Link>
+      <div className="container px-2 mobile:px-4 py-6 min-w-0">
+        <p className="text-muted-foreground text-sm">Provider not found.</p>
+        <Link to="/games" className="text-primary hover:underline mt-2 inline-block text-sm">Back to games</Link>
       </div>
     );
   }
 
   return (
-    <div className="container px-4 py-6 space-y-6">
+    <div className="container px-2 mobile:px-4 py-4 mobile:py-6 space-y-4 mobile:space-y-6 min-w-0 max-w-full">
       {/* Banner + name + total games */}
       <div className="space-y-3">
         {providerLoading ? (
@@ -174,13 +174,10 @@ const ProviderPage = () => {
         </div>
       )}
       {!gamesLoading && !gamesError && (
-        <div
-          className="scrollbar-hide pb-2"
-          style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "space-evenly", overflowX: "auto", overflowY: "hidden", gap: "12px", width: "100%", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory" }}
-        >
+        <div className="grid grid-cols-2 mobile:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2 mobile:gap-3 min-w-0">
           {results.map((game: Game) => (
-            <div key={game.id} style={{ flexShrink: 0, flexGrow: 0, width: "150px", minWidth: "150px", scrollSnapAlign: "start" }}>
-              <Link to={`/games/${game.id}`}>
+            <div key={game.id} className="min-w-0 w-full">
+              <Link to={`/games/${game.id}`} className="block min-w-0">
                 <GameCard
                   image={getGameImageUrl(game)}
                   name={game.name}
@@ -195,23 +192,23 @@ const ProviderPage = () => {
       )}
 
       {!gamesLoading && !gamesError && results.length === 0 && (
-        <p className="text-center text-muted-foreground py-12">No games in this category</p>
+        <p className="text-center text-muted-foreground py-12 text-sm">No games in this category</p>
       )}
 
-      {/* Pagination */}
+      {/* Pagination - touch-friendly */}
       {!gamesLoading && !gamesError && totalPages > 1 && (
         <Pagination className="pt-4">
-          <PaginationContent className="gap-2">
+          <PaginationContent className="gap-1 mobile:gap-2 flex-wrap">
             <PaginationItem>
               <PaginationPrevious
                 href="#"
                 onClick={(e) => { e.preventDefault(); setFilters({ page: currentPage - 1 }); }}
-                className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                className={`min-h-[44px] touch-manipulation ${currentPage <= 1 ? "pointer-events-none opacity-50" : ""}`}
                 aria-disabled={currentPage <= 1}
               />
             </PaginationItem>
             <PaginationItem>
-              <span className="px-3 py-2 text-sm text-muted-foreground">
+              <span className="px-2 mobile:px-3 py-2 text-xs mobile:text-sm text-muted-foreground whitespace-nowrap">
                 Page {currentPage} of {totalPages}
               </span>
             </PaginationItem>
@@ -219,7 +216,7 @@ const ProviderPage = () => {
               <PaginationNext
                 href="#"
                 onClick={(e) => { e.preventDefault(); setFilters({ page: currentPage + 1 }); }}
-                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                className={`min-h-[44px] touch-manipulation ${currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}`}
                 aria-disabled={currentPage >= totalPages}
               />
             </PaginationItem>

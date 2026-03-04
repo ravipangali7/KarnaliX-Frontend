@@ -15,7 +15,7 @@ interface GameCardProps {
 export const GameCard = ({ image, name, category, minBet, maxBet, plays, onClick }: GameCardProps) => {
   return (
     <Card
-      className="overflow-hidden cursor-pointer group hover:ring-2 hover:ring-primary/40 hover:neon-glow-sm transition-all duration-300 flex-shrink-0 gaming-card"
+      className="overflow-hidden cursor-pointer group hover:ring-2 hover:ring-primary/40 hover:neon-glow-sm transition-all duration-300 gaming-card min-w-0 w-full"
       onClick={onClick}
     >
       <div className="relative aspect-[4/3] overflow-hidden">

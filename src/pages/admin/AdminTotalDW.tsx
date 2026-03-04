@@ -5,6 +5,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getTotalDW, type DateRangeParams } from "@/api/admin";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type TotalDWRow = Record<string, unknown> & {
   id?: number;
@@ -58,21 +59,21 @@ export default function AdminTotalDW() {
         header: "withdrawal",
         sortKey: "withdrawal",
         accessor: (row: TotalDWRow) => (
-          <CellClick value={String(row.withdrawal ?? "")} onClick={() => setEditModal({ row, field: "withdrawal", value: row.withdrawal })} />
+          <TableBadge variant="amountRed">{String(row.withdrawal ?? "—")}</TableBadge>
         ),
       },
       {
         header: "Deposit",
         sortKey: "deposit",
         accessor: (row: TotalDWRow) => (
-          <CellClick value={String(row.deposit ?? "")} onClick={() => setEditModal({ row, field: "deposit", value: row.deposit })} />
+          <TableBadge variant="amountGreen">{String(row.deposit ?? "—")}</TableBadge>
         ),
       },
       {
         header: "Total",
         sortKey: "total",
         accessor: (row: TotalDWRow) => (
-          <CellClick value={String(row.total ?? "")} onClick={() => setEditModal({ row, field: "total", value: row.total })} />
+          <TableBadge variant="total">{String(row.total ?? "—")}</TableBadge>
         ),
       },
     ],

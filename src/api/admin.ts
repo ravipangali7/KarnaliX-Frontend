@@ -161,6 +161,10 @@ export async function approveDeposit(id: number, body: { password?: string; pin?
 export async function rejectDeposit(id: number, body?: { reject_reason?: string }, role: "powerhouse" | "super" | "master") {
   return apiPost(`${prefix(role)}/deposits/${id}/reject/`, body ?? {});
 }
+/** Update deposit (status and/or amount). Requires backend PATCH endpoint e.g. PATCH /deposits/{id}/. */
+export async function updateDeposit(id: number, body: { status?: string; amount?: number }, role: "powerhouse" | "super" | "master") {
+  return apiPatch(`${prefix(role)}/deposits/${id}/`, body);
+}
 
 export async function getWithdrawals(role: "powerhouse" | "super" | "master", params?: ListParams) {
   const res = await apiGet(`${prefix(role)}/withdrawals/${buildQueryString(params)}`);
@@ -181,6 +185,10 @@ export async function approveWithdraw(id: number, body: { password?: string; pin
 }
 export async function rejectWithdraw(id: number, body?: { reject_reason?: string }, role: "powerhouse" | "super" | "master") {
   return apiPost(`${prefix(role)}/withdrawals/${id}/reject/`, body ?? {});
+}
+/** Update withdrawal (status and/or amount). Requires backend PATCH endpoint e.g. PATCH /withdrawals/{id}/. */
+export async function updateWithdraw(id: number, body: { status?: string; amount?: number }, role: "powerhouse" | "super" | "master") {
+  return apiPatch(`${prefix(role)}/withdrawals/${id}/`, body);
 }
 
 // --- Bonus Requests ---
