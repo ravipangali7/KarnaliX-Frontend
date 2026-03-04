@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Paperclip, Image as ImageIcon, X } from "lucide-react";
@@ -61,9 +61,22 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
   const [newMessage, setNewMessage] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const messageList = Array.isArray(messages) ? messages : [];
+
+  useEffect(() => {
+    if (!pendingImage) {
+      setImagePreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(pendingImage);
+    setImagePreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [pendingImage]);
 
   const list = messageList
     .filter(
@@ -148,10 +161,17 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
 
       {(pendingFile || pendingImage) && (
         <div className="px-3 py-1 flex items-center gap-2 border-t border-border">
-          <span className="text-xs text-muted-foreground truncate flex-1">
+          {pendingImage && imagePreviewUrl && (
+            <img
+              src={imagePreviewUrl}
+              alt=""
+              className="h-12 w-12 rounded object-cover flex-shrink-0"
+            />
+          )}
+          <span className="text-xs text-muted-foreground truncate flex-1 min-w-0">
             {pendingImage?.name ?? pendingFile?.name}
           </span>
-          <Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={clearAttachment}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" type="button" onClick={clearAttachment}>
             <X className="h-3.5 w-3" />
           </Button>
         </div>
