@@ -79,13 +79,34 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
     )
     .map((m) => normalizeMessage(m, currentUserId));
 
+  const scrollToBottom = () => {
+    const el = scrollContainerRef.current;
+    if (!el || list.length === 0) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (list.length === 0) return;
-    scrollContainerRef.current?.scrollTo({
-      top: scrollContainerRef.current.scrollHeight,
-      behavior: "smooth",
-    });
+    scrollToBottom();
   }, [list.length, list[list.length - 1]?.id]);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || list.length === 0) return;
+    let didScrollOnOpen = false;
+    const observer = new ResizeObserver(() => {
+      if (didScrollOnOpen) return;
+      if (el.scrollHeight > 0) {
+        didScrollOnOpen = true;
+        scrollToBottom();
+      }
+    });
+    observer.observe(el);
+    if (el.scrollHeight > 0) {
+      didScrollOnOpen = true;
+      scrollToBottom();
+    }
+    return () => observer.disconnect();
+  }, [list.length]);
 
   useEffect(() => {
     if (!pendingImage) {

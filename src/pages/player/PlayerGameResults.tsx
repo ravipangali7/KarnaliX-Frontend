@@ -123,11 +123,14 @@ const PlayerGameResults = () => {
       <div className="space-y-2">
         {filtered.map((log: Record<string, unknown>, i: number) => {
           const gameName = String(log.game_name ?? log.game ?? "");
-          const category = String(log.category ?? "");
+          const category = String(log.category_name ?? log.category ?? "");
           const betAmount = Number(log.bet_amount ?? log.betAmount ?? 0);
           const winAmount = Number(log.win_amount ?? log.winAmount ?? 0);
-          const result = String(log.type ?? log.result ?? "");
+          const loseAmount = Number(log.lose_amount ?? log.loseAmount ?? 0);
+          const result = String(log.type ?? log.result ?? "").toLowerCase();
           const playedAt = log.created_at ?? log.playedAt;
+          const isLoss = result === "lose" || result === "loss";
+          const wonDisplay = winAmount > 0 ? `${symbol}${winAmount}` : isLoss && loseAmount > 0 ? `-${symbol}${loseAmount}` : "-";
           return (
           <Card key={String(log.id ?? i)} className="hover:border-primary/20 transition-colors">
             <CardContent className="p-3 md:p-4">
@@ -143,6 +146,7 @@ const PlayerGameResults = () => {
                   <span>Bet: {symbol}{betAmount}</span>
                   <div className="flex items-center gap-2">
                     {winAmount > 0 && <span className="text-success font-bold">Won: {symbol}{winAmount}</span>}
+                    {isLoss && loseAmount > 0 && <span className="font-bold">Lost: {symbol}{loseAmount}</span>}
                     {log.id != null && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" asChild>
                         <Link to={`/player/game-results/${log.id}`}>View <ExternalLink className="h-3 w-3" /></Link>
@@ -159,7 +163,7 @@ const PlayerGameResults = () => {
                 <span className="text-xs">{category}</span>
                 <span className="text-xs font-medium">{symbol}{betAmount}</span>
                 <span className={`text-xs font-bold ${winAmount > 0 ? "text-success" : "text-muted-foreground"}`}>
-                  {winAmount > 0 ? `${symbol}${winAmount}` : "-"}
+                  {wonDisplay}
                 </span>
                 <span className="text-right"><StatusBadge status={result} /></span>
                 <span className="text-right">

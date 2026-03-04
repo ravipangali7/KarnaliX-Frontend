@@ -10,6 +10,8 @@ import { ArrowLeft, Gamepad2, Receipt } from "lucide-react";
 
 const PlayerGameLogDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const symbol = getCurrencySymbol(user);
   const { data, isLoading, error } = useQuery({
     queryKey: ["player-game-log-detail", id],
     queryFn: () => getPlayerGameLogDetail(id!),
