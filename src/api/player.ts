@@ -131,20 +131,9 @@ export async function depositRequest(body: unknown) {
   return apiPost(`${P}/deposit-request/`, body);
 }
 
-/** Submit deposit with screenshot file (multipart/form-data). */
+/** Submit deposit with screenshot file (multipart/form-data). Uses same BASE_URL as rest of app. */
 export async function depositRequestWithScreenshot(formData: FormData) {
-  const token = localStorage.getItem("token");
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-  const res = await fetch(`${base}${P}/deposit-request/`, {
-    method: "POST",
-    headers: token ? { Authorization: `Token ${token}` } : {},
-    body: formData,
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw { status: res.status, ...data };
-  }
-  return res.json();
+  return apiPostForm(`${P}/deposit-request/`, formData);
 }
 
 export async function withdrawRequest(body: unknown) {
