@@ -1,9 +1,12 @@
 import { MessageCircle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { footerContact } from "@/data/homePageMockData";
 
 const waUrl = `https://wa.me/${footerContact.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Hi, I need support from KarnaliX.")}`;
 
 export const WhatsAppButton = () => {
+  const { user } = useAuth();
+  if (user) return null;
   return (
     <a
       href={waUrl}
