@@ -174,7 +174,7 @@ export async function updateProfile(body: {
   return apiPatch<PlayerProfileResponse>(`${P}/profile/update/`, body);
 }
 
-export async function changePassword(body: { old_password: string; new_password: string }) {
+export async function changePassword(body: { new_password: string }) {
   return apiPost(`${P}/change-password/`, body);
 }
 

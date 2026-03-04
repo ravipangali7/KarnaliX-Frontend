@@ -2,19 +2,19 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { changePassword } from "@/api/player";
 
 const PlayerChangePassword = () => {
-  const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
-  const [current, setCurrent] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    if (!current || !newPw || !confirm) {
-      toast({ title: "Please fill all fields", variant: "destructive" });
+  const handleSubmit = async () => {
+    if (!newPw || !confirm) {
+      toast({ title: "Please fill new password and confirm", variant: "destructive" });
       return;
     }
     if (newPw !== confirm) {
@@ -25,8 +25,18 @@ const PlayerChangePassword = () => {
       toast({ title: "Password must be at least 6 characters", variant: "destructive" });
       return;
     }
-    toast({ title: "Password updated successfully!", description: "Please use your new password next time." });
-    setCurrent(""); setNewPw(""); setConfirm("");
+    setLoading(true);
+    try {
+      await changePassword({ new_password: newPw });
+      toast({ title: "Password updated successfully!", description: "Please use your new password next time." });
+      setNewPw("");
+      setConfirm("");
+    } catch (err: unknown) {
+      const detail = (err as { detail?: string })?.detail ?? "Failed to update password.";
+      toast({ title: detail, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,20 +50,10 @@ const PlayerChangePassword = () => {
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground font-medium mb-1 block">Current Password</label>
-            <div className="relative">
-              <Input type={showCurrent ? "text" : "password"} placeholder="Enter current password" value={current} onChange={(e) => setCurrent(e.target.value)} className="h-11 pr-10" />
-              <button onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div>
             <label className="text-xs text-muted-foreground font-medium mb-1 block">New Password</label>
             <div className="relative">
               <Input type={showNew ? "text" : "password"} placeholder="Enter new password" value={newPw} onChange={(e) => setNewPw(e.target.value)} className="h-11 pr-10" />
-              <button onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
@@ -82,8 +82,8 @@ const PlayerChangePassword = () => {
             )}
           </div>
 
-          <Button onClick={handleSubmit} className="w-full gold-gradient text-primary-foreground font-gaming tracking-wider h-11 neon-glow-sm">
-            UPDATE PASSWORD
+          <Button onClick={handleSubmit} disabled={loading} className="w-full gold-gradient text-primary-foreground font-gaming tracking-wider h-11 neon-glow-sm">
+            {loading ? "Updating..." : "UPDATE PASSWORD"}
           </Button>
         </CardContent>
       </Card>
