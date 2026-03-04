@@ -38,7 +38,9 @@ const AdminDeposits = () => {
   });
   const [pinOpen, setPinOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
+  const [snapOpen, setSnapOpen] = useState(false);
   const [selectedDeposit, setSelectedDeposit] = useState<DepositRow | null>(null);
+  const [snapDeposit, setSnapDeposit] = useState<DepositRow | null>(null);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [cellView, setCellView] = useState<{ label: string; value: ReactNode } | null>(null);
@@ -80,7 +82,7 @@ const AdminDeposits = () => {
       ),
     },
     { header: "request date", sortKey: "created_at", accessor: (row: DepositRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Request date", row.created_at ? new Date(String(row.created_at)).toLocaleString() : "—")}>{row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : ""}</span> },
-    { header: "snap", accessor: (row: DepositRow) => row.screenshot ? <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedDeposit(row); setViewOpen(true); }}><Eye className="h-3 w-3" /></Button> : "—" },
+    { header: "snap", accessor: (row: DepositRow) => row.screenshot ? <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSnapDeposit(row); setSnapOpen(true); }} title="View screenshot"><Eye className="h-3 w-3" /></Button> : "—" },
     {
       header: "amount",
       sortKey: "amount",
@@ -94,7 +96,7 @@ const AdminDeposits = () => {
       header: "Actions",
       accessor: (row: DepositRow) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedDeposit(row); setViewOpen(true); }}><Eye className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedDeposit(row); setViewOpen(true); }} title="View full details"><Eye className="h-3 w-3" /></Button>
           {String(row.status) === "pending" && (
             <>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-success" onClick={() => { setSelectedDeposit(row); setPinOpen(true); }}><Check className="h-3 w-3" /></Button>
@@ -198,7 +200,18 @@ const AdminDeposits = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View Deposit */}
+      {/* View screenshot only (from snap column) */}
+      <Dialog open={snapOpen} onOpenChange={(open) => { setSnapOpen(open); if (!open) setSnapDeposit(null); }}>
+        <DialogContent className="max-w-lg p-2">
+          <DialogHeader><DialogTitle className="font-display text-sm">Payment screenshot</DialogTitle></DialogHeader>
+          {snapDeposit?.screenshot && (
+            <img src={getMediaUrl(String(snapDeposit.screenshot))} alt="Deposit screenshot" className="w-full max-h-[85vh] object-contain rounded-lg border border-border" />
+          )}
+          <DialogFooter><Button variant="outline" onClick={() => { setSnapOpen(false); setSnapDeposit(null); }}>Close</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Deposit – full report (from Actions) */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="font-display">Deposit Details – Small Report</DialogTitle></DialogHeader>
