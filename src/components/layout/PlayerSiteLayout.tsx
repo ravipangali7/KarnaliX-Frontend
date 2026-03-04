@@ -3,10 +3,10 @@ import { HomeHeader } from "./HomeHeader";
 import { HomeFooter } from "./HomeFooter";
 import { MobileNav } from "./MobileNav";
 import { WhatsAppButton } from "./WhatsAppButton";
-import { PlayerChatFab } from "@/components/player/PlayerChatFab";
 
 /**
  * Player dashboard wrapped in the same site header and footer as the second home.
+ * Message FAB is shown globally via GlobalMessageFab in App (when user is logged in).
  */
 export const PlayerSiteLayout = () => (
   <div className="home-design min-h-screen flex flex-col bg-background">
@@ -16,7 +16,6 @@ export const PlayerSiteLayout = () => (
     </main>
     <HomeFooter />
     <MobileNav />
-    <PlayerChatFab />
     <WhatsAppButton />
   </div>
 );

@@ -88,6 +88,7 @@ import PowerhousePaymentMethods from "@/pages/admin/PowerhousePaymentMethods";
 import PowerhouseCountries from "@/pages/admin/PowerhouseCountries";
 
 import NotFound from "@/pages/NotFound";
+import { GlobalMessageFab } from "@/components/shared/GlobalMessageFab";
 import { HOME_PAGE_VARIANT } from "@/config";
 import FirstHomePage from "@/pages/public/FirstHomePage";
 import SecondHomePage from "@/pages/public/SecondHomePage";
@@ -149,6 +150,7 @@ const App = () => {
             <ScrollToTop />
             <SiteFavicon />
             <SiteThemeApplier />
+            <GlobalMessageFab />
             <Routes>
             {/* Public Website */}
             <Route path="/" element={<HomePageSwitch />} />
