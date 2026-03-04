@@ -63,6 +63,7 @@ const getNavItems = (role: string): NavItem[] => {
 
   if (role === "super") {
     return [
+      { label: "Messages", path: "/messages", icon: MessageCircle },
       { label: "List of Master", path: "/masters", icon: Users },
       { label: "List of User", path: "/players", icon: Users },
       { label: "Account Statement", path: "/account-statement", icon: FileText },
@@ -86,6 +87,7 @@ const getNavItems = (role: string): NavItem[] => {
 
   if (role === "master") {
     return [
+      { label: "Messages", path: "/messages", icon: MessageCircle },
       { label: "List of User", path: "/players", icon: Users },
       { label: "Account Statement", path: "/account-statement", icon: FileText },
       { label: "Bonus Statement", path: "/bonus-statement", icon: Gift },

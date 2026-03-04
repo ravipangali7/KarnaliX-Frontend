@@ -200,6 +200,7 @@ const App = () => {
               <Route path="/master/payment-modes" element={<MasterPaymentModes />} />
               <Route path="/master/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/master/activity" element={<AdminActivityLog />} />
+              <Route path="/master/messages" element={<AdminMessages role="master" />} />
               <Route path="/master/profile" element={<AdminProfile />} />
               <Route path="/master/change-password" element={<AdminChangePassword />} />
             </Route>
@@ -220,6 +221,7 @@ const App = () => {
               <Route path="/super/payment-method" element={<Navigate to="/super/payment-mode-verification" replace />} />
               <Route path="/super/payment-mode-verification" element={<AdminPaymentModeVerification />} />
               <Route path="/super/activity" element={<AdminActivityLog />} />
+              <Route path="/super/messages" element={<AdminMessages role="super" />} />
               <Route path="/super/profile" element={<AdminProfile />} />
               <Route path="/super/change-password" element={<AdminChangePassword />} />
             </Route>
