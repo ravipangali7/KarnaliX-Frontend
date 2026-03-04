@@ -10,9 +10,11 @@ const POLL_INTERVAL_MS = 4000;
 
 interface AdminMessagesProps {
   role: "master" | "super" | "powerhouse";
+  /** When true, fill container height (e.g. inside bottom sheet) so input is visible. */
+  embedded?: boolean;
 }
 
-const AdminMessages = ({ role }: AdminMessagesProps) => {
+const AdminMessages = ({ role, embedded = false }: AdminMessagesProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
@@ -59,7 +61,7 @@ const AdminMessages = ({ role }: AdminMessagesProps) => {
   const apiMessages = messages as ApiMessage[];
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row">
+    <div className={embedded ? "h-full min-h-0 flex flex-col md:flex-row" : "h-[calc(100vh-8rem)] flex flex-col md:flex-row"}>
       {/* Contact list */}
       <div className={`${selectedContactId != null ? "hidden md:block" : ""} md:w-72 border-r border-border overflow-y-auto flex-shrink-0`}>
         <div className="p-3 border-b border-border">
@@ -81,7 +83,7 @@ const AdminMessages = ({ role }: AdminMessagesProps) => {
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {selectedContactId != null ? (
           <>
             <div className="p-3 border-b border-border flex items-center gap-2 md:hidden flex-shrink-0">
@@ -96,7 +98,7 @@ const AdminMessages = ({ role }: AdminMessagesProps) => {
                 {selectedContact?.name ?? selectedContact?.username ?? "User"}
               </span>
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 flex flex-col">
               {isLoading ? (
                 <p className="text-center text-sm text-muted-foreground py-8">Loading…</p>
               ) : (

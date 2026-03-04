@@ -163,8 +163,8 @@ export const GlobalMessageFab = () => {
                   Messages
                 </SheetTitle>
               </SheetHeader>
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <AdminMessages role={adminRole} />
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <AdminMessages role={adminRole} embedded />
               </div>
             </div>
           ) : null}
