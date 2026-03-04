@@ -102,16 +102,12 @@ export const GlobalMessageFab = () => {
   const isPlayer = role === "player";
   const showPlayerSheet = isPlayer && partnerId != null;
 
-  const positionClass = isPlayer
-    ? "fixed bottom-32 right-4 z-40 md:bottom-6 md:right-20"
-    : "fixed bottom-6 right-4 z-40";
-
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`${positionClass} h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform`}
+        className="fixed bottom-20 right-4 z-40 md:bottom-6 h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform"
         style={{ backgroundColor: fabColor }}
         aria-label="Open messages"
       >
