@@ -17,7 +17,7 @@ import { TableBadge } from "@/components/admin/TableBadge";
 import { Check, X, Eye, RefreshCw } from "lucide-react";
 
 type PaymentModeDetail = Record<string, unknown> & { payment_method?: number; payment_method_name?: string; details?: Record<string, unknown>; status_display?: string; qr_image_url?: string };
-type DepositRow = Record<string, unknown> & { id?: number; user_username?: string; user_name?: string; user_phone?: string; user_email?: string; user_whatsapp_number?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; payment_mode_detail?: PaymentModeDetail | null; status?: string; created_at?: string; screenshot?: string };
+type DepositRow = Record<string, unknown> & { id?: number; user_username?: string; user_name?: string; user_phone?: string; user_email?: string; user_whatsapp_number?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; payment_mode_detail?: PaymentModeDetail | null; status?: string; created_at?: string; screenshot?: string; remarks?: string; reference_id?: string };
 
 const AdminDeposits = () => {
   const { user } = useAuth();
@@ -83,6 +83,10 @@ const AdminDeposits = () => {
     },
     { header: "request date", sortKey: "created_at", accessor: (row: DepositRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Request date", row.created_at ? new Date(String(row.created_at)).toLocaleString() : "—")}>{row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : ""}</span> },
     { header: "snap", accessor: (row: DepositRow) => row.screenshot ? <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSnapDeposit(row); setSnapOpen(true); }} title="View screenshot"><Eye className="h-3 w-3" /></Button> : "—" },
+    { header: "remarks", sortKey: "remarks", accessor: (row: DepositRow) => {
+      const remarks = String(row.remarks ?? "").trim();
+      return remarks ? <span className="cursor-pointer hover:underline text-primary max-w-[120px] truncate block" onClick={openCell("Remarks", remarks)} title={remarks}>{remarks}</span> : "—";
+    } },
     {
       header: "amount",
       sortKey: "amount",
@@ -234,6 +238,8 @@ const AdminDeposits = () => {
                   <div><span className="text-muted-foreground text-xs">Method</span><p className="font-medium">{String(selectedDeposit.payment_mode_name ?? selectedDeposit.payment_mode ?? "")}</p></div>
                   <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selectedDeposit.status ?? "pending")} /></p></div>
                   <div className="col-span-2"><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{selectedDeposit.created_at ? new Date(String(selectedDeposit.created_at)).toLocaleString() : ""}</p></div>
+                  {(selectedDeposit.remarks != null && String(selectedDeposit.remarks).trim() !== "") && <div className="col-span-2"><span className="text-muted-foreground text-xs">Remarks</span><p className="font-medium whitespace-pre-wrap">{String(selectedDeposit.remarks)}</p></div>}
+                  {(selectedDeposit.reference_id != null && String(selectedDeposit.reference_id).trim() !== "") && <div className="col-span-2"><span className="text-muted-foreground text-xs">Reference ID</span><p className="font-medium">{String(selectedDeposit.reference_id)}</p></div>}
                 </div>
               </div>
               <div className="space-y-3">
