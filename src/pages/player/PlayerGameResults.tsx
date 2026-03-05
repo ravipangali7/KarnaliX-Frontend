@@ -42,7 +42,7 @@ const PlayerGameResults = () => {
   return (
     <div className="p-2 mobile:p-4 md:p-6 space-y-4 max-w-4xl mx-auto min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
-        <h2 className="font-gaming font-bold text-lg mobile:text-xl neon-text tracking-wider truncate">GAME RESULTS</h2>
+        <h2 className="font-gaming font-bold text-lg mobile:text-xl neon-text tracking-wider truncate">BET HISTORY</h2>
         <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <Radio className="h-3 w-3 animate-pulse text-primary" />
           Live — updates every 3s

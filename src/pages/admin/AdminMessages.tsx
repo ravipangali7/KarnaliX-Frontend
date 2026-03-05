@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatInterface, type ApiMessage, type SendPayload } from "@/components/shared/ChatInterface";
@@ -18,7 +19,18 @@ interface AdminMessagesProps {
 const AdminMessages = ({ role, embedded = false }: AdminMessagesProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
+  const contactFromUrl = searchParams.get("contact");
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(() => {
+    const id = contactFromUrl ? parseInt(contactFromUrl, 10) : NaN;
+    return Number.isNaN(id) ? null : id;
+  });
+  const [contactSearch, setContactSearch] = useState("");
+
+  useEffect(() => {
+    const id = contactFromUrl ? parseInt(contactFromUrl, 10) : NaN;
+    if (!Number.isNaN(id)) setSelectedContactId(id);
+  }, [contactFromUrl]);
 
   const { connected } = useMessageSocket((msg) => {
     if (msg.sender === selectedContactId || msg.receiver === selectedContactId) {
@@ -40,7 +52,15 @@ const AdminMessages = ({ role, embedded = false }: AdminMessagesProps) => {
     refetchInterval: connected ? false : selectedContactId != null ? POLL_INTERVAL_MS : false,
   });
 
-  const contacts = Array.isArray(contactsData) ? contactsData : [];
+  const contactsRaw = Array.isArray(contactsData) ? contactsData : [];
+  const contactSearchLower = contactSearch.trim().toLowerCase();
+  const contacts = contactSearchLower
+    ? contactsRaw.filter(
+        (c: { name?: string; username?: string }) =>
+          (c.name ?? "").toLowerCase().includes(contactSearchLower) ||
+          (c.username ?? "").toLowerCase().includes(contactSearchLower)
+      )
+    : contactsRaw;
   const messages = Array.isArray(messagesData) ? messagesData : [];
 
   const [sending, setSending] = useState(false);
@@ -75,9 +95,18 @@ const AdminMessages = ({ role, embedded = false }: AdminMessagesProps) => {
   return (
     <div className={embedded ? "h-full min-h-0 flex flex-col md:flex-row" : "h-[calc(100vh-8rem)] flex flex-col md:flex-row"}>
       {/* Contact list */}
-      <div className={`${selectedContactId != null ? "hidden md:block" : ""} md:w-72 border-r border-border overflow-y-auto flex-shrink-0`}>
-        <div className="p-3 border-b border-border">
+      <div className={`${selectedContactId != null ? "hidden md:block" : ""} md:w-72 border-r border-border overflow-y-auto flex-shrink-0 flex flex-col`}>
+        <div className="p-3 border-b border-border flex-shrink-0">
           <h3 className="font-display font-semibold text-sm">Messages</h3>
+          {(role === "master" || role === "super" || role === "powerhouse") && (
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={contactSearch}
+              onChange={(e) => setContactSearch(e.target.value)}
+              className="mt-2 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+            />
+          )}
         </div>
         {contacts.map((c) => (
           <div

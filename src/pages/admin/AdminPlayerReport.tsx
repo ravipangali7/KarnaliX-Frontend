@@ -173,7 +173,7 @@ export default function AdminPlayerReport() {
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle className="text-base">Game Log</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Bet History</CardTitle></CardHeader>
         <CardContent>
           <DataTable data={gameLogs} columns={glColumns} searchKey="" />
         </CardContent>

@@ -13,7 +13,7 @@ import type { PlayerProfileResponse } from "@/api/player";
 
 const profileLinks = [
   { label: "Payment Modes", path: "/player/payment-modes", icon: CreditCard, color: "text-primary" },
-  { label: "Game Results", path: "/player/game-results", icon: BarChart3, color: "text-neon" },
+  { label: "Bet History", path: "/player/game-results", icon: BarChart3, color: "text-neon" },
   { label: "Transactions", path: "/player/transactions", icon: Clock, color: "text-warning" },
   { label: "Change Password", path: "/player/change-password", icon: Key, color: "text-accent" },
 ];

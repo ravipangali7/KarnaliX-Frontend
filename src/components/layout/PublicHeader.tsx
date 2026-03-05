@@ -21,7 +21,7 @@ const playerMobileNavItems = [
   { label: "Wallet", path: "/player/wallet", icon: Wallet },
   { label: "Messages", path: "/player/messages", icon: MessageCircle },
   { label: "Transactions", path: "/player/transactions", icon: Clock },
-  { label: "Game Results", path: "/player/game-results", icon: BarChart3 },
+  { label: "Bet History", path: "/player/game-results", icon: BarChart3 },
   { label: "Payment Modes", path: "/player/payment-modes", icon: CreditCard },
   { label: "Change Password", path: "/player/change-password", icon: Key },
   { label: "Profile", path: "/player/profile", icon: User },

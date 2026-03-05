@@ -87,7 +87,7 @@ const PlayerDashboard = () => {
           <Card className="cursor-pointer hover:border-primary/50 hover:neon-glow-sm transition-all gaming-card h-full min-h-[72px] mobile:min-h-0 touch-manipulation">
             <CardContent className="p-3 mobile:p-4 text-center">
               <Radio className="h-5 w-5 mobile:h-6 mobile:w-6 mx-auto mb-1 text-primary" />
-              <p className="text-[10px] mobile:text-xs font-medium">Live results</p>
+              <p className="text-[10px] mobile:text-xs font-medium">Bet History</p>
             </CardContent>
           </Card>
         </Link>

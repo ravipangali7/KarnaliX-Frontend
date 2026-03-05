@@ -10,13 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getMasters, getPlayers, createPlayer, updatePlayer, togglePlayerActive, getMasterPaymentModes, getPaymentModesForDepositTarget, directDeposit, directWithdraw, resetPassword, type ListParams } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
-import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, Inbox } from "lucide-react";
+
+const whatsAppUrl = (phone?: string | null, whatsapp?: string | null) => {
+  const raw = (phone || whatsapp || "").replace(/\D/g, "");
+  return raw ? `https://wa.me/${raw}` : null;
+};
 import { PinDialog } from "@/components/shared/PinDialog";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Switch } from "@/components/ui/switch";
 import { TableBadge } from "@/components/admin/TableBadge";
 
-type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; is_active?: boolean; status?: string; created_at?: string; phone?: string; total_balance?: string | number; total_win_loss?: string | number };
+type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; is_active?: boolean; status?: string; created_at?: string; phone?: string; whatsapp_number?: string; parent_username?: string; total_balance?: string | number; total_win_loss?: string | number };
 
 type PendingAction = "deposit" | "withdraw" | "resetPassword" | null;
 
@@ -61,15 +66,17 @@ const AdminPlayers = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [masterIdFilter, setMasterIdFilter] = useState<string>("");
   const listParams: ListParams = {};
   if (dateFrom) listParams.date_from = dateFrom;
   if (dateTo) listParams.date_to = dateTo;
+  if ((role === "powerhouse" || role === "super") && masterIdFilter) listParams.master_id = masterIdFilter;
   const { data: players = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-players", role, listParams],
     queryFn: () => getPlayers(role, listParams),
     refetchInterval: autoRefresh ? 10000 : false,
   });
-  const { data: mastersList = [] } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role), enabled: (role === "powerhouse" || role === "super") && createOpen });
+  const { data: mastersList = [] } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role), enabled: role === "powerhouse" || role === "super" });
   const { data: depositPaymentModesList = [] } = useQuery({
     queryKey: ["deposit-payment-modes", role, selectedUser?.id],
     queryFn: () => (role === "master" ? getMasterPaymentModes() : getPaymentModesForDepositTarget(role, selectedUser!.id as number)),
@@ -109,6 +116,29 @@ const AdminPlayers = () => {
           {String(row.phone ?? "—")}
         </span>
       ),
+    },
+    {
+      header: "Master",
+      sortKey: "parent_username",
+      accessor: (row: PlayerRow) => String(row.parent_username ?? "—"),
+    },
+    {
+      header: "Message",
+      accessor: (row: PlayerRow) => {
+        const waUrl = whatsAppUrl(row.phone, row.whatsapp_number);
+        return (
+          <div className="flex gap-1">
+            {waUrl ? (
+              <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex p-1 rounded hover:bg-muted" title="WhatsApp">
+                <svg className="h-4 w-4 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              </a>
+            ) : null}
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="Inbox - Open chat" onClick={() => navigate(`/${role}/messages?contact=${row.id}`)}>
+              <Inbox className="h-3 w-3" />
+            </Button>
+          </div>
+        );
+      },
     },
     {
       header: "Balance",
@@ -215,6 +245,21 @@ const AdminPlayers = () => {
         loading={isLoading}
       />
       <div className="flex flex-wrap items-center gap-2">
+        {(role === "powerhouse" || role === "super") && (
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Master:</span>
+            <select
+              value={masterIdFilter}
+              onChange={(e) => setMasterIdFilter(e.target.value)}
+              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+            >
+              <option value="">All</option>
+              {(mastersList as { id: number; username?: string }[]).map((m) => (
+                <option key={m.id} value={String(m.id)}>{m.username ?? m.id}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
           <RefreshCw className="h-4 w-4" /> Auto refresh (10s)

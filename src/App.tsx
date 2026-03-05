@@ -230,7 +230,8 @@ const App = () => {
 
             {/* Powerhouse Dashboard */}
             <Route element={<ProtectedRoute allowedRole="powerhouse"><AdminLayout role="powerhouse" /></ProtectedRoute>}>
-              <Route path="/powerhouse" element={<Navigate to="/powerhouse/players" replace />} />
+              <Route path="/powerhouse" element={<Navigate to="/powerhouse/dashboard" replace />} />
+              <Route path="/powerhouse/dashboard" element={<AdminDashboard role="powerhouse" />} />
               <Route path="/powerhouse/messages" element={<AdminMessages role="powerhouse" />} />
               <Route path="/powerhouse/supers" element={<AdminSupers />} />
               <Route path="/powerhouse/masters" element={<AdminMasters />} />

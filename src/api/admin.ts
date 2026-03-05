@@ -40,7 +40,7 @@ export async function changePassword(role: AdminRole, body: { old_password: stri
 }
 
 // --- Users (role-specific paths) ---
-export type ListParams = { search?: string; status?: string; date_from?: string; date_to?: string; is_active?: string };
+export type ListParams = { search?: string; status?: string; date_from?: string; date_to?: string; is_active?: string; master_id?: string };
 function buildQueryString(params?: ListParams): string {
   if (!params) return "";
   const q = new URLSearchParams();
@@ -49,6 +49,7 @@ function buildQueryString(params?: ListParams): string {
   if (params.date_from) q.set("date_from", params.date_from);
   if (params.date_to) q.set("date_to", params.date_to);
   if (params.is_active) q.set("is_active", params.is_active);
+  if (params.master_id) q.set("master_id", params.master_id);
   const s = q.toString();
   return s ? `?${s}` : "";
 }
@@ -249,7 +250,7 @@ export async function rejectPaymentModeVerification(id: number, body: { reject_r
   return apiPost(`${prefix(role)}/payment-mode-verification/${id}/reject/`, body);
 }
 
-// --- Game log, Transactions, Activity ---
+// --- Bet History, Transactions, Activity ---
 export async function getGameLog(role: "powerhouse" | "super" | "master") {
   const res = await apiGet(`${prefix(role)}/game-log/`);
   return (res as unknown as Record<string, unknown>[]) ?? [];

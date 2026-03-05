@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getGameLaunchUrl } from "@/api/player";
@@ -14,6 +14,7 @@ export default function GamePlayPage() {
   const backButtonRef = useRef<HTMLButtonElement>(null);
   const dragStartRef = useRef<{ clientX: number; clientY: number; posX: number; posY: number; width: number; height: number } | null>(null);
   const didDragRef = useRef(false);
+  const rafIdRef = useRef<number | null>(null);
 
   const handlePointerMove = useCallback((e: PointerEvent) => {
     const start = dragStartRef.current;
@@ -25,12 +26,18 @@ export default function GamePlayPage() {
     let newY = start.posY + dy;
     newX = Math.max(0, Math.min(window.innerWidth - start.width, newX));
     newY = Math.max(0, Math.min(window.innerHeight - start.height, newY));
-    setBackPosition({ x: newX, y: newY });
+    if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = requestAnimationFrame(() => {
+      setBackPosition({ x: newX, y: newY });
+      rafIdRef.current = null;
+    });
   }, []);
 
   const handlePointerUp = useCallback(() => {
     window.removeEventListener("pointermove", handlePointerMove);
     window.removeEventListener("pointerup", handlePointerUp);
+    if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = null;
     if (!didDragRef.current) navigate(-1);
     dragStartRef.current = null;
   }, [handlePointerMove, navigate]);
@@ -45,6 +52,10 @@ export default function GamePlayPage() {
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
   }, [backPosition.x, backPosition.y, handlePointerMove, handlePointerUp]);
+
+  useEffect(() => () => {
+    if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
+  }, []);
 
   const { data: launchUrl, isLoading, isError, error } = useQuery({
     queryKey: ["game-launch", id],
@@ -100,8 +111,8 @@ export default function GamePlayPage() {
         ref={backButtonRef}
         variant="outline"
         size="sm"
-        className="fixed z-50 bg-background/90 backdrop-blur-sm shadow-md hover:bg-background cursor-grab active:cursor-grabbing"
-        style={{ left: backPosition.x, top: backPosition.y }}
+        className="fixed z-50 left-0 top-0 bg-background/90 backdrop-blur-sm shadow-md hover:bg-background cursor-grab active:cursor-grabbing will-change-transform"
+        style={{ transform: `translate(${backPosition.x}px, ${backPosition.y}px)` }}
         onPointerDown={handleBackPointerDown}
       >
         <ArrowLeft className="h-4 w-4 mr-1" />

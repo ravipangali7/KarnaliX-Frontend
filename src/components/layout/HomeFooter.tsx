@@ -12,7 +12,7 @@ export const HomeFooter = () => {
 
   const gamesLinks =
     user?.role === "player"
-      ? [{ label: "Game Result", href: "/player/game-results" }, ...defaultFooterLinks.games]
+      ? [{ label: "Bet History", href: "/player/game-results" }, ...defaultFooterLinks.games]
       : defaultFooterLinks.games;
 
   const s = siteSetting as { logo?: string; name?: string; phones?: string[]; emails?: string[]; whatsapp_number?: string; footer_description?: string };

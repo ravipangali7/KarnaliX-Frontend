@@ -96,7 +96,7 @@ const AdminAccounting = () => {
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground block">Game logs</span>
+                <span className="text-muted-foreground block">Bet History</span>
                 <span className="font-semibold">{summary.game_logs_count}</span>
               </div>
               <div>
@@ -187,9 +187,9 @@ const AdminAccounting = () => {
 
       {report && !isLoading && (
         <>
-          {/* Game log */}
+          {/* Bet History */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Game Log</h3>
+            <h3 className="font-semibold text-lg">Bet History</h3>
             <DataTable
               data={report.game_logs as { id: number; user_username?: string; username?: string; game_name?: string; category?: string; bet_amount?: string; type?: string; win_amount?: string; created_at?: string }[]}
               columns={[
@@ -211,7 +211,7 @@ const AdminAccounting = () => {
                 },
               ]}
               searchKey="user_username"
-              searchPlaceholder="Search game logs..."
+              searchPlaceholder="Search bet history..."
             />
           </div>
 

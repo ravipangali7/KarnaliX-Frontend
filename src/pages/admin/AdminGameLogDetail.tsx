@@ -35,9 +35,9 @@ const AdminGameLogDetail = () => {
   if (error) {
     return (
       <div className="space-y-4">
-        <p className="text-destructive">Failed to load game log.</p>
+        <p className="text-destructive">Failed to load Bet History.</p>
         <Button variant="outline" size="sm" asChild>
-          <Link to={`${basePath}/game-log`}><ArrowLeft className="h-3 w-3 mr-1" /> Back to game log</Link>
+          <Link to={`${basePath}/game-log`}><ArrowLeft className="h-3 w-3 mr-1" /> Back to Bet History</Link>
         </Button>
       </div>
     );
@@ -58,7 +58,7 @@ const AdminGameLogDetail = () => {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" asChild>
           <Link to={`${basePath}/game-log`} className="gap-1">
-            <ArrowLeft className="h-4 w-4" /> Back to game log
+            <ArrowLeft className="h-4 w-4" /> Back to Bet History
           </Link>
         </Button>
       </div>
@@ -67,7 +67,7 @@ const AdminGameLogDetail = () => {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Gamepad2 className="h-5 w-5 text-primary" />
-            Game log details
+            Bet History details
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">

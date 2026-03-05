@@ -191,24 +191,24 @@ const GameDetailPage = () => {
                 <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-base h-12" disabled>
                   Only players can launch games
                 </Button>
-              ) : !canPlay ? (
-                <Link to="/wallet">
-                  <Button className="w-full bg-muted text-muted-foreground font-gaming font-bold text-base h-12">
-                    Add Funds to play
-                  </Button>
-                </Link>
               ) : (
-                <Button
-                  className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-base h-12 neon-glow tracking-widest animate-scale-pulse"
-                  onClick={() => navigate(`/games/${g.id}/play`)}
-                >
-                  🎮 START PLAYING
-                </Button>
+                <>
+                  <Button
+                    className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-base h-12 neon-glow tracking-widest animate-scale-pulse disabled:opacity-60 disabled:cursor-not-allowed"
+                    onClick={() => navigate(`/games/${g.id}/play`)}
+                    disabled={!canPlay}
+                  >
+                    🎮 START PLAYING
+                  </Button>
+                  {!canPlay && (
+                    <p className="text-xs text-muted-foreground text-center mt-1">Insufficient balance</p>
+                  )}
+                </>
               )}
               {isPlayer && (
                 <Link to="/player/game-results">
                   <Button variant="outline" size="sm" className="w-full mt-2 text-xs text-muted-foreground">
-                    View live results and balance
+                    View Bet History and balance
                   </Button>
                 </Link>
               )}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +26,7 @@ const FAB_COLORS: Record<UserRole, string> = {
  * Shown across the whole site with role-specific color. Opens bottom sheet chat.
  */
 export const GlobalMessageFab = () => {
+  const location = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -97,6 +99,7 @@ export const GlobalMessageFab = () => {
   };
 
   if (!user || !role) return null;
+  if (location.pathname.match(/^\/games\/[^/]+\/play$/)) return null;
 
   const fabColor = FAB_COLORS[role];
   const isPlayer = role === "player";
