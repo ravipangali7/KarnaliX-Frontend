@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Move } from "lucide-react";
+import { ArrowLeft, Home, Move } from "lucide-react";
 
 const BUTTON_WIDTH = 80;
 const BUTTON_HEIGHT = 36;
@@ -115,6 +115,10 @@ export default function GamePlayPage() {
           <DropdownMenuItem onClick={() => { setPopupOpen(false); navigate(-1); }}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { setPopupOpen(false); navigate("/"); }}>
+            <Home className="h-4 w-4 mr-2" />
+            Home
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => { setPopupOpen(false); setPositionMode(true); }}>
             <Move className="h-4 w-4 mr-2" />
