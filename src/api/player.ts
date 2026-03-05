@@ -40,6 +40,19 @@ export async function getPlayerUnreadMessageCount(): Promise<number> {
   return (res as unknown as { unread_count?: number })?.unread_count ?? 0;
 }
 
+export type PlayerMessageContact = {
+  id: number;
+  username: string;
+  name: string;
+  role: string;
+  unread_count?: number;
+};
+
+export async function getPlayerMessageContacts(): Promise<PlayerMessageContact[]> {
+  const res = await apiGet<PlayerMessageContact[]>(`${P}/messages/contacts/`);
+  return Array.isArray(res) ? res : [];
+}
+
 export async function getPlayerWallet() {
   const res = await apiGet<Record<string, unknown>>(`${P}/wallet/`);
   return res as unknown as Record<string, unknown>;

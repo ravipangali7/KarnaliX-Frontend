@@ -57,9 +57,11 @@ interface ChatInterfaceProps {
   onSend: (messageOrPayload: string | SendPayload) => Promise<void>;
   /** Optional: loading state to disable send. */
   sending?: boolean;
+  /** When true, hide send input (read-only thread). */
+  readOnly?: boolean;
 }
 
-export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, sending = false }: ChatInterfaceProps) => {
+export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, sending = false, readOnly = false }: ChatInterfaceProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
@@ -202,7 +204,7 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
         ))}
       </div>
 
-      {(pendingFile || pendingImage) && (
+      {!readOnly && (pendingFile || pendingImage) && (
         <div className="px-3 py-1 flex items-center gap-2 border-t border-border">
           {pendingImage && imagePreviewUrl && (
             <img
@@ -220,71 +222,73 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
         </div>
       )}
 
-      <div className="border-t border-border p-3 flex gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) {
-              setPendingFile(f);
-              setPendingImage(null);
-            }
-          }}
-        />
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) {
-              setPendingImage(f);
-              setPendingFile(null);
-            }
-          }}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 flex-shrink-0 text-muted-foreground"
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={partnerId == null || sending}
-        >
-          <Paperclip className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 flex-shrink-0 text-muted-foreground"
-          type="button"
-          onClick={() => imageInputRef.current?.click()}
-          disabled={partnerId == null || sending}
-        >
-          <ImageIcon className="h-4 w-4" />
-        </Button>
-        <Input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="h-10"
-          disabled={partnerId == null || sending}
-        />
-        <Button
-          onClick={handleSend}
-          size="icon"
-          className="gold-gradient text-primary-foreground h-10 w-10 neon-glow-sm flex-shrink-0"
-          disabled={!canSend}
-          type="button"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="border-t border-border p-3 flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) {
+                setPendingFile(f);
+                setPendingImage(null);
+              }
+            }}
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) {
+                setPendingImage(f);
+                setPendingFile(null);
+              }
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 flex-shrink-0 text-muted-foreground"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={partnerId == null || sending}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 flex-shrink-0 text-muted-foreground"
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={partnerId == null || sending}
+          >
+            <ImageIcon className="h-4 w-4" />
+          </Button>
+          <Input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type a message..."
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            className="h-10"
+            disabled={partnerId == null || sending}
+          />
+          <Button
+            onClick={handleSend}
+            size="icon"
+            className="gold-gradient text-primary-foreground h-10 w-10 neon-glow-sm flex-shrink-0"
+            disabled={!canSend}
+            type="button"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
