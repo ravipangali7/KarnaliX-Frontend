@@ -300,10 +300,20 @@ const PlayerWallet = () => {
                   </div>
                 </div>
 
-                <Input placeholder="Remarks (optional)" value={depositRemarks} onChange={(e) => setDepositRemarks(e.target.value)} className="text-sm" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">4. Transaction ID / Reference ID <span className="text-destructive">*</span></p>
+                  <Input
+                    placeholder="Enter transaction ID or reference ID from your payment"
+                    value={depositRemarks}
+                    onChange={(e) => setDepositRemarks(e.target.value)}
+                    className="text-sm"
+                    required
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Required. This helps us verify your deposit quickly.</p>
+                </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-2">4. Upload payment screenshot</p>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">5. Upload payment screenshot</p>
                   <input
                     ref={screenshotInputRef}
                     type="file"
@@ -339,6 +349,10 @@ const PlayerWallet = () => {
                 }
                 if (!selectedPM) {
                   toast({ title: "Select a payment method first.", variant: "destructive" });
+                  return;
+                }
+                if (!depositRemarks.trim()) {
+                  toast({ title: "Please enter your transaction ID or reference ID.", variant: "destructive" });
                   return;
                 }
                 try {
