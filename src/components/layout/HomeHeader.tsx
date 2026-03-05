@@ -152,10 +152,22 @@ export const HomeHeader = () => {
               <Wallet className="h-4 w-4 text-primary" />
               <span className="font-roboto-mono text-sm font-semibold text-foreground truncate max-w-[100px] sm:max-w-none">{walletBalance}</span>
             </div>
-            <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-neon-green animate-pulse" />
-            </Button>
+            {isPlayer ? (
+              <Link to={messagesPath}>
+                <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
+                  <Bell className="h-5 w-5" />
+                  {messageBadge > 0 && (
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold">
+                      {messageBadge > 99 ? "99+" : messageBadge}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            ) : (
+              <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
+                <Bell className="h-5 w-5" />
+              </Button>
+            )}
             {!isLoggedIn && (
               <>
                 <Link to="/login">
