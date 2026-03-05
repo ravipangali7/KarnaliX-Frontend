@@ -36,7 +36,9 @@ export default function GamePlayPage() {
     enabled: !!id && /^\d+$/.test(id),
   });
 
-  const gameContainerClass = "fixed top-0 left-0 w-[100vw] h-[98vh] overflow-hidden";
+  // Use inset-0 + full width/height to avoid 100vw overflow on mobile; 100dvh for dynamic viewport (address bar)
+  const gameContainerClass =
+    "fixed inset-0 w-full max-w-full overflow-hidden min-h-0 h-[98vh] h-[100dvh]";
 
   if (!id) {
     return (
@@ -76,7 +78,7 @@ export default function GamePlayPage() {
       <iframe
         title="Game"
         src={launchUrl}
-        className="absolute inset-0 w-full h-full border-0"
+        className="absolute inset-0 w-full h-full min-w-0 min-h-0 border-0"
         allow="fullscreen; payment; autoplay"
         allowFullScreen
       />
