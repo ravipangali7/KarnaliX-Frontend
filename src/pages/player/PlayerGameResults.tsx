@@ -30,7 +30,7 @@ const PlayerGameResults = () => {
   const logs = gameLogs as Record<string, unknown>[];
   const resultKey = (l: Record<string, unknown>) => String(l.type ?? l.result ?? l.game_result ?? "").toLowerCase();
   const filtered = logs.slice(0, 100).filter((l) => filter === "all" || resultKey(l) === filter);
-  const totalBet = filtered.reduce((s, l) => s + Number(l.bet_amount ?? l.betAmount ?? 0), 0);
+  const totalBet = filtered.reduce((s, l) => s + Number(l.effective_bet_amount ?? l.bet_amount ?? l.betAmount ?? 0), 0);
   const totalWin = filtered.reduce((s, l) => s + Number(l.win_amount ?? l.winAmount ?? 0), 0);
 
   const w = wallet as Record<string, unknown> | undefined;
@@ -115,22 +115,31 @@ const PlayerGameResults = () => {
         ))}
       </div>
 
-      {/* Desktop header */}
-      <div className="hidden md:grid grid-cols-6 gap-2 text-xs text-muted-foreground px-4 py-2 font-semibold border-b border-border">
-        <span>Game</span><span>Category</span><span>Bet</span><span>Won</span><span className="text-right">Result</span><span className="text-right">Details</span>
+      {/* Desktop header: Game, Category, Bet amount, Win/Loss, Total Amount, Result, Details */}
+      <div className="hidden md:grid grid-cols-7 gap-2 text-xs text-muted-foreground px-4 py-2 font-semibold border-b border-border bg-muted/30 rounded-t-lg">
+        <span>Game</span>
+        <span>Category</span>
+        <span>Bet amount</span>
+        <span>Win/Loss</span>
+        <span>Total Amount</span>
+        <span className="text-right">Result</span>
+        <span className="text-right">Details</span>
       </div>
 
       <div className="space-y-2">
         {filtered.map((log: Record<string, unknown>, i: number) => {
           const gameName = String(log.game_name ?? log.game ?? "");
           const category = String(log.category_name ?? log.category ?? "");
-          const betAmount = Number(log.bet_amount ?? log.betAmount ?? 0);
+          const effectiveBet = log.effective_bet_amount != null ? Number(log.effective_bet_amount) : Number(log.bet_amount ?? log.betAmount ?? 0);
+          const betDisplay = effectiveBet > 0 ? `${symbol}${effectiveBet}` : "—";
           const winAmount = Number(log.win_amount ?? log.winAmount ?? 0);
           const loseAmount = Number(log.lose_amount ?? log.loseAmount ?? 0);
           const result = String(log.type ?? log.result ?? "").toLowerCase();
           const playedAt = log.created_at ?? log.playedAt;
           const isLoss = result === "lose" || result === "loss";
-          const wonDisplay = winAmount > 0 ? `${symbol}${winAmount}` : isLoss && loseAmount > 0 ? `-${symbol}${loseAmount}` : "-";
+          const winLossDisplay = winAmount > 0 ? `${symbol}${winAmount}` : isLoss && loseAmount > 0 ? `-${symbol}${loseAmount}` : "—";
+          const afterBalance = log.after_balance != null && log.after_balance !== "" ? Number(log.after_balance) : null;
+          const totalAmountDisplay = afterBalance != null && !Number.isNaN(afterBalance) ? `${symbol}${afterBalance.toLocaleString()}` : "—";
           return (
           <Card key={String(log.id ?? i)} className="hover:border-primary/20 transition-colors">
             <CardContent className="p-3 md:p-4">
@@ -142,29 +151,30 @@ const PlayerGameResults = () => {
                   </div>
                   <StatusBadge status={result} />
                 </div>
-                <div className="flex justify-between mt-2 text-xs text-muted-foreground items-center">
-                  <span>Bet: {symbol}{betAmount}</span>
-                  <div className="flex items-center gap-2">
-                    {winAmount > 0 && <span className="text-success font-bold">Won: {symbol}{winAmount}</span>}
-                    {isLoss && loseAmount > 0 && <span className="font-bold">Lost: {symbol}{loseAmount}</span>}
-                    {log.id != null && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" asChild>
-                        <Link to={`/player/game-results/${log.id}`}>View <ExternalLink className="h-3 w-3" /></Link>
-                      </Button>
-                    )}
-                  </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground items-center">
+                  <span>Bet amount: {betDisplay}</span>
+                  <span className={winAmount > 0 ? "text-success font-bold" : isLoss && loseAmount > 0 ? "font-bold" : ""}>
+                    Win/Loss: {winLossDisplay}
+                  </span>
+                  <span>Total Amount: {totalAmountDisplay}</span>
+                  {log.id != null && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" asChild>
+                      <Link to={`/player/game-results/${log.id}`}>View <ExternalLink className="h-3 w-3" /></Link>
+                    </Button>
+                  )}
                 </div>
               </div>
-              <div className="hidden md:grid grid-cols-6 gap-2 items-center">
+              <div className="hidden md:grid grid-cols-7 gap-2 items-center">
                 <div>
                   <p className="text-sm font-semibold">{gameName}</p>
                   <p className="text-[10px] text-muted-foreground">{playedAt ? new Date(String(playedAt)).toLocaleString() : ""}</p>
                 </div>
                 <span className="text-xs">{category}</span>
-                <span className="text-xs font-medium">{symbol}{betAmount}</span>
-                <span className={`text-xs font-bold ${winAmount > 0 ? "text-success" : "text-muted-foreground"}`}>
-                  {wonDisplay}
+                <span className="text-xs font-medium">{betDisplay}</span>
+                <span className={`text-xs font-bold ${winAmount > 0 ? "text-success" : isLoss && loseAmount > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                  {winLossDisplay}
                 </span>
+                <span className="text-xs font-medium">{totalAmountDisplay}</span>
                 <span className="text-right"><StatusBadge status={result} /></span>
                 <span className="text-right">
                   {log.id != null && (
