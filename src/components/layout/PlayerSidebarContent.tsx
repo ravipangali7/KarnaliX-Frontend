@@ -23,6 +23,8 @@ export interface PlayerSidebarContentProps {
   messageBadge: number;
   currentPath: string;
   onNavigate?: () => void;
+  /** When provided and messageBadge > 0, clicking Messages opens this instead of navigating. */
+  onMessagesClick?: () => void;
   compact?: boolean;
 }
 
@@ -32,6 +34,7 @@ export const PlayerSidebarContent = ({
   messageBadge,
   currentPath,
   onNavigate,
+  onMessagesClick,
   compact = false,
 }: PlayerSidebarContentProps) => {
   const navigate = useNavigate();
@@ -67,26 +70,53 @@ export const PlayerSidebarContent = ({
 
       {/* Nav items */}
       <nav className={compact ? "flex-1 px-2 py-1 space-y-0.5" : "flex-1 px-3 py-2 space-y-1"}>
-        {sidebarLinks.map((link) => (
-          <Link
-            key={link.path}
-            to={link.path}
-            onClick={onNavigate}
-            className={`${linkClass} ${
-              isActive(link.path)
-                ? "bg-primary/10 text-primary neon-glow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <link.icon className={`h-4 w-4 flex-shrink-0 ${isActive(link.path) ? "text-primary" : ""}`} />
-            <span className="flex-1 truncate">{link.label}</span>
-            {link.path === "/player/messages" && messageBadge > 0 && (
-              <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
-                {messageBadge > 99 ? "99+" : messageBadge}
-              </Badge>
-            )}
-          </Link>
-        ))}
+        {sidebarLinks.map((link) => {
+          const isMessages = link.path === "/player/messages";
+          const openModalInstead = isMessages && messageBadge > 0 && onMessagesClick;
+          if (openModalInstead) {
+            return (
+              <button
+                key={link.path}
+                type="button"
+                onClick={() => {
+                  onMessagesClick();
+                  onNavigate?.();
+                }}
+                className={`${linkClass} w-full ${
+                  isActive(link.path)
+                    ? "bg-primary/10 text-primary neon-glow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <link.icon className={`h-4 w-4 flex-shrink-0 ${isActive(link.path) ? "text-primary" : ""}`} />
+                <span className="flex-1 truncate text-left">{link.label}</span>
+                <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
+                  {messageBadge > 99 ? "99+" : messageBadge}
+                </Badge>
+              </button>
+            );
+          }
+          return (
+            <Link
+              key={link.path}
+              to={link.path}
+              onClick={onNavigate}
+              className={`${linkClass} ${
+                isActive(link.path)
+                  ? "bg-primary/10 text-primary neon-glow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <link.icon className={`h-4 w-4 flex-shrink-0 ${isActive(link.path) ? "text-primary" : ""}`} />
+              <span className="flex-1 truncate">{link.label}</span>
+              {isMessages && messageBadge > 0 && (
+                <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1">
+                  {messageBadge > 99 ? "99+" : messageBadge}
+                </Badge>
+              )}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Footer */}

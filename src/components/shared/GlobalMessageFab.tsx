@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlayerNotification } from "@/contexts/PlayerNotificationContext";
 import type { UserRole } from "@/contexts/AuthContext";
 import { getPlayerMessages, getPlayerUnreadMessageCount, sendPlayerMessage, sendPlayerMessageForm } from "@/api/player";
 import { getUnreadMessageCount } from "@/api/admin";
@@ -29,6 +30,7 @@ export const GlobalMessageFab = () => {
   const location = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const playerNotification = usePlayerNotification();
   const [open, setOpen] = useState(false);
   const role = user?.role ?? null;
   const partnerId = role === "player" ? (user?.parent ?? null) : null;
@@ -105,14 +107,22 @@ export const GlobalMessageFab = () => {
   const isPlayer = role === "player";
   const showPlayerSheet = isPlayer && partnerId != null;
 
+  const handleFabClick = () => {
+    if (isPlayer && playerNotification) {
+      playerNotification.openModal();
+    } else {
+      setOpen(true);
+    }
+  };
+
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={handleFabClick}
         className="fixed bottom-20 right-4 z-40 md:bottom-6 h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform"
         style={{ backgroundColor: fabColor }}
-        aria-label="Open messages"
+        aria-label={isPlayer ? "Open notifications" : "Open messages"}
       >
         <MessageCircle className="h-7 w-7" />
         {unread > 0 && (

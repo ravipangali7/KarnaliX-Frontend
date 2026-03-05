@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Menu, X, Bell, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlayerNotification } from "@/contexts/PlayerNotificationContext";
 import { getCurrencySymbol } from "@/utils/currency";
 import { getSiteSetting, getLiveBettingSections } from "@/api/site";
 import { getPlayerUnreadMessageCount } from "@/api/player";
@@ -68,6 +69,7 @@ export const HomeHeader = () => {
     enabled: isPlayer,
   });
   const messageBadge = isPlayer ? Number(unreadMessages) || 0 : 0;
+  const notification = usePlayerNotification();
   const tickerRows: TickerRow[] = useMemo(() => {
     const fromApi = mapLiveBettingToTickerRows(liveBettingSections);
     return fromApi.length > 0 ? fromApi : defaultLiveOddsTicker;
@@ -154,16 +156,19 @@ export const HomeHeader = () => {
               <span className="font-roboto-mono text-sm font-semibold text-foreground truncate max-w-[100px] sm:max-w-none">{walletBalance}</span>
             </div>
             {isPlayer ? (
-              <Link to={messagesPath}>
-                <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
-                  <Bell className="h-5 w-5" />
-                  {messageBadge > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold">
-                      {messageBadge > 99 ? "99+" : messageBadge}
-                    </span>
-                  )}
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative min-h-[44px] min-w-[44px] touch-manipulation"
+                onClick={() => notification?.openModal()}
+              >
+                <Bell className="h-5 w-5" />
+                {messageBadge > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold">
+                    {messageBadge > 99 ? "99+" : messageBadge}
+                  </span>
+                )}
+              </Button>
             ) : (
               <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
                 <Bell className="h-5 w-5" />
@@ -234,6 +239,10 @@ export const HomeHeader = () => {
                   messageBadge={messageBadge}
                   currentPath={location.pathname}
                   onNavigate={() => setMenuOpen(false)}
+                  onMessagesClick={() => {
+                    notification?.openModal();
+                    setMenuOpen(false);
+                  }}
                   compact
                 />
               </div>

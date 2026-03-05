@@ -9,6 +9,7 @@ import { getSiteSetting } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { PlayerNotificationProvider } from "@/contexts/PlayerNotificationContext";
 
 const googleClientId = "386184793784-njlhdvqjh0698tnc5tffi79m5pjqpig4.apps.googleusercontent.com";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -147,11 +148,12 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <ScrollToTop />
-            <SiteFavicon />
-            <SiteThemeApplier />
-            <GlobalMessageFab />
-            <Routes>
+            <PlayerNotificationProvider>
+              <ScrollToTop />
+              <SiteFavicon />
+              <SiteThemeApplier />
+              <GlobalMessageFab />
+              <Routes>
             {/* Public Website */}
             <Route path="/" element={<HomePageSwitch />} />
             <Route element={<PublicLayout />}>
@@ -270,7 +272,8 @@ const App = () => {
             </Route>
 
             <Route path="*" element={<NotFound />} />
-            </Routes>
+              </Routes>
+            </PlayerNotificationProvider>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

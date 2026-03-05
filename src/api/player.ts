@@ -53,6 +53,20 @@ export async function getPlayerMessageContacts(): Promise<PlayerMessageContact[]
   return Array.isArray(res) ? res : [];
 }
 
+export type PlayerNotificationItem = {
+  id: number;
+  sender_id: number;
+  sender_username: string;
+  sender_name: string;
+  message: string;
+  created_at: string | null;
+};
+
+export async function getPlayerNotifications(): Promise<PlayerNotificationItem[]> {
+  const res = await apiGet<PlayerNotificationItem[]>(`${P}/messages/notifications/`);
+  return Array.isArray(res) ? res : [];
+}
+
 export async function getPlayerWallet() {
   const res = await apiGet<Record<string, unknown>>(`${P}/wallet/`);
   return res as unknown as Record<string, unknown>;

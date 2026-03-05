@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Wallet } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlayerNotification } from "@/contexts/PlayerNotificationContext";
 import { getPlayerUnreadMessageCount } from "@/api/player";
 import { PlayerSidebarContent } from "./PlayerSidebarContent";
 
@@ -12,6 +13,7 @@ export const PlayerLayout = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user, logout, refreshUser } = useAuth();
+  const notification = usePlayerNotification();
   const total = user?.total_balance != null ? formatBal(user.total_balance) : "₹0";
 
   const { data: unreadMessages = 0 } = useQuery({
@@ -56,6 +58,7 @@ export const PlayerLayout = () => {
           logout={logout}
           messageBadge={messageBadge}
           currentPath={location.pathname}
+          onMessagesClick={notification?.openModal}
         />
       </aside>
 
