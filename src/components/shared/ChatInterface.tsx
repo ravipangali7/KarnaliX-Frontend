@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, Image as ImageIcon, X } from "lucide-react";
+import { Send, Paperclip, Image as ImageIcon, X, Check, CheckCheck } from "lucide-react";
 import { getMediaUrl } from "@/lib/api";
 
 /** API message shape from backend (MessageSerializer). */
@@ -15,6 +15,7 @@ export interface ApiMessage {
   receiver_username?: string;
   file?: string | null;
   image?: string | null;
+  is_read?: boolean;
 }
 
 export interface ChatMessage {
@@ -38,6 +39,7 @@ function normalizeMessage(m: ApiMessage, currentUserId: number): ChatMessage & {
     to: String(m.receiver),
     message: m.message ?? "",
     timestamp: m.created_at,
+    read: m.is_read,
     isFromMe,
     file: m.file ?? null,
     image: m.image ?? null,
@@ -181,9 +183,20 @@ export const ChatInterface = ({ currentUserId, partnerId, messages, onSend, send
                 </a>
               )}
               {msg.message ? <p>{msg.message}</p> : null}
-              <p className={`text-[10px] mt-1 ${msg.isFromMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </p>
+              <div className={`flex items-center gap-1.5 mt-1 ${msg.isFromMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                <span className="text-[10px]">
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                {msg.isFromMe && (
+                  <span className="text-[10px] flex items-center gap-0.5" title={msg.read ? "Read" : "Delivered"}>
+                    {msg.read ? (
+                      <CheckCheck className="h-3 w-3" aria-hidden />
+                    ) : (
+                      <Check className="h-3 w-3" aria-hidden />
+                    )}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         ))}

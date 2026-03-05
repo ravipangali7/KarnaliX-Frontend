@@ -5,6 +5,7 @@ import { ChatInterface, type ApiMessage, type SendPayload } from "@/components/s
 import { getMessages, getMessageContacts, sendMessage, sendMessageForm } from "@/api/admin";
 import { useMessageSocket } from "@/hooks/useMessageSocket";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -20,10 +21,11 @@ const AdminMessages = ({ role, embedded = false }: AdminMessagesProps) => {
   const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
 
   const { connected } = useMessageSocket((msg) => {
-    if (selectedContactId == null) return;
     if (msg.sender === selectedContactId || msg.receiver === selectedContactId) {
       queryClient.invalidateQueries({ queryKey: ["admin-messages", role, selectedContactId] });
     }
+    queryClient.invalidateQueries({ queryKey: ["admin-message-contacts", role] });
+    queryClient.invalidateQueries({ queryKey: ["admin-messages-unread", role] });
   });
 
   const { data: contactsData } = useQuery({
@@ -80,11 +82,24 @@ const AdminMessages = ({ role, embedded = false }: AdminMessagesProps) => {
         {contacts.map((c) => (
           <div
             key={c.id}
-            onClick={() => setSelectedContactId(c.id)}
+            onClick={() => {
+              setSelectedContactId(c.id);
+              queryClient.invalidateQueries({ queryKey: ["admin-message-contacts", role] });
+              queryClient.invalidateQueries({ queryKey: ["admin-messages-unread", role] });
+            }}
             className={`p-3 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${selectedContactId === c.id ? "bg-muted" : ""}`}
           >
-            <p className="text-sm font-medium">{c.name || c.username}</p>
-            <p className="text-xs text-muted-foreground capitalize">{c.role}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{c.name || c.username}</p>
+                <p className="text-xs text-muted-foreground capitalize">{c.role}</p>
+              </div>
+              {(c.unread_count ?? 0) > 0 && (
+                <Badge variant="destructive" className="text-[10px] min-w-5 h-5 justify-center px-1 flex-shrink-0">
+                  {(c.unread_count ?? 0) > 99 ? "99+" : c.unread_count}
+                </Badge>
+              )}
+            </div>
           </div>
         ))}
         {contacts.length === 0 && (

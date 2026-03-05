@@ -372,9 +372,17 @@ export async function getMessages(role: "powerhouse" | "super" | "master", partn
   const res = await apiGet(path);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
+export type MessageContact = {
+  id: number;
+  username: string;
+  name: string;
+  role: string;
+  unread_count?: number;
+};
+
 export async function getMessageContacts(role: "powerhouse" | "super" | "master") {
   const res = await apiGet(`${prefix(role)}/messages/contacts/`);
-  return (res as unknown as { id: number; username: string; name: string; role: string }[]) ?? [];
+  return (res as unknown as MessageContact[]) ?? [];
 }
 export async function sendMessage(body: unknown, role: "powerhouse" | "super" | "master") {
   return apiPost(`${prefix(role)}/messages/send/`, body);
