@@ -143,3 +143,13 @@ export function getMessagesWebSocketUrl(): string | null {
   const url = `${wsProtocol}://${wsHost}/ws/messages/?token=${encodeURIComponent(token)}`;
   return url;
 }
+
+/** WebSocket URL for session revoke (one device per user). Same host as API, path /ws/session/, token in query. */
+export function getSessionWebSocketUrl(): string | null {
+  const token = getToken();
+  if (!token) return null;
+  const base = BASE_URL.replace(/\/api\/?$/, '').trim();
+  const wsProtocol = base.startsWith('https') ? 'wss' : 'ws';
+  const wsHost = base.replace(/^https?:\/\//, '');
+  return `${wsProtocol}://${wsHost}/ws/session/?token=${encodeURIComponent(token)}`;
+}

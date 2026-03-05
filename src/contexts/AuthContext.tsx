@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { apiPost, apiGet } from "@/lib/api";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { apiPost, apiGet, getSessionWebSocketUrl } from "@/lib/api";
 import { authGoogle, authGoogleComplete } from "@/api/auth";
 
 export type UserRole = "powerhouse" | "super" | "master" | "player";
@@ -165,6 +165,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(USER_KEY);
     setState({ user: null, token: null, loading: false });
   }, []);
+
+  const logoutRef = useRef(logout);
+  logoutRef.current = logout;
+  const tokenRef = useRef<string | null>(state.token);
+  tokenRef.current = state.token;
+
+  useEffect(() => {
+    const token = state.token;
+    if (!token) return;
+    const url = getSessionWebSocketUrl();
+    if (!url) return;
+    const ws = new WebSocket(url);
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as { type?: string; current_token?: string };
+        if (data?.type === "session.revoked" && data.current_token !== tokenRef.current) {
+          logoutRef.current();
+          ws.close();
+        }
+      } catch {
+        // ignore parse errors
+      }
+    };
+    return () => {
+      ws.close();
+    };
+  }, [state.token]);
 
   const value: AuthContextValue = {
     ...state,
