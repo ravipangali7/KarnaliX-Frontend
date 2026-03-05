@@ -137,7 +137,8 @@ const PlayerGameResults = () => {
           const result = String(log.type ?? log.result ?? "").toLowerCase();
           const playedAt = log.created_at ?? log.playedAt;
           const isLoss = result === "lose" || result === "loss";
-          const winLossDisplay = winAmount > 0 ? `${symbol}${winAmount}` : isLoss && loseAmount > 0 ? `-${symbol}${loseAmount}` : "—";
+          const winLossDisplay =
+            winAmount > 0 ? `+${symbol}${winAmount}` : isLoss && loseAmount > 0 ? `-${symbol}${loseAmount}` : "—";
           const afterBalance = log.after_balance != null && log.after_balance !== "" ? Number(log.after_balance) : null;
           const totalAmountDisplay = afterBalance != null && !Number.isNaN(afterBalance) ? `${symbol}${afterBalance.toLocaleString()}` : "—";
           return (
@@ -153,7 +154,7 @@ const PlayerGameResults = () => {
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground items-center">
                   <span>Bet amount: {betDisplay}</span>
-                  <span className={winAmount > 0 ? "text-success font-bold" : isLoss && loseAmount > 0 ? "font-bold" : ""}>
+                  <span className={winAmount > 0 ? "text-success font-bold" : isLoss && loseAmount > 0 ? "text-destructive font-bold" : ""}>
                     Win/Loss: {winLossDisplay}
                   </span>
                   <span>Total Amount: {totalAmountDisplay}</span>
