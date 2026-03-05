@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getMasters, getPlayers, createPlayer, updatePlayer, togglePlayerActive, getMasterPaymentModes, getPaymentModesForDepositTarget, directDeposit, directWithdraw, resetPassword, type ListParams } from "@/api/admin";
+import { getMasters, getPlayers, createPlayer, updatePlayer, togglePlayerActive, directDeposit, directWithdraw, resetPassword, type ListParams } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, Inbox } from "lucide-react";
 
@@ -21,7 +21,7 @@ import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Switch } from "@/components/ui/switch";
 import { TableBadge } from "@/components/admin/TableBadge";
 
-type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; is_active?: boolean; status?: string; created_at?: string; phone?: string; whatsapp_number?: string; parent_username?: string; total_balance?: string | number; total_win_loss?: string | number };
+type PlayerRow = Record<string, unknown> & { id?: number; username?: string; name?: string; main_balance?: string; bonus_balance?: string; exposure_balance?: string; exposure_limit?: string; is_active?: boolean; status?: string; created_at?: string; phone?: string; whatsapp_number?: string; parent_username?: string; no_activity_7_days?: boolean; total_balance?: string | number; total_win_loss?: string | number };
 
 type PendingAction = "deposit" | "withdraw" | "resetPassword" | null;
 
@@ -51,7 +51,6 @@ const AdminPlayers = () => {
   const [pendingPayload, setPendingPayload] = useState<Record<string, unknown>>({});
   const [depositAmount, setDepositAmount] = useState("");
   const [depositRemarks, setDepositRemarks] = useState("");
-  const [depositPaymentModeId, setDepositPaymentModeId] = useState<number | "">("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawRemarks, setWithdrawRemarks] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -77,11 +76,6 @@ const AdminPlayers = () => {
     refetchInterval: autoRefresh ? 10000 : false,
   });
   const { data: mastersList = [] } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role), enabled: role === "powerhouse" || role === "super" });
-  const { data: depositPaymentModesList = [] } = useQuery({
-    queryKey: ["deposit-payment-modes", role, selectedUser?.id],
-    queryFn: () => (role === "master" ? getMasterPaymentModes() : getPaymentModesForDepositTarget(role, selectedUser!.id as number)),
-    enabled: depositOpen && !!selectedUser?.id,
-  });
   const rows = players as PlayerRow[];
 
   const openCell = (row: PlayerRow, field: string, label: string, value: unknown, editable: boolean) => {
@@ -265,7 +259,16 @@ const AdminPlayers = () => {
           <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
         </label>
       </div>
-      <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search players..." onAdd={() => setCreateOpen(true)} addLabel="Add Player" variant="adminListing" />
+      <DataTable
+        data={rows}
+        columns={columns}
+        searchKey="username"
+        searchPlaceholder="Search players..."
+        onAdd={() => setCreateOpen(true)}
+        addLabel="Add Player"
+        variant="adminListing"
+        getRowClassName={(row) => (row.is_active === false || row.no_activity_7_days === true ? "bg-destructive/15" : "")}
+      />
 
       {/* Single-field cell edit / view modal */}
       <Dialog
@@ -460,23 +463,10 @@ const AdminPlayers = () => {
       </Dialog>
 
       {/* Deposit Dialog */}
-      <Dialog open={depositOpen} onOpenChange={(open) => { setDepositOpen(open); if (!open) setDepositPaymentModeId(""); }}>
+      <Dialog open={depositOpen} onOpenChange={setDepositOpen}>
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Deposit to {selectedUser?.username}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div>
-              <label className="text-xs text-muted-foreground">Payment method (optional)</label>
-              <select
-                className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm mt-1"
-                value={depositPaymentModeId}
-                onChange={(e) => setDepositPaymentModeId(e.target.value === "" ? "" : Number(e.target.value))}
-              >
-                <option value="">— Select —</option>
-                {(depositPaymentModesList as { id?: number; name?: string }[]).map((pm) => (
-                  <option key={pm.id} value={pm.id}>{pm.name ?? pm.id}</option>
-                ))}
-              </select>
-            </div>
             <Input type="number" placeholder="Amount" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
             <Textarea placeholder="Remarks (optional)" rows={2} value={depositRemarks} onChange={(e) => setDepositRemarks(e.target.value)} />
           </div>
@@ -486,7 +476,7 @@ const AdminPlayers = () => {
               className="gold-gradient text-primary-foreground"
               onClick={() => {
                 setPendingAction("deposit");
-                setPendingPayload({ userId: selectedUser?.id, amount: depositAmount, remarks: depositRemarks, paymentModeId: depositPaymentModeId });
+                setPendingPayload({ userId: selectedUser?.id, amount: depositAmount, remarks: depositRemarks });
                 setDepositOpen(false);
                 setPinOpen(true);
               }}
@@ -577,15 +567,10 @@ const AdminPlayers = () => {
               const userId = pendingPayload.userId as number;
               const amount = pendingPayload.amount as string;
               const remarks = (pendingPayload.remarks as string) ?? "";
-              const paymentModeId = pendingPayload.paymentModeId as number | "" | undefined;
-              const body: { user_id: number; amount: number; remarks?: string; pin: string; payment_mode?: number } = {
-                user_id: userId,
-                amount: Number(amount) || 0,
-                remarks,
-                pin,
-              };
-              if (paymentModeId !== "" && paymentModeId != null) body.payment_mode = Number(paymentModeId);
-              await directDeposit(body, role);
+              await directDeposit(
+                { user_id: userId, amount: Number(amount) || 0, remarks, pin },
+                role
+              );
               queryClient.invalidateQueries({ queryKey: ["admin-players", role] });
               queryClient.invalidateQueries({ queryKey: ["admin-deposits", role] });
               toast({ title: "Deposit created and approved." });

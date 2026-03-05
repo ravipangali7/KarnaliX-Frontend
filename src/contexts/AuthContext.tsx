@@ -24,6 +24,7 @@ export interface User {
   whatsapp_number?: string;
   country_code?: string;
   currency_symbol?: string;
+  last_login?: string | null;
 }
 
 interface AuthState {

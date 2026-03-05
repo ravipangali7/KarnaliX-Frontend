@@ -1,61 +1,34 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getGameLaunchUrl } from "@/api/player";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Move } from "lucide-react";
 
-const DRAG_THRESHOLD_PX = 5;
+const BUTTON_WIDTH = 80;
+const BUTTON_HEIGHT = 36;
 
 export default function GamePlayPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [backPosition, setBackPosition] = useState({ x: 16, y: 16 });
   const backButtonRef = useRef<HTMLButtonElement>(null);
-  const dragStartRef = useRef<{ clientX: number; clientY: number; posX: number; posY: number; width: number; height: number } | null>(null);
-  const didDragRef = useRef(false);
-  const rafIdRef = useRef<number | null>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [positionMode, setPositionMode] = useState(false);
 
-  const handlePointerMove = useCallback((e: PointerEvent) => {
-    const start = dragStartRef.current;
-    if (!start) return;
-    const dx = e.clientX - start.clientX;
-    const dy = e.clientY - start.clientY;
-    if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) didDragRef.current = true;
-    let newX = start.posX + dx;
-    let newY = start.posY + dy;
-    newX = Math.max(0, Math.min(window.innerWidth - start.width, newX));
-    newY = Math.max(0, Math.min(window.innerHeight - start.height, newY));
-    if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
-    rafIdRef.current = requestAnimationFrame(() => {
-      setBackPosition({ x: newX, y: newY });
-      rafIdRef.current = null;
-    });
-  }, []);
-
-  const handlePointerUp = useCallback(() => {
-    window.removeEventListener("pointermove", handlePointerMove);
-    window.removeEventListener("pointerup", handlePointerUp);
-    if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
-    rafIdRef.current = null;
-    if (!didDragRef.current) navigate(-1);
-    dragStartRef.current = null;
-  }, [handlePointerMove, navigate]);
-
-  const handleBackPointerDown = useCallback((e: React.PointerEvent) => {
-    didDragRef.current = false;
-    const rect = backButtonRef.current?.getBoundingClientRect();
-    const w = rect?.width ?? 80;
-    const h = rect?.height ?? 36;
-    dragStartRef.current = { clientX: e.clientX, clientY: e.clientY, posX: backPosition.x, posY: backPosition.y, width: w, height: h };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-  }, [backPosition.x, backPosition.y, handlePointerMove, handlePointerUp]);
-
-  useEffect(() => () => {
-    if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
-  }, []);
+  const handlePlaceBack = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const x = Math.max(0, Math.min(window.innerWidth - BUTTON_WIDTH, e.clientX - BUTTON_WIDTH / 2));
+    const y = Math.max(0, Math.min(window.innerHeight - BUTTON_HEIGHT, e.clientY - BUTTON_HEIGHT / 2));
+    setBackPosition({ x, y });
+    setPositionMode(false);
+  };
 
   const { data: launchUrl, isLoading, isError, error } = useQuery({
     queryKey: ["game-launch", id],
@@ -107,17 +80,46 @@ export default function GamePlayPage() {
         allow="fullscreen; payment; autoplay"
         allowFullScreen
       />
-      <Button
-        ref={backButtonRef}
-        variant="outline"
-        size="sm"
-        className="fixed z-50 left-0 top-0 bg-background/90 backdrop-blur-sm shadow-md hover:bg-background cursor-grab active:cursor-grabbing will-change-transform"
-        style={{ transform: `translate(${backPosition.x}px, ${backPosition.y}px)` }}
-        onPointerDown={handleBackPointerDown}
-      >
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back
-      </Button>
+
+      {positionMode && (
+        <div
+          className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-black/40"
+          onClick={handlePlaceBack}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Escape" && setPositionMode(false)}
+          aria-label="Tap to place back button"
+        >
+          <p className="text-white font-medium text-center px-4 py-3 rounded-lg bg-background/90 shadow-lg max-w-[90vw]">
+            Tap anywhere on screen to place the back button.
+          </p>
+        </div>
+      )}
+
+      <DropdownMenu open={popupOpen} onOpenChange={setPopupOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            ref={backButtonRef}
+            variant="outline"
+            size="sm"
+            className="fixed z-50 left-0 top-0 bg-background/90 backdrop-blur-sm shadow-md hover:bg-background will-change-transform"
+            style={{ transform: `translate(${backPosition.x}px, ${backPosition.y}px)` }}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="bottom" className="z-[60]">
+          <DropdownMenuItem onClick={() => { setPopupOpen(false); navigate(-1); }}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { setPopupOpen(false); setPositionMode(true); }}>
+            <Move className="h-4 w-4 mr-2" />
+            Change position
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

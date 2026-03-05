@@ -34,6 +34,7 @@ function mapLiveBettingToTickerRows(sections: { events?: { team1: string; team2:
 const navItems = [
   { label: "Home", path: "/" },
   { label: "Games", path: "/games" },
+  { label: "Providers", path: "/providers" },
   { label: "Promotion", path: "/promotions" },
 ];
 

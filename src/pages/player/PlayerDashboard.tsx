@@ -38,8 +38,12 @@ const PlayerDashboard = () => {
           <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/5 -ml-8 -mb-8" />
           <CardContent className="p-4 mobile:p-6 relative z-10">
             <p className="text-primary-foreground/70 text-xs font-medium">Welcome back,</p>
-            <h2 className="font-gaming font-bold text-xl mobile:text-2xl text-primary-foreground tracking-wide truncate">PLAYER1</h2>
-            <p className="text-primary-foreground/60 text-[10px] mobile:text-xs mt-1 truncate">Last login: Today, 10:30 AM</p>
+            <h2 className="font-gaming font-bold text-xl mobile:text-2xl text-primary-foreground tracking-wide truncate">{user?.name || user?.username || "Player"}</h2>
+            <p className="text-primary-foreground/60 text-[10px] mobile:text-xs mt-1 truncate">
+              {user?.last_login
+                ? `Last login: ${new Date(user.last_login).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`
+                : "Last login: —"}
+            </p>
           </CardContent>
         </Card>
       </motion.div>

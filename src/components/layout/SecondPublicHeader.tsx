@@ -12,6 +12,7 @@ const navItems = [
   { label: "Home", path: "/" },
   { label: "Game", path: "/games" },
   { label: "Live Casino", path: "/games" },
+  { label: "Providers", path: "/providers" },
   { label: "Promotion", path: "/promotions" },
   { label: "Bonus", path: "/bonus" },
   { label: "Wallet", path: "/wallet" },

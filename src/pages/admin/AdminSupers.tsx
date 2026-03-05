@@ -10,7 +10,6 @@ import {
   getSupers,
   createSuper,
   updateSuper,
-  getPaymentModesForDepositTarget,
   directDeposit,
   directWithdraw,
   regeneratePin,
@@ -115,7 +114,6 @@ const AdminSupers = () => {
   const [pendingPayload, setPendingPayload] = useState<Record<string, unknown>>({});
   const [depositAmount, setDepositAmount] = useState("");
   const [depositRemarks, setDepositRemarks] = useState("");
-  const [depositPaymentModeId, setDepositPaymentModeId] = useState<number | "">("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawRemarks, setWithdrawRemarks] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -142,11 +140,6 @@ const AdminSupers = () => {
     queryKey: ["admin-supers", listParams],
     queryFn: () => getSupers(listParams),
     refetchInterval: autoRefresh ? 10000 : false,
-  });
-  const { data: depositPaymentModesList = [] } = useQuery({
-    queryKey: ["deposit-payment-modes-supers", selectedUser?.id],
-    queryFn: () => getPaymentModesForDepositTarget(ROLE, selectedUser!.id as number),
-    enabled: depositOpen && !!selectedUser?.id,
   });
   const rows = (Array.isArray(supersRaw) ? supersRaw : []) as SuperRow[];
 
@@ -466,23 +459,10 @@ const AdminSupers = () => {
       </Dialog>
 
       {/* Deposit */}
-      <Dialog open={depositOpen} onOpenChange={(open) => { setDepositOpen(open); if (!open) setDepositPaymentModeId(""); }}>
+      <Dialog open={depositOpen} onOpenChange={setDepositOpen}>
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Deposit to {selectedUser?.username}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div>
-              <label className="text-xs text-muted-foreground">Payment method (optional)</label>
-              <select
-                className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm mt-1"
-                value={depositPaymentModeId}
-                onChange={(e) => setDepositPaymentModeId(e.target.value === "" ? "" : Number(e.target.value))}
-              >
-                <option value="">— Select —</option>
-                {(depositPaymentModesList as { id?: number; name?: string }[]).map((pm) => (
-                  <option key={pm.id} value={pm.id}>{pm.name ?? pm.id}</option>
-                ))}
-              </select>
-            </div>
             <Input type="number" placeholder="Amount" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
             <Textarea placeholder="Remarks" rows={2} value={depositRemarks} onChange={(e) => setDepositRemarks(e.target.value)} />
           </div>
@@ -492,7 +472,7 @@ const AdminSupers = () => {
               className="gold-gradient text-primary-foreground"
               onClick={() => {
                 setPendingAction("deposit");
-                setPendingPayload({ userId: selectedUser?.id, amount: depositAmount, remarks: depositRemarks, paymentModeId: depositPaymentModeId });
+                setPendingPayload({ userId: selectedUser?.id, amount: depositAmount, remarks: depositRemarks });
                 setDepositOpen(false);
                 setPinOpen(true);
               }}
@@ -588,12 +568,10 @@ const AdminSupers = () => {
               const userId = pendingPayload.userId as number;
               const amount = pendingPayload.amount as string;
               const remarks = (pendingPayload.remarks as string) ?? "";
-              const paymentModeId = pendingPayload.paymentModeId as number | "" | undefined;
-              const body: { user_id: number; amount: number; remarks?: string; pin: string; payment_mode?: number } = {
-                user_id: userId, amount: Number(amount) || 0, remarks, pin,
-              };
-              if (paymentModeId !== "" && paymentModeId != null) body.payment_mode = Number(paymentModeId);
-              await directDeposit(body, ROLE);
+              await directDeposit(
+                { user_id: userId, amount: Number(amount) || 0, remarks, pin },
+                ROLE
+              );
               queryClient.invalidateQueries({ queryKey: ["admin-supers"] });
               queryClient.invalidateQueries({ queryKey: ["admin-deposits", ROLE] });
               toast({ title: "Deposit created and approved." });

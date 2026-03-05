@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, ChevronLeft, ChevronRight, Plus, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Column<T> {
   header: string;
@@ -23,13 +24,15 @@ interface DataTableProps<T> {
   pageSize?: number;
   /** Use "adminListing" for master/super listing pages: colorful header, striped rows, styled pagination */
   variant?: "default" | "adminListing";
+  /** Optional row class (e.g. red background for inactive) */
+  getRowClassName?: (row: T) => string;
 }
 
 type SortDir = "asc" | "desc";
 
 export function DataTable<T extends { id: string | number }>({
   data, columns, searchPlaceholder = "Search...", searchKey, onAdd, addLabel = "Add New", secondaryAction, pageSize = 10,
-  variant = "default",
+  variant = "default", getRowClassName,
 }: DataTableProps<T>) {
   const isThemed = variant === "adminListing";
   const [search, setSearch] = useState("");
@@ -137,11 +140,12 @@ export function DataTable<T extends { id: string | number }>({
                 pageData.map((row, rowIndex) => (
                   <TableRow
                     key={row.id}
-                    className={
+                    className={cn(
                       isThemed
                         ? `transition-colors hover:bg-primary/15 ${rowIndex % 2 === 1 ? "bg-muted/40" : "bg-background/80"}`
-                        : "hover:bg-muted/30 transition-colors"
-                    }
+                        : "hover:bg-muted/30 transition-colors",
+                      getRowClassName?.(row)
+                    )}
                   >
                     {columns.map((col, i) => {
                       const cellTint = isThemed && (i % 3 === 0 ? "bg-primary/5" : i % 3 === 1 ? "bg-accent/5" : "bg-muted/20");

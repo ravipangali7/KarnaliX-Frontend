@@ -17,8 +17,13 @@ function asList<T = Record<string, unknown>>(res: unknown): T[] {
 }
 
 // --- Dashboard ---
-export async function getDashboard(role: "powerhouse" | "super" | "master") {
-  const res = await apiGet<Record<string, unknown>>(`${prefix(role)}/dashboard/`);
+export type DashboardParams = { date_from?: string; date_to?: string };
+export async function getDashboard(role: "powerhouse" | "super" | "master", params?: DashboardParams) {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  const res = await apiGet<Record<string, unknown>>(`${prefix(role)}/dashboard/${qs ? `?${qs}` : ""}`);
   return res as unknown as Record<string, unknown>;
 }
 
