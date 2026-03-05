@@ -40,8 +40,20 @@ export async function changePassword(role: AdminRole, body: { old_password: stri
 }
 
 // --- Users (role-specific paths) ---
-export async function getSupers() {
-  const res = await apiGet(`${prefix("powerhouse")}/supers/`);
+export type ListParams = { search?: string; status?: string; date_from?: string; date_to?: string; is_active?: string };
+function buildQueryString(params?: ListParams): string {
+  if (!params) return "";
+  const q = new URLSearchParams();
+  if (params.search) q.set("search", params.search);
+  if (params.status) q.set("status", params.status);
+  if (params.date_from) q.set("date_from", params.date_from);
+  if (params.date_to) q.set("date_to", params.date_to);
+  if (params.is_active) q.set("is_active", params.is_active);
+  const s = q.toString();
+  return s ? `?${s}` : "";
+}
+export async function getSupers(params?: ListParams) {
+  const res = await apiGet(`${prefix("powerhouse")}/supers/${buildQueryString(params)}`);
   return asList(res);
 }
 export async function getSuper(id: number) {
@@ -57,8 +69,8 @@ export async function deleteSuper(id: number) {
   return apiDelete(`${prefix("powerhouse")}/supers/${id}/delete/`);
 }
 
-export async function getMasters(role: "powerhouse" | "super" = "powerhouse") {
-  const res = await apiGet(`${prefix(role)}/masters/`);
+export async function getMasters(role: "powerhouse" | "super" = "powerhouse", params?: ListParams) {
+  const res = await apiGet(`${prefix(role)}/masters/${buildQueryString(params)}`);
   return asList(res);
 }
 export async function getMaster(id: number, role: "powerhouse" | "super" = "powerhouse") {
@@ -113,18 +125,6 @@ export async function deletePlayer(id: number, role: "powerhouse" | "super" | "m
 }
 
 // --- Deposits / Withdrawals ---
-export type ListParams = { search?: string; status?: string; date_from?: string; date_to?: string; is_active?: string };
-function buildQueryString(params?: ListParams): string {
-  if (!params) return "";
-  const q = new URLSearchParams();
-  if (params.search) q.set("search", params.search);
-  if (params.status) q.set("status", params.status);
-  if (params.date_from) q.set("date_from", params.date_from);
-  if (params.date_to) q.set("date_to", params.date_to);
-  if (params.is_active) q.set("is_active", params.is_active);
-  const s = q.toString();
-  return s ? `?${s}` : "";
-}
 export async function getDeposits(role: "powerhouse" | "super" | "master", params?: ListParams) {
   const res = await apiGet(`${prefix(role)}/deposits/${buildQueryString(params)}`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
@@ -270,11 +270,11 @@ export async function getActivity(role: "powerhouse" | "super" | "master") {
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
 
-// --- Account / Bonus statement (master & super) ---
+// --- Account / Bonus statement (master, super, powerhouse) ---
 export type StatementParams = { date_from?: string; date_to?: string; page?: number; page_size?: number };
 export type StatementResponse = { results: Record<string, unknown>[]; count: number };
 export async function getAccountStatement(
-  role: "master" | "super",
+  role: "master" | "super" | "powerhouse",
   params?: StatementParams
 ): Promise<StatementResponse> {
   const q = new URLSearchParams();
@@ -287,7 +287,7 @@ export async function getAccountStatement(
   return res as StatementResponse;
 }
 export async function getBonusStatement(
-  role: "master" | "super",
+  role: "master" | "super" | "powerhouse",
   params?: StatementParams
 ): Promise<StatementResponse> {
   const q = new URLSearchParams();
@@ -302,7 +302,7 @@ export async function getBonusStatement(
 
 // --- Total D/W, Super Master D/W, Super D/W State ---
 export type DateRangeParams = { date_from?: string; date_to?: string };
-export async function getTotalDW(role: "master" | "super", params?: DateRangeParams): Promise<Record<string, unknown>[]> {
+export async function getTotalDW(role: "master" | "super" | "powerhouse", params?: DateRangeParams): Promise<Record<string, unknown>[]> {
   const q = new URLSearchParams();
   if (params?.date_from) q.set("date_from", params.date_from);
   if (params?.date_to) q.set("date_to", params.date_to);
@@ -310,20 +310,20 @@ export async function getTotalDW(role: "master" | "super", params?: DateRangePar
   const res = await apiGet<Record<string, unknown>[]>(`${prefix(role)}/client-request/total-dw/${qs ? `?${qs}` : ""}`);
   return Array.isArray(res) ? res : (res as { data?: Record<string, unknown>[] })?.data ?? [];
 }
-export async function getSuperMasterDW(params?: DateRangeParams): Promise<Record<string, unknown>[]> {
+export async function getSuperMasterDW(role: "super" | "powerhouse" = "super", params?: DateRangeParams): Promise<Record<string, unknown>[]> {
   const q = new URLSearchParams();
   if (params?.date_from) q.set("date_from", params.date_from);
   if (params?.date_to) q.set("date_to", params.date_to);
   const qs = q.toString();
-  const res = await apiGet<Record<string, unknown>[]>(`${prefix("super")}/client-request/super-master-dw/${qs ? `?${qs}` : ""}`);
+  const res = await apiGet<Record<string, unknown>[]>(`${prefix(role)}/client-request/super-master-dw/${qs ? `?${qs}` : ""}`);
   return Array.isArray(res) ? res : (res as { data?: Record<string, unknown>[] })?.data ?? [];
 }
-export async function getSuperDWState(params?: DateRangeParams): Promise<Record<string, unknown>[]> {
+export async function getSuperDWState(role: "super" | "powerhouse" = "super", params?: DateRangeParams): Promise<Record<string, unknown>[]> {
   const q = new URLSearchParams();
   if (params?.date_from) q.set("date_from", params.date_from);
   if (params?.date_to) q.set("date_to", params.date_to);
   const qs = q.toString();
-  const res = await apiGet<Record<string, unknown>[]>(`${prefix("super")}/client-request/super-dw-state/${qs ? `?${qs}` : ""}`);
+  const res = await apiGet<Record<string, unknown>[]>(`${prefix(role)}/client-request/super-dw-state/${qs ? `?${qs}` : ""}`);
   return Array.isArray(res) ? res : (res as { data?: Record<string, unknown>[] })?.data ?? [];
 }
 

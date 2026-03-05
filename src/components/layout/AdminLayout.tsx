@@ -2,9 +2,9 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  LayoutDashboard, MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
-  Shield, ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
-  Menu, X, Tag, Box, Gift, FileText, Star, Globe, Wallet, LogOut, CreditCard, User, Key, Image,
+  MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
+  ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
+  Menu, X, Tag, Box, Gift, FileText, Star, Globe, LogOut, CreditCard, User, Key, Image,
   Calculator, LayoutPanelTop, Megaphone, MapPin
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,34 +30,61 @@ const getNavItems = (role: string): NavItem[] => {
 
   if (role === "powerhouse") {
     return [
-      { label: "Dashboard", path: "", icon: LayoutDashboard },
-      { label: "Messages", path: "/messages", icon: MessageCircle },
-      ...profileItems,
-      { label: "Super Users", path: "/supers", icon: Users },
-      { label: "Master Users", path: "/masters", icon: Users },
-      { label: "Player Users", path: "/players", icon: Users },
-      { label: "Payment Mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
-      { label: "Deposits", path: "/deposits", icon: ArrowDownCircle },
-      { label: "Withdrawals", path: "/withdrawals", icon: ArrowUpCircle },
-      { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
-      { label: "Categories", path: "/categories", icon: Tag },
-      { label: "Providers", path: "/providers", icon: Box },
-      { label: "Games", path: "/games", icon: Gamepad2 },
-      { label: "Slider", path: "/slider", icon: Image },
-      { label: "Popup", path: "/popup", icon: LayoutPanelTop },
-      { label: "Promotion", path: "/promotions", icon: Megaphone },
-      { label: "Coming Soon Enrollments", path: "/coming-soon-enrollments", icon: Clock },
-      { label: "Bonus Rules", path: "/bonus-rules", icon: Gift },
-      { label: "Game Log", path: "/game-log", icon: Gamepad2 },
-      { label: "Transactions", path: "/transactions", icon: Clock },
-      { label: "Accounting", path: "/accounting", icon: Calculator },
-      { label: "Activity Log", path: "/activity", icon: Activity },
-      { label: "Super Settings", path: "/super-settings", icon: Settings },
-      { label: "Site Settings", path: "/site-settings", icon: Globe },
-      { label: "Countries", path: "/countries", icon: MapPin },
-      { label: "Payment Methods", path: "/payment-methods", icon: CreditCard },
-      { label: "CMS Pages", path: "/cms", icon: FileText },
-      { label: "Testimonials", path: "/testimonials", icon: Star },
+      { label: "Message", path: "/messages", icon: MessageCircle },
+      {
+        label: "List of Users",
+        icon: Users,
+        children: [
+          { label: "Super", path: "/supers", icon: Users },
+          { label: "Master", path: "/masters", icon: Users },
+          { label: "User", path: "/players", icon: Users },
+        ],
+      },
+      { label: "Payment mode Verification", path: "/payment-mode-verification", icon: ShieldCheck },
+      { label: "Account Statement", path: "/account-statement", icon: FileText },
+      { label: "Bonus Statement", path: "/bonus-statement", icon: Gift },
+      {
+        label: "Client Request",
+        icon: ArrowDownCircle,
+        children: [
+          { label: "Deposit", path: "/deposits", icon: ArrowDownCircle },
+          { label: "Withdrawal", path: "/withdrawals", icon: ArrowUpCircle },
+          { label: "Bonus Request", path: "/bonus-requests", icon: Gift },
+          { label: "Total D/W", path: "/client-request/total-dw", icon: Clock },
+          { label: "Super Master D/W", path: "/client-request/super-master-dw", icon: Users },
+          { label: "Super D/W State", path: "/client-request/super-dw-state", icon: Calculator },
+        ],
+      },
+      { label: "Client Activity", path: "/activity", icon: Activity },
+      {
+        label: "Game",
+        icon: Gamepad2,
+        children: [
+          { label: "Categories", path: "/categories", icon: Tag },
+          { label: "Provider", path: "/providers", icon: Box },
+          { label: "Games", path: "/games", icon: Gamepad2 },
+          { label: "Coming Soon", path: "/coming-soon-enrollments", icon: Clock },
+          { label: "Bonus Rule", path: "/bonus-rules", icon: Gift },
+          { label: "Game Log", path: "/game-log", icon: Gamepad2 },
+        ],
+      },
+      {
+        label: "Site",
+        icon: Globe,
+        children: [
+          { label: "Slider", path: "/slider", icon: Image },
+          { label: "Popup", path: "/popup", icon: LayoutPanelTop },
+          { label: "Promotion", path: "/promotions", icon: Megaphone },
+          { label: "Country", path: "/countries", icon: MapPin },
+          { label: "CMS Page", path: "/cms", icon: FileText },
+          { label: "Testimonial", path: "/testimonials", icon: Star },
+          { label: "Site Setting", path: "/site-settings", icon: Globe },
+        ],
+      },
+      { label: "Payment Method", path: "/payment-methods", icon: CreditCard },
+      { label: "Super Setting", path: "/super-settings", icon: Settings },
+      { label: "Change Password", path: "/change-password", icon: Key },
+      { label: "Profile", path: "/profile", icon: User },
     ];
   }
 

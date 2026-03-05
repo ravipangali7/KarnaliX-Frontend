@@ -17,10 +17,13 @@ import {
   regeneratePin,
   resetPassword,
   settleMaster,
+  type ListParams,
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, ArrowRightLeft } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
+import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type MasterRow = Record<string, unknown> & {
   id?: number; username?: string; name?: string;
@@ -149,9 +152,19 @@ const AdminMasters = () => {
   const [editSaving, setEditSaving] = useState(false);
   const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
   const [pendingCellSave, setPendingCellSave] = useState<{ id: number; field: string; value: unknown } | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
-  const { data: mastersRaw } = useQuery({ queryKey: ["admin-masters", role], queryFn: () => getMasters(role) });
-  const { data: supersListRaw } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers, enabled: role === "powerhouse" && createOpen });
+  const listParams: ListParams = {};
+  if (dateFrom) listParams.date_from = dateFrom;
+  if (dateTo) listParams.date_to = dateTo;
+  const { data: mastersRaw, isLoading, refetch } = useQuery({
+    queryKey: ["admin-masters", role, listParams],
+    queryFn: () => getMasters(role, listParams),
+    refetchInterval: autoRefresh ? 10000 : false,
+  });
+  const { data: supersListRaw } = useQuery({ queryKey: ["admin-supers"], queryFn: () => getSupers(), enabled: role === "powerhouse" && createOpen });
   const rows = (Array.isArray(mastersRaw) ? mastersRaw : []) as MasterRow[];
   const supersList = Array.isArray(supersListRaw) ? supersListRaw : [];
 
@@ -186,16 +199,6 @@ const AdminMasters = () => {
     setInlineEdit(null);
   };
 
-  const fmt = (v: unknown) => `₹${Number(v ?? 0).toLocaleString()}`;
-  const fmtPL = (v: unknown) => {
-    const n = Number(v ?? 0);
-    return (
-      <span className={n >= 0 ? "text-success" : "text-accent"}>
-        {n >= 0 ? "+" : ""}₹{n.toLocaleString()}
-      </span>
-    );
-  };
-
   const columns = [
     {
       header: "Username",
@@ -207,11 +210,8 @@ const AdminMasters = () => {
     {
       header: "Name",
       accessor: (row: MasterRow) => (
-        <span
-          className="cursor-pointer hover:underline"
-          onClick={() => handleCellClick(row, "name")}
-        >
-          {String(row.name ?? "")}
+        <span className="cursor-pointer hover:underline text-primary" onClick={() => handleCellClick(row, "name")}>
+          {String(row.name ?? "—")}
         </span>
       ),
       sortKey: "name",
@@ -219,93 +219,76 @@ const AdminMasters = () => {
     {
       header: "Balance",
       accessor: (row: MasterRow) => (
-        <span
-          className="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 cursor-pointer hover:bg-emerald-500/25"
-          onClick={() => handleCellClick(row, "main_balance")}
-        >
-          {fmt(row.main_balance)}
-        </span>
+        <TableBadge variant="balance" onClick={() => handleCellClick(row, "main_balance")}>
+          ₹{Number(row.main_balance ?? 0).toLocaleString()}
+        </TableBadge>
       ),
       sortKey: "main_balance",
     },
     {
       header: "P/L",
-      accessor: (row: MasterRow) => (
-        <span
-          className={`text-xs px-2 py-0.5 rounded border cursor-pointer ${Number(row.pl_balance ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30 hover:bg-green-500/20" : "bg-red-500/10 border-red-500/30 hover:bg-red-500/20"}`}
-          onClick={() => handleCellClick(row, "pl_balance")}
-        >
-          {fmtPL(row.pl_balance)}
-        </span>
-      ),
+      accessor: (row: MasterRow) => {
+        const n = Number(row.pl_balance ?? 0);
+        return (
+          <TableBadge variant={n >= 0 ? "plPositive" : "plNegative"} onClick={() => handleCellClick(row, "pl_balance")}>
+            {n >= 0 ? "+" : ""}₹{n.toLocaleString()}
+          </TableBadge>
+        );
+      },
       sortKey: "pl_balance",
     },
     {
       header: "Bonus Bal",
       accessor: (row: MasterRow) => (
-        <span
-          className="text-xs px-2 py-0.5 rounded bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30 cursor-pointer hover:bg-violet-500/25"
-          onClick={() => handleCellClick(row, "bonus_balance")}
-        >
-          {fmt(row.bonus_balance)}
-        </span>
+        <TableBadge variant="bonus" onClick={() => handleCellClick(row, "bonus_balance")}>
+          ₹{Number(row.bonus_balance ?? 0).toLocaleString()}
+        </TableBadge>
       ),
       sortKey: "bonus_balance",
     },
     {
       header: "Total Bal",
       accessor: (row: MasterRow) => (
-        <span
-          className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 cursor-pointer hover:bg-blue-500/25"
-          onClick={() => handleCellClick(row, "total_balance")}
-        >
-          {fmt(row.total_balance)}
-        </span>
+        <TableBadge variant="total" onClick={() => handleCellClick(row, "total_balance")}>
+          ₹{Number(row.total_balance ?? 0).toLocaleString()}
+        </TableBadge>
       ),
       sortKey: "total_balance",
     },
     {
       header: "Win/Loss",
-      accessor: (row: MasterRow) => (
-        <span
-          className={`text-xs px-2 py-0.5 rounded border cursor-pointer ${Number(row.total_win_loss ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30 hover:bg-green-500/20" : "bg-red-500/10 border-red-500/30 hover:bg-red-500/20"}`}
-          onClick={() => handleCellClick(row, "total_win_loss")}
-        >
-          {fmtPL(row.total_win_loss)}
-        </span>
-      ),
+      accessor: (row: MasterRow) => {
+        const n = Number(row.total_win_loss ?? 0);
+        return (
+          <TableBadge variant={n >= 0 ? "plPositive" : "plNegative"} onClick={() => handleCellClick(row, "total_win_loss")}>
+            {n >= 0 ? "+" : ""}₹{n.toLocaleString()}
+          </TableBadge>
+        );
+      },
       sortKey: "total_win_loss",
     },
     {
       header: "Users Bal",
       accessor: (row: MasterRow) => (
-        <span
-          className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 cursor-pointer hover:bg-amber-500/25"
-          onClick={() => handleCellClick(row, "users_balance")}
-        >
-          {fmt(row.users_balance)}
-        </span>
+        <TableBadge variant="usersBal" onClick={() => handleCellClick(row, "users_balance")}>
+          ₹{Number(row.users_balance ?? 0).toLocaleString()}
+        </TableBadge>
       ),
       sortKey: "users_balance",
     },
     {
       header: "Players",
       accessor: (row: MasterRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
-          {row.players_count ?? 0}
-        </span>
+        <TableBadge variant="players">{row.players_count ?? 0}</TableBadge>
       ),
       sortKey: "players_count",
     },
     {
       header: "Commission",
       accessor: (row: MasterRow) => (
-        <span
-          className="text-xs px-2 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/30 cursor-pointer hover:bg-orange-500/25"
-          onClick={() => handleCellClick(row, "commission_percentage")}
-        >
+        <TableBadge variant="commission" onClick={() => handleCellClick(row, "commission_percentage")}>
           {row.commission_percentage ?? 0}%
-        </span>
+        </TableBadge>
       ),
       sortKey: "commission_percentage",
     },
@@ -350,6 +333,19 @@ const AdminMasters = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Master Users</h2>
+      <ListDateRangeToolbar
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateChange={({ dateFrom: f, dateTo: t }) => { setDateFrom(f); setDateTo(t); }}
+        onLoad={() => refetch()}
+        loading={isLoading}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+          <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
+        </label>
+      </div>
       <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search masters..." onAdd={() => setCreateOpen(true)} addLabel="Add Master" variant="adminListing" />
 
       {/* Inline single-field edit */}

@@ -14,7 +14,7 @@ import { Eye, EyeOff, Gamepad2 } from "lucide-react";
 const googleClientId = "386184793784-njlhdvqjh0698tnc5tffi79m5pjqpig4.apps.googleusercontent.com";
 
 const roleRedirect: Record<string, string> = {
-  powerhouse: "/powerhouse",
+  powerhouse: "/powerhouse/players",
   super: "/super/masters",
   master: "/master/players",
   player: "/player",

@@ -15,10 +15,13 @@ import {
   directWithdraw,
   regeneratePin,
   resetPassword,
+  type ListParams,
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
+import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type SuperRow = Record<string, unknown> & {
   id?: number; username?: string; name?: string;
@@ -128,8 +131,18 @@ const AdminSupers = () => {
   const [editCommission, setEditCommission] = useState("10");
   const [editSaving, setEditSaving] = useState(false);
   const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
-  const { data: supersRaw } = useQuery({ queryKey: ["admin-supers"], queryFn: getSupers });
+  const listParams: ListParams = {};
+  if (dateFrom) listParams.date_from = dateFrom;
+  if (dateTo) listParams.date_to = dateTo;
+  const { data: supersRaw, isLoading, refetch } = useQuery({
+    queryKey: ["admin-supers", listParams],
+    queryFn: () => getSupers(listParams),
+    refetchInterval: autoRefresh ? 10000 : false,
+  });
   const { data: depositPaymentModesList = [] } = useQuery({
     queryKey: ["deposit-payment-modes-supers", selectedUser?.id],
     queryFn: () => getPaymentModesForDepositTarget(ROLE, selectedUser!.id as number),
@@ -147,16 +160,6 @@ const AdminSupers = () => {
     setInlineEdit({ row, field, label: EDITABLE_CELLS[field], value: row[field] ?? null });
   };
 
-  const fmt = (v: unknown) => `₹${Number(v ?? 0).toLocaleString()}`;
-  const fmtPL = (v: unknown) => {
-    const n = Number(v ?? 0);
-    return (
-      <span className={n >= 0 ? "text-success" : "text-accent"}>
-        {n >= 0 ? "+" : ""}₹{n.toLocaleString()}
-      </span>
-    );
-  };
-
   const columns = [
     {
       header: "Username",
@@ -168,11 +171,8 @@ const AdminSupers = () => {
     {
       header: "Name",
       accessor: (row: SuperRow) => (
-        <span
-          className="cursor-pointer hover:underline"
-          onClick={() => handleCellClick(row, "name")}
-        >
-          {String(row.name ?? "")}
+        <span className="cursor-pointer hover:underline text-primary" onClick={() => handleCellClick(row, "name")}>
+          {String(row.name ?? "—")}
         </span>
       ),
       sortKey: "name",
@@ -180,84 +180,83 @@ const AdminSupers = () => {
     {
       header: "Balance",
       accessor: (row: SuperRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-          {fmt(row.main_balance)}
-        </span>
+        <TableBadge variant="balance">
+          ₹{Number(row.main_balance ?? 0).toLocaleString()}
+        </TableBadge>
       ),
       sortKey: "main_balance",
     },
     {
       header: "P/L",
-      accessor: (row: SuperRow) => (
-        <span className={`text-xs px-2 py-0.5 rounded border ${Number(row.pl_balance ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
-          {fmtPL(row.pl_balance)}
-        </span>
-      ),
+      accessor: (row: SuperRow) => {
+        const n = Number(row.pl_balance ?? 0);
+        return (
+          <TableBadge variant={n >= 0 ? "plPositive" : "plNegative"}>
+            {n >= 0 ? "+" : ""}₹{n.toLocaleString()}
+          </TableBadge>
+        );
+      },
       sortKey: "pl_balance",
     },
     {
       header: "Bonus Bal",
       accessor: (row: SuperRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30">
-          {fmt(row.bonus_balance)}
-        </span>
+        <TableBadge variant="bonus">
+          ₹{Number(row.bonus_balance ?? 0).toLocaleString()}
+        </TableBadge>
       ),
       sortKey: "bonus_balance",
     },
     {
       header: "Total Bal",
       accessor: (row: SuperRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
-          {fmt(row.total_balance)}
-        </span>
+        <TableBadge variant="total">
+          ₹{Number(row.total_balance ?? 0).toLocaleString()}
+        </TableBadge>
       ),
       sortKey: "total_balance",
     },
     {
       header: "Win/Loss",
-      accessor: (row: SuperRow) => (
-        <span className={`text-xs px-2 py-0.5 rounded border ${Number(row.total_win_loss ?? 0) >= 0 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
-          {fmtPL(row.total_win_loss)}
-        </span>
-      ),
+      accessor: (row: SuperRow) => {
+        const n = Number(row.total_win_loss ?? 0);
+        return (
+          <TableBadge variant={n >= 0 ? "plPositive" : "plNegative"}>
+            {n >= 0 ? "+" : ""}₹{n.toLocaleString()}
+          </TableBadge>
+        );
+      },
       sortKey: "total_win_loss",
     },
     {
       header: "Users Bal",
       accessor: (row: SuperRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-          {fmt(row.users_balance)}
-        </span>
+        <TableBadge variant="usersBal">
+          ₹{Number(row.users_balance ?? 0).toLocaleString()}
+        </TableBadge>
       ),
       sortKey: "users_balance",
     },
     {
       header: "Masters",
       accessor: (row: SuperRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
-          {row.masters_count ?? 0}
-        </span>
+        <TableBadge variant="players">{row.masters_count ?? 0}</TableBadge>
       ),
       sortKey: "masters_count",
     },
     {
       header: "Players",
       accessor: (row: SuperRow) => (
-        <span className="text-xs px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
-          {row.players_count ?? 0}
-        </span>
+        <TableBadge variant="players">{row.players_count ?? 0}</TableBadge>
       ),
       sortKey: "players_count",
     },
     {
       header: "Commission",
       accessor: (row: SuperRow) => (
-        <span
-          className="text-xs px-2 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/30 cursor-pointer hover:bg-orange-500/25"
-          onClick={() => handleCellClick(row, "commission_percentage")}
-        >
+        <TableBadge variant="commission" onClick={() => handleCellClick(row, "commission_percentage")}>
           {row.commission_percentage ?? 0}%
-        </span>
+        </TableBadge>
       ),
       sortKey: "commission_percentage",
     },
@@ -269,8 +268,8 @@ const AdminSupers = () => {
     {
       header: "Joined",
       accessor: (row: SuperRow) => (
-        <span className="text-xs text-muted-foreground">
-          {row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : ""}
+        <span className="text-xs text-muted-foreground cursor-pointer hover:underline text-primary">
+          {row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "—"}
         </span>
       ),
       sortKey: "created_at",
@@ -294,7 +293,20 @@ const AdminSupers = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Super Users</h2>
-      <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search supers..." onAdd={() => setCreateOpen(true)} addLabel="Add Super" />
+      <ListDateRangeToolbar
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateChange={({ dateFrom: f, dateTo: t }) => { setDateFrom(f); setDateTo(t); }}
+        onLoad={() => refetch()}
+        loading={isLoading}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+          <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
+        </label>
+      </div>
+      <DataTable data={rows} columns={columns} searchKey="username" searchPlaceholder="Search supers..." onAdd={() => setCreateOpen(true)} addLabel="Add Super" variant="adminListing" />
 
       {/* Inline single-field edit */}
       <InlineEditModal state={inlineEdit} onClose={() => setInlineEdit(null)} />

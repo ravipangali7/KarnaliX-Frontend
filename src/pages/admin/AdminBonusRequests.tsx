@@ -17,6 +17,8 @@ import {
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { Check, X, Eye, RefreshCw } from "lucide-react";
+import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
+import { TableBadge } from "@/components/admin/TableBadge";
 
 type BonusRequestRow = Record<string, unknown> & {
   id?: number;
@@ -48,7 +50,7 @@ const AdminBonusRequests = () => {
   if (dateFrom) listParams.date_from = dateFrom;
   if (dateTo) listParams.date_to = dateTo;
   if (statusFilter) listParams.status = statusFilter;
-  const { data: bonusRequests = [] } = useQuery({
+  const { data: bonusRequests = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-bonus-requests", role, listParams],
     queryFn: () => getBonusRequests(role, listParams),
     refetchInterval: autoRefresh ? 10000 : false,
@@ -65,18 +67,23 @@ const AdminBonusRequests = () => {
     setEditAmount("");
   }, [selected?.id]);
 
+  const openView = (row: BonusRequestRow) => {
+    setSelected(row);
+    setViewOpen(true);
+  };
+
   const columns = [
-    { header: "ID", accessor: (row: BonusRequestRow) => String(row.id ?? "") },
-    { header: "User", accessor: (row: BonusRequestRow) => String(row.user_username ?? "") },
-    { header: "Amount", accessor: (row: BonusRequestRow) => `₹${Number(row.amount ?? 0).toLocaleString()}` },
-    { header: "Bonus Type", accessor: (row: BonusRequestRow) => String(row.bonus_type_display ?? row.bonus_type ?? "") },
-    { header: "Status", accessor: (row: BonusRequestRow) => <StatusBadge status={String(row.status ?? "pending")} /> },
-    { header: "Date", accessor: (row: BonusRequestRow) => (row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "") },
+    { header: "ID", sortKey: "id", accessor: (row: BonusRequestRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openView(row)}>{String(row.id ?? "")}</span> },
+    { header: "User", sortKey: "user_username", accessor: (row: BonusRequestRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openView(row)}>{String(row.user_username ?? "")}</span> },
+    { header: "Amount", sortKey: "amount", accessor: (row: BonusRequestRow) => <TableBadge variant="amountGreen" onClick={() => openView(row)}>₹{Number(row.amount ?? 0).toLocaleString()}</TableBadge> },
+    { header: "Bonus Type", sortKey: "bonus_type", accessor: (row: BonusRequestRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openView(row)}>{String(row.bonus_type_display ?? row.bonus_type ?? "—")}</span> },
+    { header: "Status", sortKey: "status", accessor: (row: BonusRequestRow) => <span className="cursor-pointer inline-block" onClick={() => openView(row)}><StatusBadge status={String(row.status ?? "pending")} /></span> },
+    { header: "Date", sortKey: "created_at", accessor: (row: BonusRequestRow) => <span className="cursor-pointer hover:underline text-primary" onClick={() => openView(row)}>{row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : "—"}</span> },
     {
       header: "Actions",
       accessor: (row: BonusRequestRow) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelected(row); setViewOpen(true); }}><Eye className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openView(row)} title="View"><Eye className="h-3 w-3" /></Button>
           {String(row.status) === "pending" && (
             <>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-success" onClick={() => { setSelected(row); setPinOpen(true); }}><Check className="h-3 w-3" /></Button>
@@ -91,9 +98,14 @@ const AdminBonusRequests = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Bonus Requests</h2>
+      <ListDateRangeToolbar
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateChange={({ dateFrom: f, dateTo: t }) => { setDateFrom(f); setDateTo(t); }}
+        onLoad={() => refetch()}
+        loading={isLoading}
+      />
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="date" className="w-40 h-9 text-sm" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-        <Input type="date" className="w-40 h-9 text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         <select className="h-9 rounded-md border border-border bg-background px-3 text-sm w-32" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All status</option>
           <option value="pending">Pending</option>
@@ -105,7 +117,7 @@ const AdminBonusRequests = () => {
           <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
         </label>
       </div>
-      <DataTable data={rows} columns={columns} searchKey="user_username" searchPlaceholder="Search bonus requests..." />
+      <DataTable data={rows} columns={columns} searchKey="user_username" searchPlaceholder="Search bonus requests..." variant="adminListing" />
 
       {/* View */}
       <Dialog open={viewOpen} onOpenChange={(open) => { setViewOpen(open); if (!open) setEditAmount(""); }}>

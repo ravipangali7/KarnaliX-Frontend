@@ -34,7 +34,7 @@ function CellClick({ value, onClick }: { value: string; onClick: () => void }) {
 
 export default function AdminTotalDW() {
   const { user } = useAuth();
-  const role = user?.role === "super" || user?.role === "master" ? user.role : "master";
+  const role = (user?.role === "powerhouse" || user?.role === "super" || user?.role === "master") ? user.role : "master";
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const params: DateRangeParams = useMemo(() => ({ date_from: dateFrom, date_to: dateTo }), [dateFrom, dateTo]);

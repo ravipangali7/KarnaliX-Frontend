@@ -35,7 +35,7 @@ function CellClick({ value, onClick }: { value: string; onClick: () => void }) {
 
 export default function AdminBonusStatement() {
   const { user } = useAuth();
-  const role = user?.role === "super" || user?.role === "master" ? user.role : "master";
+  const role = (user?.role === "powerhouse" || user?.role === "super" || user?.role === "master") ? user.role : "master";
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);

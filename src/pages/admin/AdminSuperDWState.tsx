@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { DataTable } from "@/components/shared/DataTable";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,12 +36,14 @@ function CellClick({ value, onClick }: { value: string | number; onClick: () => 
 }
 
 export default function AdminSuperDWState() {
+  const { user } = useAuth();
+  const role = (user?.role === "powerhouse" || user?.role === "super") ? user.role : "super";
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const params: DateRangeParams = useMemo(() => ({ date_from: dateFrom, date_to: dateTo }), [dateFrom, dateTo]);
   const { data = [], isLoading, refetch } = useQuery({
-    queryKey: ["super-dw-state", params],
-    queryFn: () => getSuperDWState(params),
+    queryKey: ["super-dw-state", role, params],
+    queryFn: () => getSuperDWState(role, params),
   });
   const rows: Row[] = (Array.isArray(data) ? data : []).map((r, i) => ({ ...r, id: (r as Row).user_id ?? i }));
 

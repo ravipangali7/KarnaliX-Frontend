@@ -230,16 +230,21 @@ const App = () => {
 
             {/* Powerhouse Dashboard */}
             <Route element={<ProtectedRoute allowedRole="powerhouse"><AdminLayout role="powerhouse" /></ProtectedRoute>}>
-              <Route path="/powerhouse" element={<AdminDashboard role="powerhouse" />} />
+              <Route path="/powerhouse" element={<Navigate to="/powerhouse/players" replace />} />
               <Route path="/powerhouse/messages" element={<AdminMessages role="powerhouse" />} />
               <Route path="/powerhouse/supers" element={<AdminSupers />} />
               <Route path="/powerhouse/masters" element={<AdminMasters />} />
               <Route path="/powerhouse/players" element={<AdminPlayers />} />
               <Route path="/powerhouse/players/:id/report" element={<AdminPlayerReport />} />
               <Route path="/powerhouse/payment-mode-verification" element={<AdminPaymentModeVerification />} />
+              <Route path="/powerhouse/account-statement" element={<AdminAccountStatement />} />
+              <Route path="/powerhouse/bonus-statement" element={<AdminBonusStatement />} />
               <Route path="/powerhouse/deposits" element={<AdminDeposits />} />
               <Route path="/powerhouse/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/powerhouse/bonus-requests" element={<AdminBonusRequests />} />
+              <Route path="/powerhouse/client-request/total-dw" element={<AdminTotalDW />} />
+              <Route path="/powerhouse/client-request/super-master-dw" element={<AdminSuperMasterDW />} />
+              <Route path="/powerhouse/client-request/super-dw-state" element={<AdminSuperDWState />} />
               <Route path="/powerhouse/categories" element={<PowerhouseCategories />} />
               <Route path="/powerhouse/providers" element={<PowerhouseProviders />} />
               <Route path="/powerhouse/games" element={<PowerhouseGames />} />
