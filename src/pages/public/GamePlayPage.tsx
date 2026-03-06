@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useLayoutEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getGameLaunchUrl } from "@/api/player";
@@ -14,6 +14,10 @@ import { ArrowLeft, Home, Move } from "lucide-react";
 const BUTTON_WIDTH = 80;
 const BUTTON_HEIGHT = 36;
 
+/** Design size many embedded games expect (min width); we scale to fit viewport on small devices. */
+const DESIGN_WIDTH = 768;
+const DESIGN_HEIGHT = 1024;
+
 export default function GamePlayPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -21,6 +25,26 @@ export default function GamePlayPage() {
   const backButtonRef = useRef<HTMLButtonElement>(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [positionMode, setPositionMode] = useState(false);
+  const [scale, setScale] = useState(1);
+
+  useLayoutEffect(() => {
+    const updateScale = () => {
+      const w = window.visualViewport?.width ?? window.innerWidth;
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      // Only scale down when viewport is smaller than design size (small devices); cap at 1 so big devices stay full-size
+      const s = Math.min(w / DESIGN_WIDTH, h / DESIGN_HEIGHT, 1);
+      setScale(s);
+    };
+    updateScale();
+    window.visualViewport?.addEventListener("resize", updateScale);
+    window.addEventListener("resize", updateScale);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateScale);
+      window.removeEventListener("resize", updateScale);
+    };
+  }, []);
+
+  const useScaleFit = scale < 1;
 
   const handlePlaceBack = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -36,9 +60,9 @@ export default function GamePlayPage() {
     enabled: !!id && /^\d+$/.test(id),
   });
 
-  // Use inset-0 + full width/height to avoid 100vw overflow on mobile; 100dvh for dynamic viewport (address bar)
+  // Full viewport; 100dvh for mobile (avoids address bar); overflow hidden for scale wrapper
   const gameContainerClass =
-    "fixed inset-0 w-full max-w-full overflow-hidden min-h-0 h-[98vh] h-[100dvh]";
+    "fixed inset-0 w-full max-w-full overflow-hidden min-h-0 h-[100dvh]";
 
   if (!id) {
     return (
@@ -75,13 +99,36 @@ export default function GamePlayPage() {
 
   return (
     <div className={gameContainerClass}>
-      <iframe
-        title="Game"
-        src={launchUrl}
-        className="absolute inset-0 w-full h-full min-w-0 min-h-0 border-0"
-        allow="fullscreen; payment; autoplay"
-        allowFullScreen
-      />
+      {useScaleFit ? (
+        /* Small viewport: scale design-size iframe down so full game is visible (no cut-off on iPhone 13 etc.) */
+        <div className="flex items-center justify-center w-full h-full">
+          <div
+            className="relative origin-center shrink-0"
+            style={{
+              width: DESIGN_WIDTH,
+              height: DESIGN_HEIGHT,
+              transform: `scale(${scale})`,
+            }}
+          >
+            <iframe
+              title="Game"
+              src={launchUrl}
+              className="absolute inset-0 w-full h-full min-w-0 min-h-0 border-0"
+              allow="fullscreen; payment; autoplay"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      ) : (
+        /* Big viewport: iframe fills screen, game fits as before */
+        <iframe
+          title="Game"
+          src={launchUrl}
+          className="absolute inset-0 w-full h-full min-w-0 min-h-0 border-0"
+          allow="fullscreen; payment; autoplay"
+          allowFullScreen
+        />
+      )}
 
       {positionMode && (
         <div
