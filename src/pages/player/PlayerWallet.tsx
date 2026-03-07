@@ -29,6 +29,7 @@ const PlayerWallet = () => {
   const [amount, setAmount] = useState("");
   const [withdrawPassword, setWithdrawPassword] = useState("");
   const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
+  const [withdrawWallet, setWithdrawWallet] = useState<"main" | "bonus">("main");
   const [depositRemarks, setDepositRemarks] = useState("");
   const [depositScreenshot, setDepositScreenshot] = useState<File | null>(null);
   const screenshotInputRef = useRef<HTMLInputElement>(null);
@@ -61,12 +62,28 @@ const PlayerWallet = () => {
     {} as Record<number, string>
   );
   const withdrawPaymentModes = (playerPaymentModes as Record<string, unknown>[]).filter((pm) => pm.status === "approved");
-  const w = wallet as Record<string, unknown> & { recent_deposits?: unknown[]; recent_withdrawals?: unknown[]; bonus_requests?: unknown[]; main_balance?: string; bonus_balance?: string };
+  const w = wallet as Record<string, unknown> & {
+    recent_deposits?: unknown[];
+    recent_withdrawals?: unknown[];
+    bonus_requests?: unknown[];
+    main_balance?: string;
+    bonus_balance?: string;
+    main_withdrawable?: string;
+    bonus_withdrawable?: string;
+    total_withdrawable?: string;
+    can_withdraw_main?: boolean;
+    can_withdraw_bonus?: boolean;
+  };
   const myDeposits = w.deposits ?? w.recent_deposits ?? [];
   const myWithdrawals = w.withdrawals ?? w.recent_withdrawals ?? [];
   const myBonusRequests = w.bonus_requests ?? [];
   const mainBalance = Number(w.main_balance ?? 0);
   const bonusBalance = Number(w.bonus_balance ?? 0);
+  const mainWithdrawable = Number(w.main_withdrawable ?? 0);
+  const bonusWithdrawable = Number(w.bonus_withdrawable ?? 0);
+  const totalWithdrawable = Number(w.total_withdrawable ?? 0);
+  const canWithdrawBonus = Boolean(w.can_withdraw_bonus);
+  const maxAmountForWallet = withdrawWallet === "bonus" ? bonusWithdrawable : mainWithdrawable;
 
   return (
     <div className="p-2 mobile:p-4 md:p-6 space-y-4 mobile:space-y-5 max-w-4xl mx-auto min-w-0">
@@ -415,7 +432,7 @@ const PlayerWallet = () => {
       </Dialog>
 
       {/* Withdraw Modal — only reachable when KYC approved */}
-      <Dialog open={withdrawOpen} onOpenChange={(open) => { setWithdrawOpen(open); if (!open) { setAmount(""); setWithdrawPassword(""); setSelectedPM(null); } }}>
+      <Dialog open={withdrawOpen} onOpenChange={(open) => { setWithdrawOpen(open); if (!open) { setAmount(""); setWithdrawPassword(""); setSelectedPM(null); setWithdrawWallet("main"); } }}>
         <DialogContent className="max-w-[calc(100vw-2rem)] mobile:max-w-md gaming-card w-full">
           <DialogHeader>
             <DialogTitle className="font-gaming text-lg neon-text tracking-wider">WITHDRAW FUNDS</DialogTitle>
@@ -460,9 +477,38 @@ const PlayerWallet = () => {
                 )}
               </div>
             </div>
+            <div className="rounded-xl bg-muted/50 border border-border p-3 space-y-2">
+              <p className="text-xs text-muted-foreground font-medium">Withdrawable</p>
+              <p className="text-sm">
+                Main {symbol}{mainWithdrawable.toLocaleString()}
+                {bonusWithdrawable > 0 || !canWithdrawBonus ? (
+                  <> · Bonus {symbol}{bonusWithdrawable.toLocaleString()}</>
+                ) : (
+                  <span className="text-muted-foreground"> · Bonus not withdrawable (play required games after bonus approval)</span>
+                )}
+              </p>
+              {canWithdrawBonus && bonusWithdrawable > 0 && (
+                <div className="flex gap-3 pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="radio" name="withdrawWallet" checked={withdrawWallet === "main"} onChange={() => setWithdrawWallet("main")} className="rounded-full" />
+                    Main balance
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="radio" name="withdrawWallet" checked={withdrawWallet === "bonus"} onChange={() => setWithdrawWallet("bonus")} className="rounded-full" />
+                    Bonus balance
+                  </label>
+                </div>
+              )}
+            </div>
             <div>
-              <label className="text-xs text-muted-foreground font-medium mb-2 block">Amount</label>
+              <label className="text-xs text-muted-foreground font-medium mb-2 block">Amount (max {symbol}{maxAmountForWallet.toLocaleString()} from {withdrawWallet === "bonus" ? "bonus" : "main"})</label>
               <Input type="number" placeholder="Enter withdrawal amount" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-12 text-lg font-gaming" />
+              {amount && Number(amount) > totalWithdrawable && (
+                <p className="text-xs text-destructive mt-1">Amount exceeds total withdrawable ({symbol}{totalWithdrawable.toLocaleString()}).</p>
+              )}
+              {amount && Number(amount) > maxAmountForWallet && Number(amount) <= totalWithdrawable && (
+                <p className="text-xs text-destructive mt-1">Amount exceeds {withdrawWallet === "bonus" ? "bonus" : "main"} withdrawable ({symbol}{maxAmountForWallet.toLocaleString()}).</p>
+              )}
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium mb-2 block">Password (to confirm)</label>
@@ -477,18 +523,28 @@ const PlayerWallet = () => {
               onClick={async () => {
                 const amt = Number(amount);
                 if (!selectedPM || !amt || amt <= 0) return;
+                if (amt > totalWithdrawable) {
+                  toast({ title: "Amount exceeds withdrawable (Main + Bonus).", variant: "destructive" });
+                  return;
+                }
+                if (amt > maxAmountForWallet) {
+                  toast({ title: `Amount exceeds ${withdrawWallet === "bonus" ? "bonus" : "main"} withdrawable (${symbol}${maxAmountForWallet.toLocaleString()}).`, variant: "destructive" });
+                  return;
+                }
                 setWithdrawSubmitting(true);
                 try {
-                  await withdrawRequest({ amount: amt, payment_mode: Number(selectedPM), password: withdrawPassword });
+                  await withdrawRequest({ amount: amt, payment_mode: Number(selectedPM), password: withdrawPassword, wallet: withdrawWallet });
                   toast({ title: "Withdrawal request submitted." });
                   setWithdrawOpen(false);
                   setAmount("");
                   setWithdrawPassword("");
                   setSelectedPM(null);
+                  setWithdrawWallet("main");
                   queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
                 } catch (e: unknown) {
-                  const err = e as { detail?: string; status?: number };
-                  const msg = err?.detail ?? "Invalid password or request failed.";
+                  const err = e as { detail?: string | Record<string, string[]>; status?: number };
+                  const raw = err?.detail;
+                  const msg = typeof raw === "string" ? raw : Array.isArray(raw?.amount) ? raw.amount[0] : Array.isArray(raw?.wallet) ? raw.wallet[0] : "Invalid password or request failed.";
                   toast({ title: msg, variant: "destructive" });
                 } finally {
                   setWithdrawSubmitting(false);

@@ -182,7 +182,14 @@ export async function depositRequestWithScreenshot(formData: FormData) {
   return apiPostForm(`${P}/deposit-request/`, formData);
 }
 
-export async function withdrawRequest(body: unknown) {
+export type WithdrawRequestBody = {
+  amount: number;
+  payment_mode: number;
+  password: string;
+  wallet?: 'main' | 'bonus';
+};
+
+export async function withdrawRequest(body: WithdrawRequestBody) {
   return apiPost(`${P}/withdraw-request/`, body);
 }
 
