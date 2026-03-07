@@ -27,7 +27,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
             Partnered with world-class gaming providers for the best experience
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {loading ? (
             <div className="col-span-2 md:col-span-4 text-center text-muted-foreground">Loading providers...</div>
           ) : (
@@ -35,19 +35,16 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
             <Link
               key={p.id ?? p.name}
               to={p.single_game_id != null && p.single_game_id > 0 ? `/games/${p.single_game_id}/play` : (p.id != null ? `/providers/${p.id}` : `/games?provider=${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, "-"))}`)}
-              className="group"
+              className="group flex flex-col items-center text-center"
             >
-              <div className="glass rounded-xl p-6 text-center hover:glow-cyan transition-all duration-300 group-hover:scale-105">
-                <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${p.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  {p.logoImage ? (
-                    <img src={p.logoImage} alt="" className="w-full h-full object-cover rounded-2xl" />
-                  ) : (
-                    <span className="text-xl font-bold text-white">{p.logo}</span>
-                  )}
-                </div>
-                <h3 className="font-semibold text-foreground mb-1">{p.name}</h3>
-                {/* <p className="text-sm text-muted-foreground">{p.games}+ Games</p> */}
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-muted/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                {p.logoImage ? (
+                  <img src={p.logoImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl font-bold text-white">{p.logo}</span>
+                )}
               </div>
+              <span className="text-sm font-medium text-white">{p.name}</span>
             </Link>
           ))
           )}
