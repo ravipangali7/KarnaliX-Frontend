@@ -46,7 +46,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
                   )}
                 </div>
                 <h3 className="font-semibold text-foreground mb-1">{p.name}</h3>
-                <p className="text-sm text-muted-foreground">{p.games}+ Games</p>
+                {/* <p className="text-sm text-muted-foreground">{p.games}+ Games</p> */}
               </div>
             </Link>
           ))
