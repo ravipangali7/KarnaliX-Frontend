@@ -99,36 +99,15 @@ export default function GamePlayPage() {
 
   return (
     <div className={gameContainerClass}>
-      {useScaleFit ? (
-        /* Small viewport: scale design-size iframe down so full game is visible (no cut-off on iPhone 13 etc.) */
-        <div className="flex items-center justify-center w-full h-full">
-          <div
-            className="relative origin-center shrink-0"
-            style={{
-              width: DESIGN_WIDTH,
-              height: DESIGN_HEIGHT,
-              transform: `scale(${scale})`,
-            }}
-          >
-            <iframe
-              title="Game"
-              src={launchUrl}
-              className="absolute inset-0 w-full h-full min-w-0 min-h-0 border-0"
-              allow="fullscreen; payment; autoplay"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      ) : (
-        /* Big viewport: iframe fills screen, game fits as before */
-        <iframe
-          title="Game"
-          src={launchUrl}
-          className="absolute inset-0 min-w-0 min-h-0 border-0 w-[100vw] h-[100vh]"
-          allow="fullscreen; payment; autoplay"
-          allowFullScreen
-        />
-      )}
+
+      <iframe
+        title="Game"
+        src={launchUrl}
+        className="absolute inset-0 w-[100vw] h-[100vh] min-w-0 min-h-0 border-0"
+        allow="fullscreen; payment; autoplay"
+        allowFullScreen
+      />
+
 
       {positionMode && (
         <div
