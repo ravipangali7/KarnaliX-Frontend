@@ -212,7 +212,11 @@ const BonusPage = () => {
                           </div>
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-2">
-                          {!isPlayer ? (
+                          {type === "deposit" ? (
+                            <span className="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white/90">
+                              Applied on first deposit
+                            </span>
+                          ) : !isPlayer ? (
                             <Button variant="outline" size="lg" className="bg-white/10 border-white/30 text-white hover:bg-white/20" asChild>
                               <Link to={type === "referral" ? "/login?next=/player/referral" : "/login"}>
                                 Login to claim

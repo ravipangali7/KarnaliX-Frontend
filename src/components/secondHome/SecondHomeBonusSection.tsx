@@ -39,19 +39,17 @@ const variantConfig: Record<
   },
 };
 
-/** Bonus card: when logged in show "Claim now", when guest show "Login to claim". */
+/** Bonus card: when logged in show "Claim now", when guest show "Login to claim". Deposit type has no claim button (applied on first deposit). */
 export function SecondHomeBonusCard({ promo, featured = false }: { promo: PromoShape; featured?: boolean }) {
   const { user } = useAuth();
   const variant = promo.variant ?? "welcome";
   const cfg = variantConfig[variant] ?? variantConfig.welcome;
   const Icon = cfg.icon;
+  const isDeposit = variant === "deposit";
   const ctaLabel = user ? "Claim now" : "Login to claim";
 
-  return (
-    <Link
-      to={promo.href ?? "/bonus"}
-      className={`relative flex items-center gap-4 rounded-2xl overflow-hidden bg-gradient-to-r ${cfg.gradient} p-4 md:p-5 min-h-[88px] shadow-inner border border-white/10 hover:opacity-95 transition-opacity`}
-    >
+  const content = (
+    <>
       {/* Icon in rounded square (left) */}
       <div className={`flex-shrink-0 h-14 w-14 rounded-xl ${cfg.iconBg} flex items-center justify-center shadow-md`}>
         <Icon className="h-7 w-7 text-white" />
@@ -70,12 +68,36 @@ export function SecondHomeBonusCard({ promo, featured = false }: { promo: PromoS
         </p>
       </div>
 
-      {/* CTA: Claim now when logged in, Login to claim when guest */}
-      <span
-        className={`flex-shrink-0 px-4 py-2 rounded-lg bg-white/20 backdrop-blur border border-white/30 text-sm font-semibold ${cfg.buttonText}`}
+      {/* CTA: no button for deposit (applied on first deposit); otherwise Claim now / Login to claim */}
+      {!isDeposit && (
+        <span
+          className={`flex-shrink-0 px-4 py-2 rounded-lg bg-white/20 backdrop-blur border border-white/30 text-sm font-semibold ${cfg.buttonText}`}
+        >
+          {ctaLabel}
+        </span>
+      )}
+      {isDeposit && (
+        <span className="flex-shrink-0 text-sm font-medium text-white/80">Applied on first deposit</span>
+      )}
+    </>
+  );
+
+  if (isDeposit) {
+    return (
+      <div
+        className={`relative flex items-center gap-4 rounded-2xl overflow-hidden bg-gradient-to-r ${cfg.gradient} p-4 md:p-5 min-h-[88px] shadow-inner border border-white/10`}
       >
-        {ctaLabel}
-      </span>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={promo.href ?? "/bonus"}
+      className={`relative flex items-center gap-4 rounded-2xl overflow-hidden bg-gradient-to-r ${cfg.gradient} p-4 md:p-5 min-h-[88px] shadow-inner border border-white/10 hover:opacity-95 transition-opacity`}
+    >
+      {content}
     </Link>
   );
 }
