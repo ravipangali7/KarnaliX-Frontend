@@ -104,8 +104,8 @@ export default function GamePlayPage() {
         title="Game"
         src={launchUrl}
         className="absolute inset-0 w-[100vw] h-[100vh] min-w-0 min-h-0 border-0"
-        allow="fullscreen; payment; autoplay"
-        allowFullScreen
+        // allow="fullscreen; payment; autoplay"
+        // allowFullScreen
       />
 
 
