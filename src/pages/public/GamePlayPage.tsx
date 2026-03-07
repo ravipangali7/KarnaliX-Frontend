@@ -124,7 +124,7 @@ export default function GamePlayPage() {
         <iframe
           title="Game"
           src={launchUrl}
-          className="absolute inset-0 w-full h-full min-w-0 min-h-0 border-0"
+          className="absolute inset-0 min-w-0 min-h-0 border-0 w-[100vw] h-[100vh]"
           allow="fullscreen; payment; autoplay"
           allowFullScreen
         />
