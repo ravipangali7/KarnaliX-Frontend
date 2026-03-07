@@ -10,15 +10,21 @@ export function GameCategories({ categories: categoriesProp }: GameCategoriesPro
   const categories = categoriesProp && categoriesProp.length > 0 ? categoriesProp : defaultCategories;
 
   return (
-    <section className="container px-4 py-10">
-      <h2 className="text-xl font-bold text-foreground mb-2">
-        Explore <span className="gradient-text">Game Categories</span>
-      </h2>
-      <p className="text-sm text-muted-foreground mb-6">Choose your favorite category and start playing</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-        {categories.map((cat) => (
-          <CategoryCard key={cat.slug} {...cat} />
-        ))}
+    <section className="py-16 relative">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">
+            Explore <span className="gradient-text">Game Categories</span>
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            From classic card games to thrilling live casino experiences. Find your perfect game.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          {categories.map((cat) => (
+            <CategoryCard key={cat.slug} {...cat} />
+          ))}
+        </div>
       </div>
     </section>
   );

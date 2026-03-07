@@ -5,12 +5,12 @@ import type { PromoShape } from "@/data/homePageMockData";
 import { promosGrid as defaultPromos } from "@/data/homePageMockData";
 import { cn } from "@/lib/utils";
 
-const variantStyles: Record<string, string> = {
-  welcome: "from-violet-600/90 to-purple-800/90 border-violet-500/30",
-  deposit: "from-amber-600/90 to-cyan-800/90 border-amber-500/30",
-  referral: "from-emerald-600/90 to-teal-800/90 border-emerald-500/30",
-  tournament: "from-amber-600/90 to-orange-800/90 border-amber-500/30",
-  cashback: "from-cyan-600/90 to-blue-800/90 border-cyan-500/30",
+const GRADIENTS: Record<string, string> = {
+  welcome: "from-primary via-secondary to-primary",
+  deposit: "from-amber-500 via-cyan-500 to-amber-500",
+  referral: "from-neon-green via-emerald-500 to-neon-green",
+  tournament: "from-accent via-orange-500 to-accent",
+  cashback: "from-neon-pink via-purple-500 to-neon-pink",
 };
 
 const variantIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -28,57 +28,69 @@ interface PromoBannerProps {
 }
 
 export function PromoBanner({ promo, className, fullWidth }: PromoBannerProps) {
-  const variant = promo.variant ?? "welcome";
+  const variant = (promo.variant ?? "welcome") as keyof typeof GRADIENTS;
+  const gradient = GRADIENTS[variant] ?? GRADIENTS.welcome;
   const Icon = variantIcons[variant] ?? Gift;
-  const style = variantStyles[variant] ?? variantStyles.welcome;
+  const href = promo.href ?? "/promotions";
+  const cta = promo.cta ?? "Learn More";
 
   const content = (
-    <div className={cn("rounded-xl border overflow-hidden bg-gradient-to-r", style, className)}>
-      <div className={cn("p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4", fullWidth && "md:px-10")}>
-        <div className="flex items-center gap-4">
-          <div className="h-14 w-14 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <Icon className="h-7 w-7 text-white" />
-          </div>
-          <div>
-            {promo.badge && (
-              <p className="text-white/80 text-xs font-semibold uppercase tracking-wider">{promo.badge}</p>
-            )}
-            <h3 className="text-white font-bold text-xl">
-              {promo.title}
-              {promo.highlight && <span className="text-amber-300 ml-1">{promo.highlight}</span>}
-            </h3>
-            {promo.subtitle && <p className="text-white/90 text-sm">{promo.subtitle}</p>}
-            {promo.description && <p className="text-white/70 text-sm mt-1 max-w-md">{promo.description}</p>}
-          </div>
+    <div className={cn("relative rounded-2xl overflow-hidden bg-gradient-to-r p-[2px]", gradient, className)}>
+      <div className="relative rounded-2xl bg-card overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)`,
+            }}
+          />
         </div>
-        {promo.cta && promo.href && (
-          <Link to={promo.href} className="shrink-0">
-            <Button variant="gold" size="lg" className="text-white border-0">
-              {promo.cta}
+        <div className={cn("relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6", fullWidth && "md:px-10")}>
+          <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white flex-shrink-0 animate-float`}>
+            <Icon className="w-8 h-8" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            {promo.badge && (
+              <span className="inline-block px-3 py-1 rounded-full bg-muted text-xs font-semibold mb-3">
+                {promo.badge}
+              </span>
+            )}
+            <h3 className="text-xl md:text-2xl font-bold mb-2 text-foreground">
+              {promo.title}
+              {promo.highlight != null && (
+                <>
+                  {" "}
+                  <span className="gradient-text">{promo.highlight}</span>
+                </>
+              )}
+              {promo.subtitle != null && ` ${promo.subtitle}`}
+            </h3>
+            {promo.description && <p className="text-muted-foreground">{promo.description}</p>}
+          </div>
+          <Link to={href} className="flex-shrink-0">
+            <Button variant="gold" size="lg">
+              {cta}
             </Button>
           </Link>
-        )}
+        </div>
       </div>
     </div>
   );
 
-  if (promo.href && !promo.cta) {
-    return <Link to={promo.href}>{content}</Link>;
-  }
   return content;
 }
 
 export function PromoBannerGrid({ promos: promosProp }: { promos?: PromoShape[] | null }) {
   const promos = promosProp && promosProp.length > 0 ? promosProp : defaultPromos;
-  const firstIsRefer = promos[0]?.variant === "referral";
+  const welcomePromo = promos.find((p) => (p.variant || "").toLowerCase() === "welcome") ?? promos[0];
+  const referralPromo = promos.find((p) => (p.variant || "").toLowerCase() === "referral") ?? promos[1];
   return (
-    <section className="container px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {promos.map((promo, i) => (
-          <div key={i} className={i === 0 && firstIsRefer ? "md:col-span-2" : undefined}>
-            <PromoBanner promo={promo} fullWidth={i === 0 && firstIsRefer} />
-          </div>
-        ))}
+    <section className="py-8">
+      <div className="container mx-auto px-4">
+        <div className="grid md:grid-cols-2 gap-6">
+          <PromoBanner promo={welcomePromo ?? defaultPromos[0]} />
+          <PromoBanner promo={referralPromo ?? defaultPromos[1]} />
+        </div>
       </div>
     </section>
   );

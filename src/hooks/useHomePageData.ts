@@ -316,3 +316,38 @@ export function useHomePageData(): {
 
   return { data, isLoading, isError, refetch };
 }
+
+/**
+ * Static-only home page data (no API). Use for first home variant (maitidevi clone).
+ */
+export function useHomePageStaticData(): {
+  data: HomePageData;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+} {
+  const data: HomePageData = {
+    hero: defaultHero,
+    heroStats: defaultHeroStats,
+    featuredGames: defaultFeaturedGames,
+    promosGrid: defaultPromosGrid,
+    tournamentPromo: defaultTournamentPromo,
+    cashbackPromo: defaultCashbackPromo,
+    categories: defaultCategories,
+    gamesByCategory: defaultGamesByCategory,
+    providers: defaultProviders,
+    testimonials: defaultTestimonials,
+    recentWins: defaultRecentWins,
+    comingSoon: defaultComingSoon,
+    liveOddsTicker,
+    footerContact: defaultFooterContact,
+    footerLinks: defaultFooterLinks,
+    paymentMethods: defaultPaymentMethods,
+  };
+  return {
+    data,
+    isLoading: false,
+    isError: false,
+    refetch: () => {},
+  };
+}

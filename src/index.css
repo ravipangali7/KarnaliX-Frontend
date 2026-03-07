@@ -366,6 +366,19 @@ body::-webkit-scrollbar {
   .animate-ticker {
     animation: ticker 30s linear infinite;
   }
+  /* Neon color utilities (match maitidevi when .home-design sets --neon-*) */
+  .bg-neon-cyan { background-color: hsl(var(--neon-cyan, 187 100% 50%)); }
+  .bg-neon-purple { background-color: hsl(var(--neon-purple, 270 70% 55%)); }
+  .bg-neon-gold { background-color: hsl(var(--neon-gold, 45 100% 55%)); }
+  .bg-neon-green { background-color: hsl(var(--neon-green, 142 76% 45%)); }
+  .bg-neon-red { background-color: hsl(var(--neon-red, 0 84% 60%)); }
+  .bg-neon-pink { background-color: hsl(var(--neon-pink, 330 85% 60%)); }
+  .text-neon-cyan { color: hsl(var(--neon-cyan, 187 100% 50%)); }
+  .text-neon-purple { color: hsl(var(--neon-purple, 270 70% 55%)); }
+  .text-neon-gold { color: hsl(var(--neon-gold, 45 100% 55%)); }
+  .text-neon-green { color: hsl(var(--neon-green, 142 76% 45%)); }
+  .text-neon-red { color: hsl(var(--neon-red, 0 84% 60%)); }
+  .text-neon-pink { color: hsl(var(--neon-pink, 330 85% 60%)); }
 }
 
 @keyframes float {

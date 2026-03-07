@@ -7,10 +7,40 @@ import { GameProviders } from "@/components/home/GameProviders";
 import { ComingSoon } from "@/components/home/ComingSoon";
 import { Testimonials } from "@/components/home/Testimonials";
 import { ActivePopups } from "@/components/home/ActivePopups";
-import { useHomePageData } from "@/hooks/useHomePageData";
+import { useHomePageData, useHomePageStaticData } from "@/hooks/useHomePageData";
+import { HOME_PAGE_VARIANT } from "@/config";
+
+function HomePageContent({
+  data,
+}: {
+  data: ReturnType<typeof useHomePageStaticData>["data"];
+}) {
+  return (
+    <>
+      <ActivePopups />
+      <HeroSection hero={data.hero} heroStats={data.heroStats} />
+      <FeaturedGames games={data.featuredGames} />
+      <PromoBannerGrid promos={data.promosGrid} />
+      <GameCategories categories={data.categories} />
+      <AllGameCategories gamesByCategory={data.gamesByCategory} categories={data.categories} />
+      <section className="container px-4 py-6">
+        <PromoBanner promo={data.tournamentPromo} fullWidth />
+      </section>
+      <GameProviders providers={data.providers} />
+      <ComingSoon comingSoon={data.comingSoon} />
+      <Testimonials testimonials={data.testimonials} recentWins={data.recentWins} />
+      <section className="container px-4 py-6">
+        <PromoBanner promo={data.cashbackPromo} fullWidth />
+      </section>
+    </>
+  );
+}
 
 export default function HomeDesignPage() {
-  const { data, isLoading, isError, refetch } = useHomePageData();
+  const staticResult = useHomePageStaticData();
+  const apiResult = useHomePageData();
+  const { data, isLoading, isError, refetch } =
+    HOME_PAGE_VARIANT === "first" ? staticResult : apiResult;
 
   if (isLoading) {
     return (
@@ -40,23 +70,5 @@ export default function HomeDesignPage() {
     );
   }
 
-  return (
-    <>
-      <ActivePopups />
-      <HeroSection hero={data.hero} heroStats={data.heroStats} />
-      <FeaturedGames games={data.featuredGames} />
-      <PromoBannerGrid promos={data.promosGrid} />
-      <GameCategories categories={data.categories} />
-      <AllGameCategories gamesByCategory={data.gamesByCategory} categories={data.categories} />
-      <section className="container px-4 py-6">
-        <PromoBanner promo={data.tournamentPromo} fullWidth />
-      </section>
-      <GameProviders providers={data.providers} />
-      <ComingSoon comingSoon={data.comingSoon} />
-      <Testimonials testimonials={data.testimonials} recentWins={data.recentWins} />
-      <section className="container px-4 py-6">
-        <PromoBanner promo={data.cashbackPromo} fullWidth />
-      </section>
-    </>
-  );
+  return <HomePageContent data={data} />;
 }

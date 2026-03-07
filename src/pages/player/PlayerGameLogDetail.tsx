@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCurrencySymbol } from "@/utils/currency";
@@ -8,15 +8,24 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ArrowLeft, Gamepad2, Receipt } from "lucide-react";
 
+const RESTRICTED_ROLES = ["player", "master", "super"];
+
 const PlayerGameLogDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const symbol = getCurrencySymbol(user);
+  const isRestricted = user != null && RESTRICTED_ROLES.includes(user.role);
   const { data, isLoading, error } = useQuery({
     queryKey: ["player-game-log-detail", id],
     queryFn: () => getPlayerGameLogDetail(id!),
-    enabled: !!id,
+    enabled: !!id && !isRestricted,
   });
+
+  if (isRestricted && user) {
+    if (user.role === "player") return <Navigate to="/player/game-results" replace />;
+    if (user.role === "master") return <Navigate to="/master/players" replace />;
+    if (user.role === "super") return <Navigate to="/super/masters" replace />;
+  }
 
   if (isLoading || !data) {
     return (

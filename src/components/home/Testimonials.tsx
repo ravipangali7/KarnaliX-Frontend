@@ -14,50 +14,59 @@ export function Testimonials({ testimonials: testimonialsProp, recentWins: recen
   const recentWins = recentWinsProp && recentWinsProp.length > 0 ? recentWinsProp : defaultRecentWins;
 
   return (
-    <section className="container px-4 py-10">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <div className="flex items-center gap-2 mb-6">
-            <Quote className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-bold text-foreground">Player Stories</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {testimonials.map((t) => (
-              <Card key={t.id ?? t.name} className="glass border-white/10 overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
+    <section className="py-16">
+      <div className="container mx-auto px-4">
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
+                <Quote className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold">Player Stories</h2>
+                <p className="text-muted-foreground text-sm">Hear from our winners</p>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {testimonials.map((t) => (
+                <div key={t.id ?? t.name} className="glass rounded-xl p-5 hover:glow-gold transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-4">
                     {typeof t.avatar === "string" && (t.avatar.startsWith("http") || t.avatar.startsWith("/")) ? (
-                      <img src={t.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                      <img src={t.avatar} alt="" className="w-12 h-12 rounded-full object-cover" />
                     ) : (
-                      <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center font-semibold text-sm text-primary">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-bold">
                         {t.avatar ?? t.name.slice(0, 2).toUpperCase()}
                       </div>
                     )}
-                    <div>
-                      <p className="font-semibold text-sm text-foreground">{t.name}</p>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-foreground">{t.name}</h4>
                       {t.location && <p className="text-xs text-muted-foreground">{t.location}</p>}
                     </div>
-                    <div className="flex text-amber-400 ml-auto">
+                    <div className="flex">
                       {Array.from({ length: t.rating ?? 5 }).map((_, i) => (
-                        <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                        <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed italic">&ldquo;{t.message}&rdquo;</p>
-                  <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground leading-relaxed">&ldquo;{t.message}&rdquo;</p>
+                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-muted-foreground">
                     <span>{t.game}</span>
                     <span className="text-primary font-semibold">{t.amount ?? "—"}</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-6">
-            <Trophy className="h-6 w-6 text-amber-400" />
-            <h2 className="text-xl font-bold text-foreground">Live Wins</h2>
-          </div>
+          <div>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold">Live Wins</h2>
+                <p className="text-muted-foreground text-sm">Recent big wins</p>
+              </div>
+            </div>
           <Card className="glass border-white/10">
             <CardContent className="p-0">
               <ul className="divide-y divide-white/10">
@@ -79,6 +88,7 @@ export function Testimonials({ testimonials: testimonialsProp, recentWins: recen
               </ul>
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
     </section>

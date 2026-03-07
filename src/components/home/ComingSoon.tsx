@@ -1,6 +1,6 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Bell } from "lucide-react";
 import { comingSoon as defaultComingSoon } from "@/data/homePageMockData";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,51 +37,70 @@ export function ComingSoon({ comingSoon: comingSoonProp }: ComingSoonProps) {
     }
   };
 
-  const scroll = (dir: "left" | "right") => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: dir === "left" ? -280 : 280, behavior: "smooth" });
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+  const scrollWithAmount = (dir: "left" | "right") => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
+    }
   };
 
   return (
-    <section className="container px-4 py-10">
-      <div className="flex items-center gap-2 mb-6">
-        <Clock className="h-6 w-6 text-primary" />
-        <h2 className="text-xl font-bold text-foreground">Coming Soon</h2>
-      </div>
-      <div className="relative">
-        <Button
-          variant="glass"
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 -translate-x-2 rounded-full h-10 w-10 hidden md:flex"
-          onClick={() => scroll("left")}
+    <section className="py-16 bg-card/30">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary/20 flex items-center justify-center animate-pulse">
+              <Clock className="w-5 h-5 text-secondary" />
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold">Coming Soon</h2>
+              <p className="text-muted-foreground text-sm">Exciting new games launching soon</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" onClick={() => scrollWithAmount("left")} disabled={!canScrollLeft} className="rounded-full">
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => scrollWithAmount("right")} disabled={!canScrollRight} className="rounded-full">
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="glass"
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 translate-x-2 rounded-full h-10 w-10 hidden md:flex"
-          onClick={() => scroll("right")}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
-        <div ref={scrollRef} className="flex gap-4 overflow-x-auto scrollbar-hide snap-x pb-2 -mx-4 px-4">
           {comingSoon.map((item) => (
-            <div
-              key={item.id ?? item.name}
-              className="shrink-0 w-[240px] md:w-[280px] rounded-xl overflow-hidden glass border border-white/10 group"
-            >
-              <div className="relative aspect-video">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-70" loading="lazy" />
-                <div className="absolute inset-0 bg-black/50" />
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-amber-500/90 text-black text-xs font-semibold">
-                  {item.launchDate ?? "Coming Soon"}
+            <div key={item.id ?? item.name} className="w-[300px] flex-shrink-0 snap-start">
+              <div className="group rounded-2xl overflow-hidden glass border border-border/50 hover:border-secondary/50 transition-all duration-300">
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" loading="lazy" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+                  <div className="absolute top-3 left-3">
+                    <span className="px-3 py-1 bg-secondary/90 text-secondary-foreground text-xs font-bold rounded-full flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {item.launchDate ?? "Coming Soon"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="p-3">
-                <h3 className="font-semibold text-sm text-foreground">{item.name}</h3>
-                {item.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>}
-                <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => handleNotifyMe(item)}>Notify Me</Button>
+                <div className="p-4">
+                  <h3 className="font-bold text-lg mb-2 text-foreground">{item.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{item.description ?? ""}</p>
+                  <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => handleNotifyMe(item)}>
+                    <Bell className="w-4 h-4" />
+                    Notify Me
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

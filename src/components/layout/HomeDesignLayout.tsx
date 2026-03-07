@@ -10,9 +10,9 @@ interface HomeDesignLayoutProps {
 
 export function HomeDesignLayout({ children }: HomeDesignLayoutProps) {
   return (
-    <div className="home-design min-h-screen flex flex-col bg-background">
+    <div className="home-design min-h-screen flex flex-col bg-background pb-16 md:pb-0">
       <HomeHeader />
-      <main className="flex-1 pt-[calc(3.5rem+2.25rem)] md:pt-[calc(3.5rem+2.25rem)] pb-20 md:pb-0">
+      <main className="flex-1 pt-[calc(3.5rem+2.25rem)] md:pt-[calc(3.5rem+2.25rem)]">
         {children}
       </main>
       <HomeFooter />
