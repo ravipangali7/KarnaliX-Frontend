@@ -5,7 +5,7 @@ import {
   MessageCircle, Users, ArrowDownCircle, ArrowUpCircle,
   ShieldCheck, Gamepad2, Clock, Activity, Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   Menu, X, Tag, Box, Gift, FileText, Star, Globe, LogOut, CreditCard, User, Key, Image,
-  Calculator, LayoutPanelTop, LayoutDashboard, Megaphone, MapPin
+  Calculator, LayoutPanelTop, LayoutDashboard, Megaphone, MapPin, LayoutGrid, Palette
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDashboard, getUnreadMessageCount } from "@/api/admin";
@@ -78,6 +78,15 @@ const getNavItems = (role: string): NavItem[] => {
           { label: "Country", path: "/countries", icon: MapPin },
           { label: "CMS Page", path: "/cms", icon: FileText },
           { label: "Testimonial", path: "/testimonials", icon: Star },
+          { label: "Home Category", path: "/site-home-category", icon: Tag },
+          { label: "Home Top Games", path: "/site-home-top-games", icon: Gamepad2 },
+          { label: "Home Provider", path: "/site-home-provider", icon: Box },
+          { label: "Home Category Game", path: "/site-home-category-game", icon: LayoutGrid },
+          { label: "Home Popular Game", path: "/site-home-popular-game", icon: Star },
+          { label: "Home Coming Soon", path: "/site-home-coming-soon", icon: Clock },
+          { label: "Home Refer Bonus", path: "/site-home-refer-bonus", icon: Gift },
+          { label: "Home Payment Accepted", path: "/site-home-payment-accepted", icon: CreditCard },
+          { label: "Site Theme", path: "/site-theme", icon: Palette },
           { label: "Site Setting", path: "/site-settings", icon: Globe },
         ],
       },

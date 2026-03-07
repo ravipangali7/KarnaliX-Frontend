@@ -138,6 +138,110 @@ export function OrderedIdSelector({ label, allItems, selectedIds, onChange }: Or
 }
 
 // -----------------------------------------------------------------------
+// OrderedIdSelectorWithProviderFilter – like OrderedIdSelector but filters by game name + provider name
+// -----------------------------------------------------------------------
+export interface GameWithProvider extends BaseItem {
+  provider_name?: string;
+  category?: number;
+}
+
+interface OrderedIdSelectorWithProviderFilterProps {
+  label: string;
+  allItems: GameWithProvider[];
+  selectedIds: number[];
+  onChange: (ids: number[]) => void;
+}
+
+export function OrderedIdSelectorWithProviderFilter({
+  label,
+  allItems,
+  selectedIds,
+  onChange,
+}: OrderedIdSelectorWithProviderFilterProps) {
+  const [search, setSearch] = useState("");
+
+  const searchLower = search.toLowerCase().trim();
+  const match = (item: GameWithProvider) => {
+    if (!searchLower) return true;
+    const name = (item.name ?? "").toLowerCase();
+    const provider = (item.provider_name ?? "").toLowerCase();
+    return name.includes(searchLower) || provider.includes(searchLower);
+  };
+
+  const available = allItems.filter((item) => !selectedIds.includes(item.id) && match(item));
+  const selected = selectedIds
+    .map((id) => allItems.find((i) => i.id === id))
+    .filter(Boolean) as GameWithProvider[];
+
+  const add = (id: number) => onChange([...selectedIds, id]);
+  const remove = (id: number) => onChange(selectedIds.filter((x) => x !== id));
+  const moveUp = (idx: number) => {
+    if (idx === 0) return;
+    const n = [...selectedIds];
+    [n[idx - 1], n[idx]] = [n[idx], n[idx - 1]];
+    onChange(n);
+  };
+  const moveDown = (idx: number) => {
+    if (idx === selectedIds.length - 1) return;
+    const n = [...selectedIds];
+    [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]];
+    onChange(n);
+  };
+
+  return (
+    <div className="space-y-3">
+      {selected.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-muted-foreground font-medium">Selected {label} (order via arrows)</p>
+          {selected.map((item, idx) => (
+            <div key={item.id} className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-1.5 text-sm">
+              <span className="flex-1 truncate">{item.name}</span>
+              {item.provider_name && <span className="text-xs text-muted-foreground truncate max-w-[120px]">{item.provider_name}</span>}
+              <Button type="button" size="icon" variant="ghost" className="h-6 w-6" disabled={idx === 0} onClick={() => moveUp(idx)}>
+                <ChevronUp className="h-3.5 w-3.5" />
+              </Button>
+              <Button type="button" size="icon" variant="ghost" className="h-6 w-6" disabled={idx === selected.length - 1} onClick={() => moveDown(idx)}>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+              <Button type="button" size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => remove(item.id)}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div>
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by game or provider name…"
+          className="mb-2 h-8 text-sm"
+        />
+        <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+          {available.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => add(item.id)}
+              className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-0.5 text-xs hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <Plus className="h-3 w-3" />
+              {item.name}
+              {item.provider_name && <span className="opacity-70">({item.provider_name})</span>}
+            </button>
+          ))}
+          {available.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              {allItems.length === 0 ? `No ${label} in this category.` : selectedIds.length >= allItems.length ? "All selected." : "No matches."}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------
 // CategoryGamesEditor – categories[{category_id, game_ids, section_title?, section_icon?}] editor
 // -----------------------------------------------------------------------
 export interface CategoryGamesEntry {
@@ -149,7 +253,7 @@ export interface CategoryGamesEntry {
 
 interface CategoryGamesEditorProps {
   allCategories: BaseItem[];
-  allGames: BaseItem[];
+  allGames: (BaseItem & { provider_name?: string; category?: number })[];
   value: CategoryGamesEntry[];
   onChange: (v: CategoryGamesEntry[]) => void;
 }
@@ -179,11 +283,22 @@ export function CategoryGamesEditor({ allCategories, allGames, value, onChange }
   };
 
   const availableCategories = allCategories.filter((c) => !usedCategoryIds.includes(c.id));
+  const hasProviderMeta = allGames.some((g) => "provider_name" in g || "category" in g);
 
   return (
     <div className="space-y-4">
       {value.map((entry, idx) => {
         const cat = allCategories.find((c) => c.id === entry.category_id);
+        const gamesInCategory = hasProviderMeta
+          ? (allGames as { id: number; name: string; provider_name?: string; category?: number }[]).filter(
+              (g) => g.category === entry.category_id
+            )
+          : allGames;
+        const GameSelector = hasProviderMeta ? OrderedIdSelectorWithProviderFilter : OrderedIdSelector;
+        const selectorProps = hasProviderMeta
+          ? { label: "games" as const, allItems: gamesInCategory, selectedIds: entry.game_ids, onChange: (ids: number[]) => setGames(entry.category_id, ids) }
+          : { label: "games" as const, allItems: gamesInCategory, selectedIds: entry.game_ids, onChange: (ids: number[]) => setGames(entry.category_id, ids) };
+
         return (
           <div key={entry.category_id} className="rounded-lg border p-4 space-y-3 bg-muted/10">
             <div className="flex items-center justify-between gap-2">
@@ -222,12 +337,7 @@ export function CategoryGamesEditor({ allCategories, allGames, value, onChange }
                 />
               </div>
             </div>
-            <OrderedIdSelector
-              label="games"
-              allItems={allGames}
-              selectedIds={entry.game_ids}
-              onChange={(ids) => setGames(entry.category_id, ids)}
-            />
+            <GameSelector {...selectorProps} />
           </div>
         );
       })}

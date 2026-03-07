@@ -87,6 +87,15 @@ import PowerhouseCMS from "@/pages/admin/PowerhouseCMS";
 import PowerhouseTestimonials from "@/pages/admin/PowerhouseTestimonials";
 import PowerhousePaymentMethods from "@/pages/admin/PowerhousePaymentMethods";
 import PowerhouseCountries from "@/pages/admin/PowerhouseCountries";
+import PowerhouseSiteHomeCategory from "@/pages/admin/PowerhouseSiteHomeCategory";
+import PowerhouseSiteHomeTopGames from "@/pages/admin/PowerhouseSiteHomeTopGames";
+import PowerhouseSiteHomeProvider from "@/pages/admin/PowerhouseSiteHomeProvider";
+import PowerhouseSiteHomeCategoryGame from "@/pages/admin/PowerhouseSiteHomeCategoryGame";
+import PowerhouseSiteHomePopularGame from "@/pages/admin/PowerhouseSiteHomePopularGame";
+import PowerhouseSiteHomeComingSoon from "@/pages/admin/PowerhouseSiteHomeComingSoon";
+import PowerhouseSiteHomeReferBonus from "@/pages/admin/PowerhouseSiteHomeReferBonus";
+import PowerhouseSiteHomePaymentAccepted from "@/pages/admin/PowerhouseSiteHomePaymentAccepted";
+import PowerhouseSiteTheme from "@/pages/admin/PowerhouseSiteTheme";
 
 import NotFound from "@/pages/NotFound";
 import { GlobalMessageFab } from "@/components/shared/GlobalMessageFab";
@@ -263,6 +272,15 @@ const App = () => {
               <Route path="/powerhouse/activity" element={<AdminActivityLog />} />
               <Route path="/powerhouse/super-settings" element={<PowerhouseSuperSettings />} />
               <Route path="/powerhouse/site-settings" element={<PowerhouseSiteSettings />} />
+              <Route path="/powerhouse/site-home-category" element={<PowerhouseSiteHomeCategory />} />
+              <Route path="/powerhouse/site-home-top-games" element={<PowerhouseSiteHomeTopGames />} />
+              <Route path="/powerhouse/site-home-provider" element={<PowerhouseSiteHomeProvider />} />
+              <Route path="/powerhouse/site-home-category-game" element={<PowerhouseSiteHomeCategoryGame />} />
+              <Route path="/powerhouse/site-home-popular-game" element={<PowerhouseSiteHomePopularGame />} />
+              <Route path="/powerhouse/site-home-coming-soon" element={<PowerhouseSiteHomeComingSoon />} />
+              <Route path="/powerhouse/site-home-refer-bonus" element={<PowerhouseSiteHomeReferBonus />} />
+              <Route path="/powerhouse/site-home-payment-accepted" element={<PowerhouseSiteHomePaymentAccepted />} />
+              <Route path="/powerhouse/site-theme" element={<PowerhouseSiteTheme />} />
               <Route path="/powerhouse/cms" element={<PowerhouseCMS />} />
               <Route path="/powerhouse/testimonials" element={<PowerhouseTestimonials />} />
               <Route path="/powerhouse/payment-methods" element={<PowerhousePaymentMethods />} />
