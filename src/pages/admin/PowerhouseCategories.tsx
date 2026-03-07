@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { getCategoriesAdmin, createCategoryAdminForm, updateCategoryAdminForm } from "@/api/admin";
+import { getCategoriesAdmin, createCategoryAdminForm, updateCategoryAdminForm, deleteCategoryAdmin } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ImageUploadWithPreview } from "@/components/shared/ImageUploadWithPreview";
 import { toast } from "@/hooks/use-toast";
@@ -55,6 +55,17 @@ const PowerhouseCategories = () => {
     return formData;
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this category?")) return;
+    try {
+      await deleteCategoryAdmin(id);
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      toast({ title: "Deleted." });
+    } catch {
+      toast({ title: "Failed to delete category", variant: "destructive" });
+    }
+  };
+
   const columns = [
     {
       header: "Icon",
@@ -71,7 +82,7 @@ const PowerhouseCategories = () => {
       accessor: (row: Record<string, unknown>) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="text-xs" onClick={() => openEdit(row)}>Edit</Button>
-          <Button variant="ghost" size="sm" className="text-xs text-crimson">Delete</Button>
+          <Button variant="ghost" size="sm" className="text-xs text-crimson" onClick={() => handleDelete(Number(row.id))}>Delete</Button>
         </div>
       ),
     },

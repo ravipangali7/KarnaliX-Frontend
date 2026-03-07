@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useQuery } from "@tanstack/react-query";
-import { getCmsPages, createCmsPage, createCmsPageForm, updateCmsPage, updateCmsPageForm } from "@/api/admin";
+import { getCmsPages, createCmsPage, createCmsPageForm, updateCmsPage, updateCmsPageForm, deleteCmsPage } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "@/hooks/use-toast";
 import { getMediaUrl } from "@/lib/api";
@@ -62,6 +62,17 @@ const PowerhouseCMS = () => {
     setEditOpen(true);
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this CMS page?")) return;
+    try {
+      await deleteCmsPage(id);
+      queryClient.invalidateQueries({ queryKey: ["admin-cms"] });
+      toast({ title: "Deleted." });
+    } catch {
+      toast({ title: "Failed to delete CMS page", variant: "destructive" });
+    }
+  };
+
   const columns = [
     { header: "Title", accessor: (row: Record<string, unknown>) => String(row.title ?? "") },
     { header: "Slug", accessor: (row: Record<string, unknown>) => String(row.slug ?? "") },
@@ -73,7 +84,7 @@ const PowerhouseCMS = () => {
       accessor: (row: Record<string, unknown>) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="text-xs" onClick={() => openEdit(row)}>Edit</Button>
-          <Button variant="ghost" size="sm" className="text-xs text-crimson">Delete</Button>
+          <Button variant="ghost" size="sm" className="text-xs text-crimson" onClick={() => handleDelete(Number(row.id))}>Delete</Button>
         </div>
       ),
     },

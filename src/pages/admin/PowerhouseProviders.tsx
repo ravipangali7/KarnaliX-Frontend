@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { getProvidersAdmin, createProviderAdmin, createProviderAdminForm, updateProviderAdmin, updateProviderAdminForm, getImportGameApiUrl, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
+import { getProvidersAdmin, createProviderAdmin, createProviderAdminForm, updateProviderAdmin, updateProviderAdminForm, deleteProviderAdmin, getImportGameApiUrl, fetchProviderGamesFromGameApi, postImportGames, type ImportProvider, type ImportGame } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
@@ -89,6 +89,18 @@ const PowerhouseProviders = () => {
     setApiSecret(String(row.api_secret ?? ""));
     setApiToken(String(row.api_token ?? ""));
     setEditOpen(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this provider?")) return;
+    try {
+      await deleteProviderAdmin(id);
+      queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
+      queryClient.invalidateQueries({ queryKey: ["providers"] });
+      toast({ title: "Deleted." });
+    } catch {
+      toast({ title: "Failed to delete provider", variant: "destructive" });
+    }
   };
 
   // When Direct Import modal opens, get game API URL only; use existing DB providers (no getProvider; games via providerGame)
@@ -201,7 +213,7 @@ const PowerhouseProviders = () => {
       accessor: (row: Record<string, unknown>) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="text-xs" onClick={() => openEdit(row)}>Edit</Button>
-          <Button variant="ghost" size="sm" className="text-xs text-crimson">Delete</Button>
+          <Button variant="ghost" size="sm" className="text-xs text-crimson" onClick={() => handleDelete(Number(row.id))}>Delete</Button>
         </div>
       ),
     },

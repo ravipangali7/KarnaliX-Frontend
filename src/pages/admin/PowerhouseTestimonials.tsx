@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
-import { getTestimonialsAdmin, createTestimonial, createTestimonialForm, updateTestimonial, updateTestimonialForm } from "@/api/admin";
+import { getTestimonialsAdmin, createTestimonial, createTestimonialForm, updateTestimonial, updateTestimonialForm, deleteTestimonial } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Star } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -59,6 +59,17 @@ const PowerhouseTestimonials = () => {
     setEditOpen(true);
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this testimonial?")) return;
+    try {
+      await deleteTestimonial(id);
+      queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
+      toast({ title: "Deleted." });
+    } catch {
+      toast({ title: "Failed to delete testimonial", variant: "destructive" });
+    }
+  };
+
   const columns = [
     {
       header: "Avatar",
@@ -81,7 +92,7 @@ const PowerhouseTestimonials = () => {
       accessor: (row: Record<string, unknown>) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="text-xs" onClick={() => openEdit(row)}>Edit</Button>
-          <Button variant="ghost" size="sm" className="text-xs text-crimson">Delete</Button>
+          <Button variant="ghost" size="sm" className="text-xs text-crimson" onClick={() => handleDelete(Number(row.id))}>Delete</Button>
         </div>
       ),
     },
