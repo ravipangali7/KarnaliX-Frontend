@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCurrencySymbol } from "@/utils/currency";
-import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
+import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, getDepositBonusEligibility, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
 import { getPublicPaymentMethods } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
@@ -37,6 +37,11 @@ const PlayerWallet = () => {
   const { data: depositPaymentModes = [] } = useQuery({
     queryKey: ["player-deposit-payment-modes"],
     queryFn: getDepositPaymentModes,
+    enabled: depositOpen,
+  });
+  const { data: depositBonusEligibility } = useQuery({
+    queryKey: ["player-deposit-bonus-eligibility"],
+    queryFn: getDepositBonusEligibility,
     enabled: depositOpen,
   });
   const { data: playerPaymentModes = [] } = useQuery({
@@ -298,6 +303,26 @@ const PlayerWallet = () => {
                       </Button>
                     ))}
                   </div>
+                  {depositBonusEligibility?.is_first_deposit && depositBonusEligibility?.applicable_rule && (
+                    <div className="mt-3 rounded-lg border border-accent/40 bg-accent/5 p-3">
+                      <p className="text-xs font-medium text-accent flex items-center gap-1.5">
+                        <Gift className="h-3.5 w-3.5" />
+                        First deposit bonus
+                      </p>
+                      {depositBonusEligibility.applicable_rule.reward_type === "flat" ? (
+                        <p className="text-sm mt-1">
+                          You will get {symbol}{Number(depositBonusEligibility.applicable_rule.reward_amount || 0).toLocaleString()} bonus on first deposit.
+                        </p>
+                      ) : (
+                        <p className="text-sm mt-1">
+                          You will get {symbol}{(Number(amount) || 0) > 0
+                            ? ((Number(amount) * Number(depositBonusEligibility.applicable_rule.reward_amount || 0)) / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+                            : "0"}
+                          {" "}bonus on first deposit ({depositBonusEligibility.applicable_rule.reward_amount}% of deposit).
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>

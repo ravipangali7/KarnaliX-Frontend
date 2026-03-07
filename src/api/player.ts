@@ -154,6 +154,25 @@ export async function submitKyc(body: FormData | Record<string, unknown>) {
   return apiPost(`${P}/kyc/submit/`, body);
 }
 
+/** Eligibility for first-deposit bonus: is_first_deposit and applicable_rule (reward_type, reward_amount, valid_from, valid_until). */
+export type DepositBonusEligibilityResponse = {
+  is_first_deposit: boolean;
+  applicable_rule: {
+    id: number;
+    name: string;
+    reward_type: string;
+    reward_amount: string;
+    reward_type_display?: string;
+    valid_from: string | null;
+    valid_until: string | null;
+  } | null;
+};
+
+export async function getDepositBonusEligibility(): Promise<DepositBonusEligibilityResponse> {
+  const res = await apiGet<DepositBonusEligibilityResponse>(`${P}/deposit-bonus-eligibility/`);
+  return res as unknown as DepositBonusEligibilityResponse;
+}
+
 export async function depositRequest(body: unknown) {
   return apiPost(`${P}/deposit-request/`, body);
 }
