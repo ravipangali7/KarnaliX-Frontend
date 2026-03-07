@@ -113,14 +113,16 @@ const PROVIDER_COLORS = [
   "from-teal-500 to-cyan-500",
 ];
 
-function mapSliderApiToSlide(s: { id: number; title: string; subtitle?: string; image?: string; cta_label: string; cta_link: string }): SliderSlide {
+function mapSliderApiToSlide(s: { id: number; title: string; subtitle?: string; image?: string; cta_label?: string | null; cta_link?: string | null }): SliderSlide {
+  const ctaLabel = (s.cta_label != null && s.cta_label !== undefined) ? String(s.cta_label).trim() : "";
+  const ctaLink = (s.cta_link != null && s.cta_link !== undefined) ? String(s.cta_link).trim() : "";
   return {
     id: String(s.id),
     title: s.title ?? "",
     subtitle: s.subtitle,
     image: (s.image as string)?.trim() ? getMediaUrl((s.image as string).trim()) : undefined,
-    ctaText: s.cta_label ?? "Join Now",
-    ctaHref: s.cta_link ?? "/register",
+    ctaText: ctaLabel,
+    ctaHref: ctaLink,
   };
 }
 
@@ -128,22 +130,26 @@ function defaultSliderSlides(site: Record<string, unknown>): SliderSlide[] {
   const heroTitle = (site.hero_title as string)?.trim() || "CRICKET CHAMPIONSHIP - T20 WORLD CUP MADNESS BEGINS - THE COUNTDOWN IS OVER";
   const promoBanners = Array.isArray(site.promo_banners) ? (site.promo_banners as Record<string, unknown>[]) : [];
   if (promoBanners.length > 0) {
-    return promoBanners.slice(0, 5).map((p, i) => ({
-      id: `slide-${i}`,
-      title: (p.title as string) ?? heroTitle,
-      subtitle: (p.subtitle as string) ?? "Join now and enjoy live sports betting and casino games.",
-      image: (p.image as string)?.trim() ? getMediaUrl((p.image as string).trim()) : undefined,
-      ctaText: (p.cta_label as string) ?? (p.cta as string) ?? "Join Now",
-      ctaHref: (p.cta_link as string) ?? (p.href as string) ?? "/register",
-    }));
+    return promoBanners.slice(0, 5).map((p, i) => {
+      const ctaLabel = (p.cta_label != null && p.cta_label !== undefined) ? String(p.cta_label).trim() : (p.cta != null && p.cta !== undefined) ? String(p.cta).trim() : "";
+      const ctaLink = (p.cta_link != null && p.cta_link !== undefined) ? String(p.cta_link).trim() : (p.href != null && p.href !== undefined) ? String(p.href).trim() : "";
+      return {
+        id: `slide-${i}`,
+        title: (p.title as string) ?? heroTitle,
+        subtitle: (p.subtitle as string) ?? "Join now and enjoy live sports betting and casino games.",
+        image: (p.image as string)?.trim() ? getMediaUrl((p.image as string).trim()) : undefined,
+        ctaText: ctaLabel,
+        ctaHref: ctaLink,
+      };
+    });
   }
   return [
     {
       id: "slide-default",
       title: heroTitle,
       subtitle: "Join now and enjoy live sports betting and casino games.",
-      ctaText: "Join Now",
-      ctaHref: "/register",
+      ctaText: "",
+      ctaHref: "",
     },
   ];
 }

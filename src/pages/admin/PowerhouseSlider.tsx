@@ -47,8 +47,8 @@ const PowerhouseSlider = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [ctaLabel, setCtaLabel] = useState("Join Now");
-  const [ctaLink, setCtaLink] = useState("/register");
+  const [ctaLabel, setCtaLabel] = useState("");
+  const [ctaLink, setCtaLink] = useState("");
   const [order, setOrder] = useState(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -74,8 +74,8 @@ const PowerhouseSlider = () => {
   const resetForm = () => {
     setTitle("");
     setSubtitle("");
-    setCtaLabel("Join Now");
-    setCtaLink("/register");
+    setCtaLabel("");
+    setCtaLink("");
     setOrder(sliderSlides.length);
     setImageFile(null);
     setEditingSlide(null);
@@ -85,8 +85,8 @@ const PowerhouseSlider = () => {
     setEditingSlide(row);
     setTitle(row.title ?? "");
     setSubtitle(row.subtitle ?? "");
-    setCtaLabel(row.cta_label ?? "Join Now");
-    setCtaLink(row.cta_link ?? "/register");
+    setCtaLabel(row.cta_label ?? "");
+    setCtaLink(row.cta_link ?? "");
     setOrder(row.order ?? 0);
     setImageFile(null);
     setEditOpen(true);
@@ -104,8 +104,8 @@ const PowerhouseSlider = () => {
         const formData = new FormData();
         formData.append("title", t);
         formData.append("subtitle", subtitle.trim());
-        formData.append("cta_label", ctaLabel.trim() || "Join Now");
-        formData.append("cta_link", ctaLink.trim() || "/register");
+        formData.append("cta_label", ctaLabel.trim());
+        formData.append("cta_link", ctaLink.trim());
         formData.append("order", String(sliderSlides.length));
         formData.append("image_file", imageFile);
         await createSliderSlideForm(formData);
@@ -113,8 +113,8 @@ const PowerhouseSlider = () => {
         await createSliderSlide({
           title: t,
           subtitle: subtitle.trim() || undefined,
-          cta_label: ctaLabel.trim() || "Join Now",
-          cta_link: ctaLink.trim() || "/register",
+          cta_label: ctaLabel.trim(),
+          cta_link: ctaLink.trim(),
           order: sliderSlides.length,
         });
       }
@@ -145,8 +145,8 @@ const PowerhouseSlider = () => {
         const formData = new FormData();
         formData.append("title", t);
         formData.append("subtitle", subtitle.trim());
-        formData.append("cta_label", ctaLabel.trim() || "Join Now");
-        formData.append("cta_link", ctaLink.trim() || "/register");
+        formData.append("cta_label", ctaLabel.trim());
+        formData.append("cta_link", ctaLink.trim());
         formData.append("order", String(order));
         formData.append("image_file", imageFile);
         await updateSliderSlideForm(id, formData);
@@ -154,8 +154,8 @@ const PowerhouseSlider = () => {
         await updateSliderSlide(id, {
           title: t,
           subtitle: subtitle.trim(),
-          cta_label: ctaLabel.trim() || "Join Now",
-          cta_link: ctaLink.trim() || "/register",
+          cta_label: ctaLabel.trim(),
+          cta_link: ctaLink.trim(),
           order,
         });
       }
