@@ -15,7 +15,9 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
   const providers = providersProp && providersProp.length > 0 ? providersProp : defaultProviders;
   const navigate = useNavigate();
 
-  const linkClass = "group flex flex-col items-center text-center";
+  const cardBase =
+    "group flex flex-col items-center text-center rounded-xl border border-border bg-card/80 p-6 transition-all duration-300 ease-out " +
+    "hover:shadow-[0_0_20px_2px_rgba(0,212,255,0.4),0_0_40px_4px_rgba(0,212,255,0.2)] hover:border-cyan-500/50";
 
   return (
     <section className="py-16 bg-card/50">
@@ -53,12 +55,12 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
               </>
             );
             return (
-              <span key={p.id ?? p.name}>
+              <span key={p.id ?? p.name} className="block">
                 {useLaunchHandler ? (
                   <span
                     role="link"
                     tabIndex={0}
-                    className={`${linkClass} cursor-pointer`}
+                    className={`${cardBase} cursor-pointer block`}
                     onClick={(e) => {
                       e.preventDefault();
                       launchGameByMode(playGameId!, navigate);
@@ -73,7 +75,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
                     {content}
                   </span>
                 ) : (
-                  <Link to={to} className={linkClass}>
+                  <Link to={to} className={cardBase}>
                     {content}
                   </Link>
                 )}
