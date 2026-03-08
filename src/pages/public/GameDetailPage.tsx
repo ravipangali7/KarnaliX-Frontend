@@ -7,7 +7,7 @@ import { GameCard } from "@/components/shared/GameCard";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import { getGame, getGames, getGameImageUrl } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
-import { getPlayerWallet } from "@/api/player";
+import { getPlayerWallet, launchGameByMode } from "@/api/player";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Game } from "@/api/games";
 import { Shield, Zap, Lock, Users, Trophy, Clock, Flame, TrendingUp, Crown, Dice1, Target, Eye } from "lucide-react";
@@ -30,6 +30,7 @@ const GameDetailPage = () => {
   const queryClient = useQueryClient();
   const isPlayer = user?.role === "player";
   const [betAmount, setBetAmount] = useState(100);
+  const [isLaunching, setIsLaunching] = useState(false);
   const { data: game, isLoading, isError: gameError, refetch: refetchGame } = useQuery({ queryKey: ["game", id], queryFn: () => getGame(id!), enabled: !!id });
   const { data: gamesResp } = useQuery({ queryKey: ["games", "detail"], queryFn: () => getGames(undefined, undefined, 1, 100) });
   const games: Game[] = Array.isArray(gamesResp?.results) ? (gamesResp.results as Game[]) : [];
@@ -195,10 +196,17 @@ const GameDetailPage = () => {
                 <>
                   <Button
                     className="w-full gold-gradient text-primary-foreground font-gaming font-bold text-base h-12 neon-glow tracking-widest animate-scale-pulse disabled:opacity-60 disabled:cursor-not-allowed"
-                    onClick={() => navigate(`/games/${g.id}/play`)}
-                    disabled={!canPlay}
+                    onClick={async () => {
+                      setIsLaunching(true);
+                      try {
+                        await launchGameByMode(g.id, navigate);
+                      } finally {
+                        setIsLaunching(false);
+                      }
+                    }}
+                    disabled={!canPlay || isLaunching}
                   >
-                    🎮 START PLAYING
+                    {isLaunching ? "Launching..." : "🎮 START PLAYING"}
                   </Button>
                   {!canPlay && (
                     <p className="text-xs text-muted-foreground text-center mt-1">Insufficient balance</p>

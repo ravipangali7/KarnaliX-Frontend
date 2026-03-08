@@ -1,16 +1,21 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getProviders } from "@/api/games";
 import type { GameProvider } from "@/api/games";
 import { getMediaUrl } from "@/lib/api";
+import { PLAY_MODE } from "@/config";
+import { launchGameByMode } from "@/api/player";
 
 const IRREGULAR_SHAPE = "60% 40% 50% 50% / 50% 60% 40% 50%";
 
 const ProvidersPage = () => {
+  const navigate = useNavigate();
   const { data: providers = [], isLoading, isError } = useQuery({
     queryKey: ["providers"],
     queryFn: getProviders,
   });
+  const linkClass =
+    "flex flex-col items-center gap-3 p-4 rounded-xl transition-all group focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0";
 
   if (isLoading) {
     return (
@@ -40,12 +45,11 @@ const ProvidersPage = () => {
         {(providers as GameProvider[]).map((prov) => {
           const imgUrl = prov.image?.trim() ? getMediaUrl(prov.image.trim()) : undefined;
           const initial = (prov.name ?? "?").slice(0, 2).toUpperCase();
-          return (
-            <Link
-              key={prov.id}
-              to={prov.single_game_id != null && prov.single_game_id > 0 ? `/games/${prov.single_game_id}/play` : `/providers/${prov.id}`}
-              className="flex flex-col items-center gap-3 p-4 rounded-xl transition-all group focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-            >
+          const playGameId = prov.single_game_id != null && prov.single_game_id > 0 ? prov.single_game_id : null;
+          const to = playGameId != null ? `/games/${playGameId}/play` : `/providers/${prov.id}`;
+          const useLaunchHandler = playGameId != null && PLAY_MODE !== "iframe";
+          const content = (
+            <>
               <div
                 className="h-20 w-20 flex items-center justify-center text-white font-bold text-lg overflow-hidden"
                 style={{ borderRadius: IRREGULAR_SHAPE }}
@@ -66,7 +70,34 @@ const ProvidersPage = () => {
               <span className="font-semibold text-sm text-foreground text-center group-hover:text-primary transition-colors line-clamp-2">
                 {prov.name}
               </span>
-            </Link>
+            </>
+          );
+          return (
+            <span key={prov.id}>
+              {useLaunchHandler ? (
+                <span
+                  role="link"
+                  tabIndex={0}
+                  className={`${linkClass} cursor-pointer`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    launchGameByMode(playGameId!, navigate);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      launchGameByMode(playGameId!, navigate);
+                    }
+                  }}
+                >
+                  {content}
+                </span>
+              ) : (
+                <Link to={to} className={linkClass}>
+                  {content}
+                </Link>
+              )}
+            </span>
           );
         })}
       </div>

@@ -1,4 +1,5 @@
 import { apiGet, apiPost, apiPostForm, apiPatch, apiDelete, BASE_URL } from "@/lib/api";
+import { PLAY_MODE } from "@/config";
 
 const P = "/player";
 
@@ -28,6 +29,27 @@ export async function getGameLaunchUrl(gameId: number): Promise<string> {
 export async function launchGame(gameId: number): Promise<void> {
   const launchUrl = await getGameLaunchUrl(gameId);
   window.open(launchUrl, "_blank", "noopener,noreferrer");
+}
+
+/**
+ * Launch game according to PLAY_MODE: iframe -> navigate to play page; new_tab -> open URL in new tab; in_same_tab -> set location.href.
+ */
+export async function launchGameByMode(
+  gameId: number,
+  navigate: (path: string) => void
+): Promise<void> {
+  if (PLAY_MODE === "iframe") {
+    navigate(`/games/${gameId}/play`);
+    return;
+  }
+  const url = await getGameLaunchUrl(gameId);
+  if (PLAY_MODE === "new_tab") {
+    window.open(url, "_blank", "noopener,noreferrer");
+    return;
+  }
+  if (PLAY_MODE === "in_same_tab") {
+    window.location.href = url;
+  }
 }
 
 export async function getPlayerDashboard() {

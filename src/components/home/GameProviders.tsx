@@ -1,6 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { providers as defaultProviders } from "@/data/homePageMockData";
 import type { ProviderShape } from "@/data/homePageMockData";
+import { PLAY_MODE } from "@/config";
+import { launchGameByMode } from "@/api/player";
 
 interface GameProvidersProps {
   providers?: ProviderShape[] | null;
@@ -11,6 +13,9 @@ interface GameProvidersProps {
 
 export function GameProviders({ providers: providersProp, sectionTitle, loading }: GameProvidersProps) {
   const providers = providersProp && providersProp.length > 0 ? providersProp : defaultProviders;
+  const navigate = useNavigate();
+
+  const linkClass = "group flex flex-col items-center text-center";
 
   return (
     <section className="py-16 bg-card/50">
@@ -31,22 +36,50 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
           {loading ? (
             <div className="col-span-2 md:col-span-4 text-center text-muted-foreground">Loading providers...</div>
           ) : (
-          providers.map((p) => (
-            <Link
-              key={p.id ?? p.name}
-              to={p.single_game_id != null && p.single_game_id > 0 ? `/games/${p.single_game_id}/play` : (p.id != null ? `/providers/${p.id}` : `/games?provider=${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, "-"))}`)}
-              className="group flex flex-col items-center text-center"
-            >
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-muted/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                {p.logoImage ? (
-                  <img src={p.logoImage} alt="" className="w-full h-full object-cover" />
+          providers.map((p) => {
+            const playGameId = p.single_game_id != null && p.single_game_id > 0 ? p.single_game_id : null;
+            const to = playGameId != null ? `/games/${playGameId}/play` : (p.id != null ? `/providers/${p.id}` : `/games?provider=${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, "-"))}`);
+            const useLaunchHandler = playGameId != null && PLAY_MODE !== "iframe";
+            const content = (
+              <>
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-muted/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  {p.logoImage ? (
+                    <img src={p.logoImage} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-bold text-white">{p.logo}</span>
+                  )}
+                </div>
+                <span className="text-sm font-medium text-white">{p.name}</span>
+              </>
+            );
+            return (
+              <span key={p.id ?? p.name}>
+                {useLaunchHandler ? (
+                  <span
+                    role="link"
+                    tabIndex={0}
+                    className={`${linkClass} cursor-pointer`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      launchGameByMode(playGameId!, navigate);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        launchGameByMode(playGameId!, navigate);
+                      }
+                    }}
+                  >
+                    {content}
+                  </span>
                 ) : (
-                  <span className="text-xl font-bold text-white">{p.logo}</span>
+                  <Link to={to} className={linkClass}>
+                    {content}
+                  </Link>
                 )}
-              </div>
-              <span className="text-sm font-medium text-white">{p.name}</span>
-            </Link>
-          ))
+              </span>
+            );
+          })
           )}
         </div>
       </div>
