@@ -50,12 +50,14 @@ export default function SecondHomePage() {
       {/* 1. Banner */}
       <SecondHomeSlider slides={data.sliderSlides} />
 
-      {/* 2. Trusted Game Providers – site JSON driven */}
-      <GameProviders
-        providers={data.providerCards}
-        sectionTitle={data.sectionMeta.providers.title}
-        sectionSvg={data.sectionMeta.providers.svg}
-      />
+      {/* 2. Trusted Game Providers – site JSON driven; hide when no providers configured */}
+      {data.providerCards.length > 0 && (
+        <GameProviders
+          providers={data.providerCards}
+          sectionTitle={data.sectionMeta.providers.title}
+          sectionSvg={data.sectionMeta.providers.svg}
+        />
+      )}
 
       {/* 3. Top Games – site JSON driven */}
       <SecondHomeTopGamesCarousel

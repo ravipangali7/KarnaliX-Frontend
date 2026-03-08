@@ -327,12 +327,12 @@ export function useSecondHomePageData(): {
 
   const providersList = (providers ?? []) as GameProvider[];
 
-  // If site_providers_json.provider_ids is set, show only those providers in that order
+  // Strict: only show providers when site_providers_json.provider_ids is set
   const providerIdOrder = Array.isArray(siteProvidersJson.provider_ids) ? (siteProvidersJson.provider_ids as number[]) : [];
   const orderedProvidersList: GameProvider[] =
     providerIdOrder.length > 0
       ? providerIdOrder.map((id) => providersList.find((p) => p.id === id)).filter(Boolean) as GameProvider[]
-      : providersList;
+      : [];
 
   const providerCards: ProviderShape[] = orderedProvidersList.map((p, i) => ({
     id: p.id,
@@ -366,29 +366,20 @@ export function useSecondHomePageData(): {
         .filter(Boolean) as Game[];
       if (orderedGames.length > 0) gamesByCategory[category_id] = orderedGames.map((g, i) => mapGameToCardShape(g, i));
     });
-  } else if (games.length > 0) {
-    // No site JSON: group all fetched games by their category.
-    categoriesList.forEach((cat) => {
-      const catList = games.filter((g) => g.category === cat.id).map((g, i) => mapGameToCardShape(g, i));
-      if (catList.length > 0) gamesByCategory[cat.id] = catList;
-    });
   }
+  // When site_categories_game_json.categories is empty, show no category rows (no fallback).
 
-  // Top games: topGamesResp is now keyed on _siteTopGameIds — it already returns the exact games in order.
+  // Strict: only show top games when site_top_games_json.game_ids is set
   const topGamesFromApi = Array.isArray(topGamesResp?.results)
     ? (topGamesResp.results as Game[]).map((g, i) => mapGameToCardShape(g, i)).slice(0, 16)
     : [];
-  const topGamesFromFlags = games.filter((g) => g.is_top_game).map((g, i) => mapGameToCardShape(g, i)).slice(0, 16);
-  const topGames =
-    topGamesFromApi.length > 0 ? topGamesFromApi :
-    topGamesFromFlags.length > 0 ? topGamesFromFlags : [...topLiveGames, ...otherGames].slice(0, 16);
+  const topGames = _siteTopGameIds.length > 0 ? topGamesFromApi : [];
 
-  // Popular games: popularGamesResp is now keyed on _sitePopularGameIds — it already returns exact games in order.
+  // Strict: only show popular games when site_popular_games_json.game_ids is set
   const popularFromApi = Array.isArray(popularGamesResp?.results)
     ? (popularGamesResp.results as Game[]).map((g, i) => mapGameToCardShape(g, i))
     : [];
-  const popularGames: GameCardShape[] =
-    popularFromApi.length > 0 ? popularFromApi : games.filter((g) => g.is_popular_game).map((g, i) => mapGameToCardShape(g, i));
+  const popularGames: GameCardShape[] = _sitePopularGameIds.length > 0 ? popularFromApi : [];
 
   // Payment methods: filtered/ordered by backend (payment_methods_list respects site_payments_accepted_json)
   const paymentMethods: PublicPaymentMethod[] = publicPaymentMethodsApi as PublicPaymentMethod[];
@@ -400,7 +391,7 @@ export function useSecondHomePageData(): {
   const siteCatIdOrder = siteCategoriesGameList.map((e) => e.category_id);
   const orderedCategoriesList: GameCategory[] = siteCatIdOrder.length > 0
     ? siteCatIdOrder.map((id) => categoriesList.find((c) => c.id === id)).filter(Boolean) as GameCategory[]
-    : categoriesList;
+    : [];
   const categorySectionOverrides: Record<number, { section_title?: string; section_icon?: string }> = {};
   for (const entry of siteCategoriesGameList) {
     if (entry.section_title != null && entry.section_title !== "" || entry.section_icon != null && entry.section_icon !== "") {
