@@ -5,6 +5,47 @@ export async function getSiteSetting() {
   return (res as Record<string, unknown>) ?? {};
 }
 
+/** Second home sections: providers, top games, category-wise games, popular games with names, image URLs, and links from backend. */
+export interface SecondHomeSectionProvider {
+  id: number;
+  name: string;
+  logo: string;
+  logo_image?: string | null;
+  games: number;
+  single_game_id?: number | null;
+  link: string;
+}
+
+export interface SecondHomeSectionGame {
+  id: number;
+  name: string;
+  image: string | null;
+  category: string;
+  min_bet: number;
+  max_bet: number;
+  provider: string;
+  link: string;
+}
+
+export interface SecondHomeCategorySection {
+  category_id: number;
+  section_title: string;
+  section_icon: string;
+  games: SecondHomeSectionGame[];
+}
+
+export interface SecondHomeSectionsResponse {
+  providers: { section_title: string; section_svg: string; items: SecondHomeSectionProvider[] };
+  top_games: { section_title: string; section_svg: string; items: SecondHomeSectionGame[] };
+  categories_game: { section_title: string; section_svg: string; categories: SecondHomeCategorySection[] };
+  popular_games: { section_title: string; section_svg: string; items: SecondHomeSectionGame[] };
+}
+
+export async function getSecondHomeSections(): Promise<SecondHomeSectionsResponse> {
+  const res = await apiGet("/public/second-home-sections/");
+  return res as SecondHomeSectionsResponse;
+}
+
 /** Active country for register/login dropdown (from DB). */
 export interface PublicCountry {
   id: number;

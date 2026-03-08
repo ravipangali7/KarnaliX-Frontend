@@ -55,6 +55,8 @@ export interface ProviderShape {
   color: string;
   /** When set, link to this game (detail) instead of provider page. */
   single_game_id?: number | null;
+  /** When set (e.g. from backend), use this exact path for redirect. */
+  link?: string;
 }
 
 export interface ComingSoonShape {

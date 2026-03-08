@@ -38,8 +38,8 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
           ) : (
           providers.map((p) => {
             const playGameId = p.single_game_id != null && p.single_game_id > 0 ? p.single_game_id : null;
-            const to = playGameId != null ? `/games/${playGameId}/play` : (p.id != null ? `/providers/${p.id}` : `/games?provider=${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, "-"))}`);
-            const useLaunchHandler = playGameId != null && PLAY_MODE !== "iframe";
+            const to = p.link ?? (playGameId != null ? `/games/${playGameId}/play` : (p.id != null ? `/providers/${p.id}` : `/games?provider=${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, "-"))}`));
+            const useLaunchHandler = playGameId != null && PLAY_MODE !== "iframe" && !p.link;
             const content = (
               <>
                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-muted/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">

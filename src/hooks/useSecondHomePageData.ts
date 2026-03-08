@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, getPublicPaymentMethods, type LiveBettingSectionApi, type PublicPaymentMethod } from "@/api/site";
-import { getCategories, getProviders, getGames, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
+import { getSiteSetting, getSliderSlides, getLiveBettingSections, getTestimonials, getPublicPaymentMethods, getSecondHomeSections, type LiveBettingSectionApi, type PublicPaymentMethod, type SecondHomeSectionGame } from "@/api/site";
+import { getCategories, getGameImageUrl, getComingSoonGames, type Game, type GameCategory } from "@/api/games";
 import { getBonusRules, mapBonusRulesToPromoShapes } from "@/api/bonus";
 import { getMediaUrl } from "@/lib/api";
 import type { ProviderShape, GameCardShape, PromoShape, TestimonialShape, ComingSoonShape } from "@/data/homePageMockData";
@@ -98,6 +98,23 @@ function mapGameToCardShape(game: Game, index: number): GameCardShape {
     isHot: index < 2,
     isNew: index < 3,
     provider: game.provider_name ?? game.provider_code ?? "",
+  };
+}
+
+/** Map backend second-home section game to GameCardShape (direct from API). */
+function mapSectionGameToCardShape(item: SecondHomeSectionGame, index: number): GameCardShape {
+  return {
+    id: String(item.id),
+    name: item.name,
+    image: item.image ?? "",
+    category: item.category ?? "",
+    players: 0,
+    minBet: item.min_bet ?? 0,
+    maxBet: item.max_bet ?? 0,
+    rating: 4.5,
+    isHot: index < 2,
+    isNew: index < 3,
+    provider: item.provider ?? "",
   };
 }
 
@@ -225,72 +242,10 @@ export function useSecondHomePageData(): {
     queryKey: ["categories"],
     queryFn: getCategories,
   });
-  const { data: providers = [], isLoading: providersLoading } = useQuery({
-    queryKey: ["providers"],
-    queryFn: getProviders,
-  });
-  // Derive site-JSON game ID lists early so queries can be keyed on them.
-  const _site = (siteSetting as Record<string, unknown>) ?? {};
-  const _parseSiteSection = (key: string): Record<string, unknown> => {
-    const val = _site[key];
-    return (val && typeof val === "object" && !Array.isArray(val)) ? (val as Record<string, unknown>) : {};
-  };
-  const _siteTopGamesJson = _parseSiteSection("site_top_games_json");
-  const _sitePopularGamesJson = _parseSiteSection("site_popular_games_json");
-  const _siteCategoriesGameJson = _parseSiteSection("site_categories_game_json");
-
-  const _siteTopGameIds: number[] = Array.isArray(_siteTopGamesJson.game_ids) ? (_siteTopGamesJson.game_ids as number[]) : [];
-  const _sitePopularGameIds: number[] = Array.isArray(_sitePopularGamesJson.game_ids) ? (_sitePopularGamesJson.game_ids as number[]) : [];
-  const _siteCatEntries: { category_id: number; game_ids: number[] }[] = Array.isArray(_siteCategoriesGameJson.categories)
-    ? (_siteCategoriesGameJson.categories as { category_id: number; game_ids: number[] }[])
-    : [];
-  const _allCatGameIds: number[] = [...new Set(_siteCatEntries.flatMap((e) => e.game_ids))];
-
-  const { data: gamesResp, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
-    queryKey: ["games", "second-home"],
-    queryFn: () => getGames(undefined, undefined, 1, 100),
-  });
-  /** Fetch popular games by site JSON IDs when configured; otherwise fall back to is_popular_game flag. */
-  const { data: popularGamesResp, refetch: refetchPopularGames } = useQuery({
-    queryKey: ["games", "second-home", "popular", _sitePopularGameIds],
-    queryFn: () => _sitePopularGameIds.length > 0
-      ? getGames(undefined, undefined, undefined, undefined, undefined, { ids: _sitePopularGameIds })
-      : getGames(undefined, undefined, 1, 50, undefined, { is_popular_game: true }),
-    enabled: !siteLoading,
-  });
-  /** Fetch top games by site JSON IDs when configured; otherwise fall back to is_top_game flag. */
-  const { data: topGamesResp, refetch: refetchTopGames } = useQuery({
-    queryKey: ["games", "second-home", "top", _siteTopGameIds],
-    queryFn: () => _siteTopGameIds.length > 0
-      ? getGames(undefined, undefined, undefined, undefined, undefined, { ids: _siteTopGameIds })
-      : getGames(undefined, undefined, 1, 24, undefined, { is_top_game: true }),
-    enabled: !siteLoading,
-  });
-  /** Fetch all category-wise game IDs (chunked to avoid URL length limits); when configured use only these IDs. */
-  const CAT_GAMES_CHUNK_SIZE = 60;
-  const { data: catGamesResp, refetch: refetchCatGames } = useQuery({
-    queryKey: ["games", "second-home", "cat-games", _allCatGameIds],
-    queryFn: async () => {
-      if (_allCatGameIds.length === 0) {
-        return getGames(undefined, undefined, 1, 100);
-      }
-      const chunks: number[][] = [];
-      for (let i = 0; i < _allCatGameIds.length; i += CAT_GAMES_CHUNK_SIZE) {
-        chunks.push(_allCatGameIds.slice(i, i + CAT_GAMES_CHUNK_SIZE));
-      }
-      const responses = await Promise.all(
-        chunks.map((ids) => getGames(undefined, undefined, undefined, undefined, undefined, { ids }))
-      );
-      const byId = new Map<number, Game>();
-      for (const r of responses) {
-        for (const g of r.results ?? []) {
-          if (!byId.has(g.id)) byId.set(g.id, g as Game);
-        }
-      }
-      const ordered = _allCatGameIds.map((id) => byId.get(id)).filter(Boolean) as Game[];
-      return { results: ordered, count: ordered.length, next: null, previous: null };
-    },
-    enabled: !siteLoading,
+  /** Single source for second-home providers, top games, category-wise games, popular games (names, image URLs, links from backend). */
+  const { data: sectionsData, isLoading: sectionsLoading, isError: sectionsError, refetch: refetchSections } = useQuery({
+    queryKey: ["second-home-sections"],
+    queryFn: getSecondHomeSections,
   });
   const { data: testimonialsApi = [] } = useQuery({
     queryKey: ["testimonials"],
@@ -308,10 +263,9 @@ export function useSecondHomePageData(): {
     queryKey: ["publicPaymentMethods"],
     queryFn: getPublicPaymentMethods,
   });
-  const games: Game[] = Array.isArray(gamesResp?.results) ? (gamesResp.results as Game[]) : [];
   const categoriesList = Array.isArray(categories) ? (categories as GameCategory[]) : [];
 
-  const isLoading = siteLoading || sliderLoading || liveBettingLoading || categoriesLoading || providersLoading || gamesLoading;
+  const isLoading = siteLoading || sliderLoading || liveBettingLoading || categoriesLoading || sectionsLoading;
   const site = (siteSetting as Record<string, unknown>) ?? {};
 
   // Parse site JSON section configs
@@ -343,82 +297,59 @@ export function useSecondHomePageData(): {
       ? sliderSlidesApi.map(mapSliderApiToSlide)
       : defaultSliderSlides(site);
 
-  const providersList = (providers ?? []) as GameProvider[];
-
-  // Strict: only show providers when site_providers_json.provider_ids is set
-  const providerIdOrder = Array.isArray(siteProvidersJson.provider_ids) ? (siteProvidersJson.provider_ids as number[]) : [];
-  const orderedProvidersList: GameProvider[] =
-    providerIdOrder.length > 0
-      ? providerIdOrder.map((id) => providersList.find((p) => p.id === id)).filter(Boolean) as GameProvider[]
-      : [];
-
-  const providerCards: ProviderShape[] = orderedProvidersList.map((p, i) => ({
-    id: p.id,
-    name: p.name,
-    logo: (p.code ?? p.name.slice(0, 2).toUpperCase()).slice(0, 2),
-    logoImage: p.image?.trim() ? getMediaUrl(p.image.trim()) : undefined,
-    games: 0,
-    color: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
-    single_game_id: p.single_game_id ?? undefined,
-  }));
-
-  let topLiveGames: GameCardShape[] = [];
-  let otherGames: GameCardShape[] = [];
+  // Build provider/top/category-wise/popular sections directly from backend second-home-sections API (exact names, image URLs, links).
+  const providerCards: ProviderShape[] = sectionsData?.providers?.items?.length
+    ? (sectionsData.providers.items.map((p, i) => ({
+        id: p.id,
+        name: p.name,
+        logo: p.logo ?? (p.name?.slice(0, 2).toUpperCase() || ""),
+        logoImage: p.logo_image ?? undefined,
+        games: p.games ?? 0,
+        color: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
+        single_game_id: p.single_game_id ?? undefined,
+        link: p.link ?? undefined,
+      })) as ProviderShape[])
+    : [];
+  const topGames: GameCardShape[] = sectionsData?.top_games?.items?.length
+    ? sectionsData.top_games.items.slice(0, 16).map((g, i) => mapSectionGameToCardShape(g, i))
+    : [];
+  const popularGames: GameCardShape[] = sectionsData?.popular_games?.items?.length
+    ? sectionsData.popular_games.items.map((g, i) => mapSectionGameToCardShape(g, i))
+    : [];
   const gamesByCategory: Record<number, GameCardShape[]> = {};
-
-  // When category-wise game IDs are configured, use the targeted catGamesResp; otherwise use generic games list.
-  const catGames: Game[] = Array.isArray(catGamesResp?.results) ? (catGamesResp.results as Game[]) : [];
-  const catGamesPool: Game[] = _siteCatEntries.length > 0 ? catGames : games;
-
-  if (games.length > 0) {
-    topLiveGames = games.slice(0, TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
-    otherGames = games.slice(TOP_LIVE_COUNT).map((g, i) => mapGameToCardShape(g, i));
+  const categorySectionOverrides: Record<number, { section_title?: string; section_icon?: string }> = {};
+  let orderedCategoriesList: GameCategory[] = [];
+  if (sectionsData?.categories_game?.categories?.length) {
+    for (const cat of sectionsData.categories_game.categories) {
+      orderedCategoriesList.push({
+        id: cat.category_id,
+        name: cat.section_title || String(cat.category_id),
+        is_active: true,
+      } as GameCategory);
+      gamesByCategory[cat.category_id] = cat.games.map((g, i) => mapSectionGameToCardShape(g, i));
+      if (cat.section_title?.trim() || cat.section_icon?.trim()) {
+        categorySectionOverrides[cat.category_id] = {
+          ...(cat.section_title?.trim() && { section_title: cat.section_title }),
+          ...(cat.section_icon?.trim() && { section_icon: cat.section_icon }),
+        };
+      }
+    }
   }
-
-  // Build gamesByCategory using the appropriate pool.
-  if (_siteCatEntries.length > 0) {
-    // Site JSON configured: use exact game_ids in the order specified, sourced from catGamesPool.
-    _siteCatEntries.forEach(({ category_id, game_ids }) => {
-      const orderedGames = game_ids
-        .map((gid) => catGamesPool.find((g) => g.id === gid))
-        .filter(Boolean) as Game[];
-      if (orderedGames.length > 0) gamesByCategory[category_id] = orderedGames.map((g, i) => mapGameToCardShape(g, i));
-    });
-  }
-  // When site_categories_game_json.categories is empty, show no category rows (no fallback).
-
-  // Strict: only show top games when site_top_games_json.game_ids is set
-  const topGamesFromApi = Array.isArray(topGamesResp?.results)
-    ? (topGamesResp.results as Game[]).map((g, i) => mapGameToCardShape(g, i)).slice(0, 16)
-    : [];
-  const topGames = _siteTopGameIds.length > 0 ? topGamesFromApi : [];
-
-  // Strict: only show popular games when site_popular_games_json.game_ids is set
-  const popularFromApi = Array.isArray(popularGamesResp?.results)
-    ? (popularGamesResp.results as Game[]).map((g, i) => mapGameToCardShape(g, i))
-    : [];
-  const popularGames: GameCardShape[] = _sitePopularGameIds.length > 0 ? popularFromApi : [];
+  const topLiveGames: GameCardShape[] = [];
+  const otherGames: GameCardShape[] = [];
 
   // Payment methods: filtered/ordered by backend (payment_methods_list respects site_payments_accepted_json)
   const paymentMethods: PublicPaymentMethod[] = publicPaymentMethodsApi as PublicPaymentMethod[];
 
-  // categories for categoriesGameJson – show only selected categories in configured order
-  const siteCategoriesGameList = Array.isArray(siteCategoriesGameJson.categories)
-    ? (siteCategoriesGameJson.categories as { category_id: number; section_title?: string; section_icon?: string }[])
-    : [];
-  const siteCatIdOrder = siteCategoriesGameList.map((e) => e.category_id);
-  const orderedCategoriesList: GameCategory[] = siteCatIdOrder.length > 0
-    ? siteCatIdOrder.map((id) => categoriesList.find((c) => c.id === id)).filter(Boolean) as GameCategory[]
-    : [];
-  const categorySectionOverrides: Record<number, { section_title?: string; section_icon?: string }> = {};
-  for (const entry of siteCategoriesGameList) {
-    if (entry.section_title != null && entry.section_title !== "" || entry.section_icon != null && entry.section_icon !== "") {
-      categorySectionOverrides[entry.category_id] = {
-        ...(entry.section_title != null && entry.section_title !== "" && { section_title: entry.section_title }),
-        ...(entry.section_icon != null && entry.section_icon !== "" && { section_icon: entry.section_icon }),
-      };
-    }
-  }
+  // Section meta from backend response (or fallback from site JSON when no sections API)
+  const sectionMetaFromSections = sectionsData
+    ? {
+        providers: { title: sectionsData.providers?.section_title, svg: sectionsData.providers?.section_svg },
+        topGames: { title: sectionsData.top_games?.section_title, svg: sectionsData.top_games?.section_svg },
+        categoriesGame: { title: sectionsData.categories_game?.section_title, svg: sectionsData.categories_game?.section_svg },
+        popularGames: { title: sectionsData.popular_games?.section_title, svg: sectionsData.popular_games?.section_svg },
+      }
+    : null;
 
   // All Categories: show only selected categories in configured order
   const siteCategoryIds = Array.isArray(siteCategoriesJson.category_ids) ? (siteCategoriesJson.category_ids as number[]) : [];
@@ -496,7 +427,7 @@ export function useSecondHomePageData(): {
     sliderSlides,
     categories: orderedCategoriesList,
     allCategoriesSection,
-    providers: orderedProvidersList,
+    providers: [], // not used when using second-home-sections API; providerCards is the source
     providerCards,
     liveBettingSections,
     topLiveGames,
@@ -515,22 +446,19 @@ export function useSecondHomePageData(): {
     paymentMethods,
     sectionMeta: {
       allCategories: getSectionMeta(siteCategoriesJson),
-      topGames: getSectionMeta(siteTopGamesJson),
-      providers: getSectionMeta(siteProvidersJson),
-      categoriesGame: getSectionMeta(siteCategoriesGameJson),
-      popularGames: getSectionMeta(sitePopularGamesJson),
+      topGames: sectionMetaFromSections?.topGames ?? getSectionMeta(siteTopGamesJson),
+      providers: sectionMetaFromSections?.providers ?? getSectionMeta(siteProvidersJson),
+      categoriesGame: sectionMetaFromSections?.categoriesGame ?? getSectionMeta(siteCategoriesGameJson),
+      popularGames: sectionMetaFromSections?.popularGames ?? getSectionMeta(sitePopularGamesJson),
       paymentsAccepted: getSectionMeta(sitePaymentsAcceptedJson),
     },
   };
 
   const refetch = () => {
     refetchSite();
-    refetchGames();
-    refetchPopularGames();
-    refetchTopGames();
-    refetchCatGames();
+    refetchSections();
   };
-  return { data, isLoading, isError: !!siteError || !!gamesError, refetch };
+  return { data, isLoading, isError: !!siteError || !!sectionsError, refetch };
 }
 
 export { PROVIDER_COLORS };
