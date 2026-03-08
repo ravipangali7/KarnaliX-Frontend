@@ -477,8 +477,16 @@ export async function deleteProviderAdmin(id: number) {
   return apiDelete(`${prefix("powerhouse")}/providers/${id}/`);
 }
 
-export async function getGamesAdmin() {
-  const res = await apiGet(`${prefix("powerhouse")}/games/`);
+export type GetGamesAdminParams = { provider_id?: number | null; provider_ids?: number[] };
+
+export async function getGamesAdmin(params?: GetGamesAdminParams) {
+  let qs = "";
+  if (params?.provider_id != null && typeof params.provider_id === "number") {
+    qs = `?provider_id=${params.provider_id}`;
+  } else if (params?.provider_ids?.length) {
+    qs = `?provider_ids=${params.provider_ids.join(",")}`;
+  }
+  const res = await apiGet(`${prefix("powerhouse")}/games/${qs}`);
   return asList(res);
 }
 export async function getGameAdmin(id: number) {

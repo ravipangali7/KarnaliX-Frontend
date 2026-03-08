@@ -159,7 +159,11 @@ function InlineEditModal({
 
 const PowerhouseGames = () => {
   const queryClient = useQueryClient();
-  const { data: gamesRaw } = useQuery({ queryKey: ["admin-games"], queryFn: getGamesAdmin });
+  const [providerFilter, setProviderFilter] = useState<number | "">("");
+  const { data: gamesRaw } = useQuery({
+    queryKey: ["admin-games", providerFilter],
+    queryFn: () => getGamesAdmin(providerFilter ? { provider_id: providerFilter } : undefined),
+  });
   const { data: categoriesRaw } = useQuery({ queryKey: ["admin-categories"], queryFn: getCategoriesAdmin });
   const { data: providersRaw } = useQuery({ queryKey: ["admin-providers"], queryFn: getProvidersAdmin });
 
@@ -655,6 +659,21 @@ const PowerhouseGames = () => {
   return (
     <div className="space-y-4">
       <h2 className="font-display font-bold text-xl">Games Management</h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="text-sm text-muted-foreground">Provider:</label>
+        <select
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm min-w-[180px]"
+          value={providerFilter === "" ? "" : String(providerFilter)}
+          onChange={(e) => setProviderFilter(e.target.value === "" ? "" : Number(e.target.value))}
+        >
+          <option value="">All providers</option>
+          {provs.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} ({p.code})
+            </option>
+          ))}
+        </select>
+      </div>
       <DataTable
         data={games as GameRow[]}
         columns={columns}
