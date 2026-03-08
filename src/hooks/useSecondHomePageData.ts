@@ -266,12 +266,30 @@ export function useSecondHomePageData(): {
       : getGames(undefined, undefined, 1, 24, undefined, { is_top_game: true }),
     enabled: !siteLoading,
   });
-  /** Fetch all category-wise game IDs in one call when configured; otherwise fall back to generic list. */
+  /** Fetch all category-wise game IDs (chunked to avoid URL length limits); when configured use only these IDs. */
+  const CAT_GAMES_CHUNK_SIZE = 60;
   const { data: catGamesResp, refetch: refetchCatGames } = useQuery({
     queryKey: ["games", "second-home", "cat-games", _allCatGameIds],
-    queryFn: () => _allCatGameIds.length > 0
-      ? getGames(undefined, undefined, undefined, undefined, undefined, { ids: _allCatGameIds })
-      : getGames(undefined, undefined, 1, 100),
+    queryFn: async () => {
+      if (_allCatGameIds.length === 0) {
+        return getGames(undefined, undefined, 1, 100);
+      }
+      const chunks: number[][] = [];
+      for (let i = 0; i < _allCatGameIds.length; i += CAT_GAMES_CHUNK_SIZE) {
+        chunks.push(_allCatGameIds.slice(i, i + CAT_GAMES_CHUNK_SIZE));
+      }
+      const responses = await Promise.all(
+        chunks.map((ids) => getGames(undefined, undefined, undefined, undefined, undefined, { ids }))
+      );
+      const byId = new Map<number, Game>();
+      for (const r of responses) {
+        for (const g of r.results ?? []) {
+          if (!byId.has(g.id)) byId.set(g.id, g as Game);
+        }
+      }
+      const ordered = _allCatGameIds.map((id) => byId.get(id)).filter(Boolean) as Game[];
+      return { results: ordered, count: ordered.length, next: null, previous: null };
+    },
     enabled: !siteLoading,
   });
   const { data: testimonialsApi = [] } = useQuery({
