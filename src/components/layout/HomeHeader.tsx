@@ -177,10 +177,21 @@ export const HomeHeader = () => {
             {!isLoggedIn && (
               <>
                 <Link to="/login">
-                  <Button variant="ghost" size="sm">Login</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg border-white/20 bg-white/5 text-foreground hover:bg-white/10 hover:border-white/30 hover:text-foreground"
+                  >
+                    Login
+                  </Button>
                 </Link>
                 <Link to="/register">
-                  <Button variant="neon" size="sm">Sign Up</Button>
+                  <Button
+                    size="sm"
+                    className="rounded-lg bg-white text-primary hover:bg-white/90 font-semibold px-4 h-9 shadow-sm"
+                  >
+                    Register
+                  </Button>
                 </Link>
               </>
             )}
@@ -268,10 +279,21 @@ export const HomeHeader = () => {
                 {!isLoggedIn && (
                   <div className="flex gap-2 pt-2">
                     <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1 min-w-0">
-                      <Button variant="outline" size="sm" className="w-full">Login</Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full rounded-lg border-white/20 bg-white/5 text-foreground hover:bg-white/10 hover:border-white/30"
+                      >
+                        Login
+                      </Button>
                     </Link>
                     <Link to="/register" onClick={() => setMenuOpen(false)} className="flex-1 min-w-0">
-                      <Button variant="neon" size="sm" className="w-full">Sign Up</Button>
+                      <Button
+                        size="sm"
+                        className="w-full rounded-lg bg-white text-primary hover:bg-white/90 font-semibold h-9"
+                      >
+                        Register
+                      </Button>
                     </Link>
                   </div>
                 )}

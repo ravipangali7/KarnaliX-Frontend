@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import type { GameCategory } from "@/api/games";
 
 const quickLinks = [
@@ -16,6 +17,30 @@ interface SecondHomeSidebarProps {
 export function SecondHomeSidebar({ categories = [] }: SecondHomeSidebarProps) {
   return (
     <aside className="space-y-6">
+      {/* CTA block – matches second home dark theme (slider/bonus style) */}
+      <div className="rounded-lg glass border border-white/10 p-4">
+        <p className="text-sm text-foreground/90 mb-3">Join and start playing.</p>
+        <div className="flex flex-col gap-2">
+          <Link to="/register" className="block">
+            <Button
+              size="sm"
+              className="w-full rounded-lg bg-white text-primary hover:bg-white/90 font-semibold h-9"
+            >
+              Register
+            </Button>
+          </Link>
+          <Link to="/login" className="block">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full rounded-lg border-white/20 bg-white/5 text-foreground hover:bg-white/10 hover:border-white/30"
+            >
+              Login
+            </Button>
+          </Link>
+        </div>
+      </div>
+
       <div className="rounded-lg glass border border-white/10 p-4">
         <h3 className="font-display font-semibold text-sm text-foreground mb-3">Quick links</h3>
         <ul className="space-y-2">
