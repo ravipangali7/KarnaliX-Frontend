@@ -40,8 +40,13 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
           ) : (
           providers.map((p) => {
             const playGameId = p.single_game_id != null && p.single_game_id > 0 ? p.single_game_id : null;
-            const to = p.link ?? (playGameId != null ? `/games/${playGameId}/play` : (p.id != null ? `/providers/${p.id}` : `/games?provider=${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, "-"))}`));
-            const useLaunchHandler = playGameId != null && PLAY_MODE !== "iframe" && !p.link;
+            // When single game + iframe: go to play page. Else: use backend link (provider/game detail) or provider page.
+            const to =
+              playGameId != null && PLAY_MODE === "iframe"
+                ? `/games/${playGameId}/play`
+                : (p.link ?? (p.id != null ? `/providers/${p.id}` : `/games?provider=${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, "-"))}`));
+            // Direct launch when single game and not iframe (ignore p.link so second-home and others get launch).
+            const useLaunchHandler = playGameId != null && PLAY_MODE !== "iframe";
             const content = (
               <>
                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-muted/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
