@@ -50,7 +50,7 @@ export default function SecondHomePage() {
       {/* 1. Banner */}
       <SecondHomeSlider slides={data.sliderSlides} />
 
-      {/* 2. Trusted Game Providers – site JSON driven; hide when no providers configured */}
+      {/* 2. Trusted Game Providers – click opens provider detail or direct-launches game when single_game_id is set */}
       {data.providerCards.length > 0 && (
         <GameProviders
           providers={data.providerCards}
