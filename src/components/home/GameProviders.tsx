@@ -39,6 +39,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
             <div className="col-span-2 md:col-span-4 text-center text-muted-foreground">Loading providers...</div>
           ) : (
           providers.map((p) => {
+            // Single-game provider: direct launch when not iframe and no custom link; else open provider detail or custom link
             const playGameId = p.single_game_id != null && p.single_game_id > 0 ? p.single_game_id : null;
             const to = p.link ?? (playGameId != null ? `/games/${playGameId}/play` : (p.id != null ? `/providers/${p.id}` : `/games?provider=${encodeURIComponent(p.name.toLowerCase().replace(/\s+/g, "-"))}`));
             const useLaunchHandler = playGameId != null && PLAY_MODE !== "iframe" && !p.link;

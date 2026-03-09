@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,9 @@ import {
   type GameCategory,
   type GameProvider,
 } from "@/api/games";
+import { getMediaUrl } from "@/lib/api";
+import { PLAY_MODE } from "@/config";
+import { launchGameByMode } from "@/api/player";
 import {
   DollarSign,
   Users,
@@ -53,6 +56,7 @@ const defaultPromoBanners = [
 const categoryIcons = ["🎮", "🤖", "🕹️", "🎰", "🎡", "🎣", "🃏", "📋"];
 
 const FirstHomePage = () => {
+  const navigate = useNavigate();
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const { data: gamesResp, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
     queryKey: ["games", "first-home"],
@@ -241,20 +245,60 @@ const FirstHomePage = () => {
         </section>
       ))}
 
-      {/* Trusted Game Providers */}
+      {/* Trusted Game Providers: click opens provider detail or direct-launches single game */}
       <section className="container px-4 py-10">
         <h2 className={sectionTitle}>Trusted Game Providers</h2>
         {providersLoading && <p className="text-sm text-muted-foreground py-4">Loading providers…</p>}
         {!providersLoading && (
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            {providers.slice(0, 8).map((p: GameProvider) => (
-              <div
-                key={p.id}
-                className="flex flex-col items-center justify-center p-4 rounded-xl bg-card border border-border hover:border-violet-500/30 transition-all"
-              >
-                <span className="text-lg font-semibold text-foreground">{p.name}</span>
-              </div>
-            ))}
+            {providers.slice(0, 8).map((p: GameProvider) => {
+              const playGameId = p.single_game_id != null && p.single_game_id > 0 ? p.single_game_id : null;
+              const to = playGameId != null ? `/games/${playGameId}/play` : `/providers/${p.id}`;
+              const useLaunchHandler = playGameId != null && PLAY_MODE !== "iframe";
+              const imgUrl = p.image?.trim() ? getMediaUrl(p.image.trim()) : undefined;
+              const initial = (p.name ?? "?").slice(0, 2).toUpperCase();
+              const content = (
+                <>
+                  <div className="h-14 w-14 flex items-center justify-center text-white font-bold text-lg overflow-hidden rounded-full bg-muted/50">
+                    {imgUrl ? (
+                      <img src={imgUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-muted-foreground">{initial}</span>
+                    )}
+                  </div>
+                  <span className="text-lg font-semibold text-foreground line-clamp-2">{p.name}</span>
+                </>
+              );
+              const cardClass =
+                "flex flex-col items-center justify-center p-4 rounded-xl bg-card border border-border hover:border-violet-500/30 transition-all cursor-pointer";
+              return (
+                <span key={p.id} className="block">
+                  {useLaunchHandler ? (
+                    <span
+                      role="link"
+                      tabIndex={0}
+                      className={cardClass}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        launchGameByMode(playGameId!, navigate);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          launchGameByMode(playGameId!, navigate);
+                        }
+                      }}
+                    >
+                      {content}
+                    </span>
+                  ) : (
+                    <Link to={to} className={cardClass}>
+                      {content}
+                    </Link>
+                  )}
+                </span>
+              );
+            })}
           </div>
         )}
       </section>
