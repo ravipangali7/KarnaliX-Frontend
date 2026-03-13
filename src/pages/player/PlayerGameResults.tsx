@@ -120,7 +120,7 @@ const PlayerGameResults = () => {
         <span>Category</span>
         <span>Bet amount</span>
         <span>Win/Loss</span>
-        <span>Total Amount</span>
+        <span className="font-bold text-foreground">Total Amount</span>
         <span className="text-right">Result</span>
       </div>
 
@@ -150,12 +150,12 @@ const PlayerGameResults = () => {
                   </div>
                   <StatusBadge status={result} />
                 </div>
-                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground items-center">
-                  <span>Bet amount: {betDisplay}</span>
-                  <span className={winAmount > 0 ? "text-success font-bold" : isLoss && loseAmount > 0 ? "text-destructive font-bold" : ""}>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs items-center">
+                  <span className="text-muted-foreground">Bet amount: {betDisplay}</span>
+                  <span className={winAmount > 0 ? "text-success font-bold" : isLoss && loseAmount > 0 ? "text-destructive font-bold" : "text-muted-foreground"}>
                     Win/Loss: {winLossDisplay}
                   </span>
-                  <span>Total Amount: {totalAmountDisplay}</span>
+                  <span className="font-bold text-foreground">Total: {totalAmountDisplay}</span>
                 </div>
               </div>
               <div className="hidden md:grid grid-cols-6 gap-2 items-center">
@@ -168,7 +168,7 @@ const PlayerGameResults = () => {
                 <span className={`text-xs font-bold ${winAmount > 0 ? "text-success" : isLoss && loseAmount > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                   {winLossDisplay}
                 </span>
-                <span className="text-xs font-medium">{totalAmountDisplay}</span>
+                <span className="text-sm font-bold text-foreground">{totalAmountDisplay}</span>
                 <span className="text-right"><StatusBadge status={result} /></span>
               </div>
             </CardContent>

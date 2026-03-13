@@ -155,6 +155,15 @@ export const HomeHeader = () => {
               <Wallet className="h-4 w-4 text-primary" />
               <span className="font-roboto-mono text-sm font-semibold text-foreground truncate max-w-[100px] sm:max-w-none">{walletBalance}</span>
             </div>
+            <Link
+              to={isPlayer ? "/player/wallet" : "/login"}
+              className={cn(
+                "hidden sm:inline-flex",
+                "rounded-lg border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 text-sm font-semibold transition-colors"
+              )}
+            >
+              Deposit
+            </Link>
             {isPlayer ? (
               <Button
                 variant="ghost"
@@ -244,6 +253,9 @@ export const HomeHeader = () => {
             </Link>
             {isPlayer ? (
               <div className="border-t border-border mt-2 pt-2">
+                <Link to="/player/wallet" onClick={() => setMenuOpen(false)} className="flex items-center justify-center gap-2 py-2.5 mx-2 rounded-lg bg-primary/10 text-primary font-semibold text-sm border border-primary/30">
+                  Deposit
+                </Link>
                 <PlayerSidebarContent
                   user={user}
                   logout={logout}
@@ -276,6 +288,9 @@ export const HomeHeader = () => {
                   <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
                   <span className="font-roboto-mono text-sm truncate">{walletBalance}</span>
                 </div>
+                <Link to={isPlayer ? "/player/wallet" : "/login"} onClick={() => setMenuOpen(false)} className="flex items-center justify-center gap-2 mt-2 mx-3 mobile:mx-4 py-2.5 rounded-lg bg-primary/10 text-primary font-semibold text-sm border border-primary/30">
+                  Deposit
+                </Link>
                 {!isLoggedIn && (
                   <div className="flex gap-2 pt-2">
                     <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1 min-w-0">

@@ -24,6 +24,10 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 // Public Pages
 import GamesPage from "@/pages/public/GamesPage";
 import GameDetailPage from "@/pages/public/GameDetailPage";
+import PopularGamesPage from "@/pages/public/PopularGamesPage";
+import TopGamesPage from "@/pages/public/TopGamesPage";
+import CategoryListPage from "@/pages/public/CategoryListPage";
+import CategoryPage from "@/pages/public/CategoryPage";
 import ProviderPage from "@/pages/public/ProviderPage";
 import ProvidersPage from "@/pages/public/ProvidersPage";
 import BonusPage from "@/pages/public/BonusPage";
@@ -167,7 +171,11 @@ const App = () => {
             <Route path="/" element={<HomePageSwitch />} />
             <Route element={<PublicLayout />}>
               <Route path="/games" element={<GamesPage />} />
+              <Route path="/games/popular" element={<PopularGamesPage />} />
+              <Route path="/games/top" element={<TopGamesPage />} />
               <Route path="/games/:id" element={<GameDetailPage />} />
+              <Route path="/categories" element={<CategoryListPage />} />
+              <Route path="/categories/:categoryId" element={<CategoryPage />} />
               <Route path="/providers" element={<ProvidersPage />} />
               <Route path="/providers/:id" element={<ProviderPage />} />
             <Route path="/bonus" element={<BonusPage />} />

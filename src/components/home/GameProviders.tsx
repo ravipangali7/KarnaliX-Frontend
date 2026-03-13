@@ -7,11 +7,12 @@ import { launchGameByMode } from "@/api/player";
 interface GameProvidersProps {
   providers?: ProviderShape[] | null;
   sectionTitle?: React.ReactNode;
+  sectionSubtitle?: string;
   sectionSvg?: string;
   loading?: boolean;
 }
 
-export function GameProviders({ providers: providersProp, sectionTitle, loading }: GameProvidersProps) {
+export function GameProviders({ providers: providersProp, sectionTitle, sectionSubtitle, loading }: GameProvidersProps) {
   const providers = providersProp && providersProp.length > 0 ? providersProp : defaultProviders;
   const navigate = useNavigate();
 
@@ -31,7 +32,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, loading 
             )}
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Partnered with world-class gaming providers for the best experience
+            {sectionSubtitle ?? "Partnered with world-class gaming providers for the best experience"}
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">

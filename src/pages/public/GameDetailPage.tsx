@@ -220,11 +220,18 @@ const GameDetailPage = () => {
                   </Button>
                 </Link>
               )}
-              <a href={`https://wa.me/${String(whatsapp).replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" className="w-full border-success text-success mt-2" size="sm">
-                  💬 Instant Deposit via WhatsApp
+              <a href="https://luckyuser365.com/player/wallet" target="_blank" rel="noopener noreferrer">
+                <Button className="w-full gold-gradient text-primary-foreground font-semibold mt-2" size="sm">
+                  Add Fund
                 </Button>
               </a>
+              {whatsapp && (
+                <a href={`https://wa.me/${String(whatsapp).replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" className="w-full border-success text-success mt-2" size="sm">
+                    💬 Instant Deposit via WhatsApp
+                  </Button>
+                </a>
+              )}
 
               {/* Trust badges */}
               <div className="flex justify-center gap-5 pt-2 text-[10px] text-muted-foreground">
