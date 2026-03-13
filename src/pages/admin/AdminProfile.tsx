@@ -23,6 +23,7 @@ export default function AdminProfile() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [mainBalance, setMainBalance] = useState("");
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["admin-profile", role],
@@ -35,11 +36,12 @@ export default function AdminProfile() {
       setPhone(String(profile.phone ?? ""));
       setEmail(String(profile.email ?? ""));
       setWhatsapp(String(profile.whatsapp_number ?? ""));
+      setMainBalance(String(profile.main_balance ?? ""));
     }
   }, [profile]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: { name?: string; phone?: string; email?: string; whatsapp_number?: string }) =>
+    mutationFn: (data: { name?: string; phone?: string; email?: string; whatsapp_number?: string; main_balance?: string }) =>
       updateProfile(role, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-profile", role] });
@@ -52,7 +54,9 @@ export default function AdminProfile() {
   });
 
   const handleSave = () => {
-    updateMutation.mutate({ name, phone, email, whatsapp_number: whatsapp || undefined });
+    const payload: { name?: string; phone?: string; email?: string; whatsapp_number?: string; main_balance?: string } = { name, phone, email, whatsapp_number: whatsapp || undefined };
+    if (role === "powerhouse") payload.main_balance = mainBalance !== "" ? mainBalance : undefined;
+    updateMutation.mutate(payload);
   };
 
   if (isLoading) {
@@ -117,6 +121,21 @@ export default function AdminProfile() {
               className={!editing ? "border-transparent bg-transparent" : ""}
             />
           </div>
+          {role === "powerhouse" && (
+            <div className="flex items-center gap-3">
+              <span className="text-muted-foreground text-sm w-4">₹</span>
+              <Input
+                placeholder="Main balance"
+                type="number"
+                step="0.01"
+                min="0"
+                value={mainBalance}
+                onChange={(e) => setMainBalance(e.target.value)}
+                readOnly={!editing}
+                className={!editing ? "border-transparent bg-transparent" : ""}
+              />
+            </div>
+          )}
           {editing && (
             <Button onClick={handleSave} disabled={updateMutation.isPending} className="w-full">
               Save changes
