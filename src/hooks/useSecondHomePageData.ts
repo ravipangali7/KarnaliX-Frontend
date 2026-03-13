@@ -54,7 +54,7 @@ export interface SecondHomePageData {
   liveBettingSections: LiveBettingSection[];
   topLiveGames: GameCardShape[];
   otherGames: GameCardShape[];
-  /** First 16 games for Top Games carousel (is_top_game preferred, else live+other fallback). */
+  /** Top Games from second-home-sections (admin-configured order, no limit). */
   topGames: GameCardShape[];
   /** Games marked is_popular_game for Popular Games section. */
   popularGames: GameCardShape[];
@@ -102,8 +102,8 @@ function mapGameToCardShape(game: Game, index: number): GameCardShape {
   };
 }
 
-/** Map backend second-home section game (full object) to GameCardShape; derive badges from API flags. */
-function mapSectionGameToCardShape(item: SecondHomeSectionGame, index: number): GameCardShape {
+/** Map backend second-home section game (full object) to GameCardShape; derive badges from API flags. Exported for TopGamesPage. */
+export function mapSectionGameToCardShape(item: SecondHomeSectionGame, index: number): GameCardShape {
   return {
     id: String(item.id),
     name: item.name,
@@ -320,7 +320,7 @@ export function useSecondHomePageData(): {
       })) as ProviderShape[])
     : [];
   const topGames: GameCardShape[] = sectionsData?.top_games?.items?.length
-    ? sectionsData.top_games.items.slice(0, 16).map((g, i) => mapSectionGameToCardShape(g, i))
+    ? sectionsData.top_games.items.map((g, i) => mapSectionGameToCardShape(g, i))
     : [];
   const popularGames: GameCardShape[] = sectionsData?.popular_games?.items?.length
     ? sectionsData.popular_games.items.map((g, i) => mapSectionGameToCardShape(g, i))

@@ -8,8 +8,6 @@ function sectionIconSrc(value: string): string {
   return value.trim().startsWith("http") ? value.trim() : getMediaUrl(value.trim());
 }
 
-const TOTAL = 16;
-
 interface SecondHomeTopGamesCarouselProps {
   games: GameCardShape[];
   sectionTitle?: string;
@@ -17,7 +15,7 @@ interface SecondHomeTopGamesCarouselProps {
 }
 
 export function SecondHomeTopGamesCarousel({ games, sectionTitle, sectionSvg }: SecondHomeTopGamesCarouselProps) {
-  const list = games.slice(0, TOTAL);
+  const list = games;
   if (list.length === 0) return null;
 
   return (

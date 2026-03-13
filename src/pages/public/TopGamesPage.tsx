@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/shared/GameCard";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { getGames, getGameImageUrl } from "@/api/games";
-import type { Game } from "@/api/games";
+import { getSecondHomeSections } from "@/api/site";
+import { mapSectionGameToCardShape } from "@/hooks/useSecondHomePageData";
 
 const PAGE_SIZE = 24;
 
@@ -14,14 +13,17 @@ const TopGamesPage = () => {
   const pageParam = searchParams.get("page");
   const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
-  const { data: gamesData, isLoading, isError, refetch } = useQuery({
-    queryKey: ["games", "top", currentPage],
-    queryFn: () => getGames(undefined, undefined, currentPage, PAGE_SIZE, undefined, { is_top_game: true }),
+  const { data: sectionsData, isLoading, isError, refetch } = useQuery({
+    queryKey: ["second-home-sections"],
+    queryFn: getSecondHomeSections,
   });
 
-  const results = gamesData?.results ?? [];
-  const totalCount = gamesData?.count ?? 0;
+  const allItems = sectionsData?.top_games?.items ?? [];
+  const allCards = allItems.map((g, i) => mapSectionGameToCardShape(g, i));
+  const totalCount = allCards.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageCards = allCards.slice(start, start + PAGE_SIZE);
 
   const setPage = (page: number) => {
     const next = new URLSearchParams(searchParams);
@@ -46,17 +48,17 @@ const TopGamesPage = () => {
 
       {!isLoading && !isError && (
         <div className="grid grid-cols-2 mobile:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2 mobile:gap-3 min-w-0">
-          {results.map((game: Game) => (
-            <div key={game.id} className="min-w-0 w-full">
-              <Link to={`/games/${game.id}`} className="block min-w-0">
-                <GameCard image={getGameImageUrl(game)} name={game.name} category={game.category_name ?? ""} minBet={Number(game.min_bet)} maxBet={Number(game.max_bet)} />
+          {pageCards.map((card) => (
+            <div key={card.id} className="min-w-0 w-full">
+              <Link to={card.link ?? `/games/${card.id}`} className="block min-w-0">
+                <GameCard image={card.image} name={card.name} category={card.category} minBet={card.minBet} maxBet={card.maxBet} />
               </Link>
             </div>
           ))}
         </div>
       )}
 
-      {!isLoading && !isError && results.length === 0 && (
+      {!isLoading && !isError && pageCards.length === 0 && (
         <p className="text-center text-muted-foreground py-12 text-sm">No top games found</p>
       )}
 
