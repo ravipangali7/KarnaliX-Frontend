@@ -8,7 +8,6 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { Button } from "@/components/ui/button";
 import type { SliderSlide } from "@/hooks/useSecondHomePageData";
 
 const AUTO_SLIDE_INTERVAL_MS = 5000;
@@ -65,10 +64,8 @@ export function SecondHomeSlider({ slides, hideTitle }: SecondHomeSliderProps) {
                     </div>
                   )}
                   {clickable && (
-                    <span className="flex-shrink-0 inline-flex">
-                      <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-bold px-8 h-12 pointer-events-none">
-                        {slide.ctaText}
-                      </Button>
+                    <span className="flex-shrink-0 inline-flex bg-white text-primary font-bold px-8 h-12 rounded-md items-center justify-center">
+                      {slide.ctaText}
                     </span>
                   )}
                 </div>

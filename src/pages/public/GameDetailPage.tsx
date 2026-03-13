@@ -150,9 +150,9 @@ const GameDetailPage = () => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs text-muted-foreground font-medium">Bet Amount</label>
-                  <Link to="/wallet">
+                  <a href="https://luckyuser365.com/player/wallet" target="_blank" rel="noopener noreferrer">
                     <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2">+ Add Fund</Button>
-                  </Link>
+                  </a>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Button variant="outline" size="icon" className="h-10 w-10 text-base font-bold shrink-0" onClick={() => setBetAmount(Math.max(minBet, betAmount - minBet))}>-</Button>

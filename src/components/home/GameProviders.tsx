@@ -24,7 +24,7 @@ export function GameProviders({ providers: providersProp, sectionTitle, sectionS
     <section className="py-16 bg-card/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3 bg-gradient-to-r from-primary via-cyan-400 to-amber-400 bg-clip-text text-transparent">
             {sectionTitle ?? (
               <>
                 Trusted <span className="gradient-text-gold">Game Providers</span>
