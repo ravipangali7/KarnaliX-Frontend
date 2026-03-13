@@ -5,6 +5,16 @@ import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -12,6 +22,7 @@ import {
   getMasters,
   createMaster,
   updateMaster,
+  deleteMaster,
   directDeposit,
   directWithdraw,
   regeneratePin,
@@ -20,7 +31,7 @@ import {
   type ListParams,
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
-import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, ArrowRightLeft } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, ArrowRightLeft, Trash2 } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { TableBadge } from "@/components/admin/TableBadge";
@@ -152,6 +163,9 @@ const AdminMasters = () => {
   const [editSaving, setEditSaving] = useState(false);
   const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
   const [pendingCellSave, setPendingCellSave] = useState<{ id: number; field: string; value: unknown } | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [masterToDelete, setMasterToDelete] = useState<MasterRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -325,10 +339,28 @@ const AdminMasters = () => {
           <Button variant="ghost" size="icon" className="h-7 w-7 text-neon" title="Settlement" onClick={() => { setSelectedUser(row); setSettlementOpen(true); }}><ArrowRightLeft className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="View" onClick={() => { setSelectedUser(row); setViewOpen(true); }}><Eye className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditName(String(row.name ?? "")); setEditCommission(String(row.commission_percentage ?? "10")); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Delete" onClick={() => { setMasterToDelete(row); setDeleteOpen(true); }}><Trash2 className="h-3 w-3" /></Button>
         </div>
       ),
     },
   ];
+
+  const handleDeleteMasterConfirm = async () => {
+    if (!masterToDelete?.id) return;
+    setDeleting(true);
+    try {
+      await deleteMaster(masterToDelete.id as number, role);
+      queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
+      toast({ title: "Master user deleted." });
+      setDeleteOpen(false);
+      setMasterToDelete(null);
+    } catch (e) {
+      const msg = (e as { detail?: string })?.detail ?? "Failed to delete master";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -626,6 +658,23 @@ const AdminMasters = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete master user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &quot;{masterToDelete?.username ?? ""}&quot; and their players. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMasterConfirm} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Settlement */}
       <Dialog open={settlementOpen} onOpenChange={setSettlementOpen}>

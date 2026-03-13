@@ -3,12 +3,23 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
 import {
   getGamesAdmin, getCategoriesAdmin, getProvidersAdmin,
   createGame, createGameForm, updateGame, updateGameForm,
+  deleteGame,
 } from "@/api/admin";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "@/hooks/use-toast";
@@ -180,6 +191,9 @@ const PowerhouseGames = () => {
   const [editingGame, setEditingGame] = useState<GameRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [gameToDelete, setGameToDelete] = useState<GameRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [name, setName] = useState("");
   const [gameUid, setGameUid] = useState("");
@@ -422,10 +436,28 @@ const PowerhouseGames = () => {
       accessor: (row: GameRow) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="text-xs" onClick={() => openEdit(row)}>Edit</Button>
+          <Button variant="ghost" size="sm" className="text-xs text-destructive hover:text-destructive" onClick={() => { setGameToDelete(row); setDeleteOpen(true); }}>Delete</Button>
         </div>
       ),
     },
   ];
+
+  const handleDeleteGameConfirm = async () => {
+    if (!gameToDelete?.id) return;
+    setDeleting(true);
+    try {
+      await deleteGame(Number(gameToDelete.id));
+      queryClient.invalidateQueries({ queryKey: ["admin-games"] });
+      toast({ title: "Game deleted." });
+      setDeleteOpen(false);
+      setGameToDelete(null);
+    } catch (e) {
+      const msg = (e as { detail?: string })?.detail ?? "Failed to delete game";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // ── Create handler ──
   const buildPayload = () => ({
@@ -718,6 +750,23 @@ const PowerhouseGames = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete game?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove &quot;{gameToDelete?.name ?? ""}&quot;. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGameConfirm} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

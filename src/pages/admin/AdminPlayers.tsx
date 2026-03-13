@@ -6,11 +6,21 @@ import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getMasters, getPlayers, createPlayer, updatePlayer, togglePlayerActive, directDeposit, directWithdraw, resetPassword, type ListParams } from "@/api/admin";
+import { getMasters, getPlayers, createPlayer, updatePlayer, deletePlayer, togglePlayerActive, directDeposit, directWithdraw, resetPassword, type ListParams } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
-import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, Inbox } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, Inbox, Trash2 } from "lucide-react";
 
 const whatsAppUrl = (phone?: string | null, whatsapp?: string | null) => {
   const raw = (phone || whatsapp || "").replace(/\D/g, "");
@@ -66,6 +76,9 @@ const AdminPlayers = () => {
   const [dateTo, setDateTo] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [masterIdFilter, setMasterIdFilter] = useState<string>("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [playerToDelete, setPlayerToDelete] = useState<PlayerRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const listParams: ListParams = {};
   if (dateFrom) listParams.date_from = dateFrom;
   if (dateTo) listParams.date_to = dateTo;
@@ -223,10 +236,28 @@ const AdminPlayers = () => {
           <Button variant="ghost" size="icon" className="h-7 w-7" title="Reset Password" onClick={() => { setSelectedUser(row); setResetPwOpen(true); }}><Key className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="View Report" onClick={() => navigate(`/${role}/players/${row.id}/report`)}><Eye className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditName(String(row.name ?? "")); setEditPhone(String(row.phone ?? "")); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Delete" onClick={() => { setPlayerToDelete(row); setDeleteOpen(true); }}><Trash2 className="h-3 w-3" /></Button>
         </div>
       ),
     },
   ];
+
+  const handleDeletePlayerConfirm = async () => {
+    if (!playerToDelete?.id) return;
+    setDeleting(true);
+    try {
+      await deletePlayer(playerToDelete.id as number, role);
+      queryClient.invalidateQueries({ queryKey: ["admin-players", role] });
+      toast({ title: "Player deleted." });
+      setDeleteOpen(false);
+      setPlayerToDelete(null);
+    } catch (e) {
+      const msg = (e as { detail?: string })?.detail ?? "Failed to delete player";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -269,6 +300,23 @@ const AdminPlayers = () => {
         variant="adminListing"
         getRowClassName={(row) => (row.is_active === false || row.no_activity_7_days === true ? "bg-destructive/15" : "")}
       />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete player?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &quot;{playerToDelete?.username ?? ""}&quot;. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePlayerConfirm} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Single-field cell edit / view modal */}
       <Dialog
