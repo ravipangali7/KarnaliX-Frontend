@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Carousel,
@@ -30,12 +30,22 @@ function hasCta(slide: SliderSlide): boolean {
 
 export function SecondHomeSlider({ slides, hideTitle }: SecondHomeSliderProps) {
   const [api, setApi] = useState<CarouselApi | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!api) return;
     const t = setInterval(() => api.scrollNext(), AUTO_SLIDE_INTERVAL_MS);
     return () => clearInterval(t);
   }, [api]);
+
+  const handleSlideClick = (href: string) => {
+    if (!href) return;
+    if (isExternalHref(href)) {
+      window.open(href, "_blank", "noopener,noreferrer");
+    } else {
+      navigate(href);
+    }
+  };
 
   if (!slides.length) return null;
   return (
@@ -74,15 +84,25 @@ export function SecondHomeSlider({ slides, hideTitle }: SecondHomeSliderProps) {
             return (
               <CarouselItem key={slide.id}>
                 {clickable ? (
-                  isExternalHref(href) ? (
-                    <a href={href} target="_blank" rel="noopener noreferrer" className="block cursor-pointer">
-                      {content}
-                    </a>
-                  ) : (
-                    <Link to={href} className="block cursor-pointer">
-                      {content}
-                    </Link>
-                  )
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="block cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSlideClick(href);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSlideClick(href);
+                      }
+                    }}
+                  >
+                    {content}
+                  </div>
                 ) : (
                   content
                 )}
