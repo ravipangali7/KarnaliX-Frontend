@@ -61,7 +61,7 @@ export function SecondHomeCategoryGames({ categories, gamesByCategory, categoryS
               {games.map((game) => (
                 <Link
                   key={game.id}
-                  to={`/games/${game.id}`}
+                  to={game.link ?? `/games/${game.id}`}
                   className="flex-shrink-0 snap-start rounded-xl overflow-hidden border border-white/10 hover:border-primary/40 transition-all"
                   style={{ width: "calc(50vw - 28px)", maxWidth: "160px", minWidth: "120px" }}
                 >

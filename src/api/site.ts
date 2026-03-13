@@ -5,10 +5,11 @@ export async function getSiteSetting() {
   return (res as Record<string, unknown>) ?? {};
 }
 
-/** Second home sections: providers, top games, category-wise games, popular games with names, image URLs, and links from backend. */
+/** Second home sections: providers, top games, category-wise games, popular games with full data from backend. */
 export interface SecondHomeSectionProvider {
   id: number;
   name: string;
+  provider_code?: string;
   logo: string;
   logo_image?: string | null;
   games: number;
@@ -16,14 +17,24 @@ export interface SecondHomeSectionProvider {
   link: string;
 }
 
+/** Full game object from second-home-sections API (same shape as games list + link and absolute image URL). */
 export interface SecondHomeSectionGame {
   id: number;
   name: string;
+  game_uid: string;
   image: string | null;
-  category: string;
+  image_url?: string | null;
+  coming_soon_image?: string | null;
   min_bet: number;
   max_bet: number;
-  provider: string;
+  category: number;
+  category_name: string;
+  provider: number;
+  provider_name: string;
+  provider_code: string;
+  is_top_game: boolean;
+  is_popular_game: boolean;
+  is_lobby: boolean;
   link: string;
 }
 
@@ -35,7 +46,7 @@ export interface SecondHomeCategorySection {
 }
 
 export interface SecondHomeSectionsResponse {
-  providers: { section_title: string; section_svg: string; items: SecondHomeSectionProvider[] };
+  providers: { section_title: string; section_subtitle?: string; section_svg: string; items: SecondHomeSectionProvider[] };
   top_games: { section_title: string; section_svg: string; items: SecondHomeSectionGame[] };
   categories_game: { section_title: string; section_svg: string; categories: SecondHomeCategorySection[] };
   popular_games: { section_title: string; section_svg: string; items: SecondHomeSectionGame[] };

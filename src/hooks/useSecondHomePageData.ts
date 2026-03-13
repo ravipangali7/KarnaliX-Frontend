@@ -102,20 +102,27 @@ function mapGameToCardShape(game: Game, index: number): GameCardShape {
   };
 }
 
-/** Map backend second-home section game to GameCardShape (direct from API). */
+/** Map backend second-home section game (full object) to GameCardShape; derive badges from API flags. */
 function mapSectionGameToCardShape(item: SecondHomeSectionGame, index: number): GameCardShape {
   return {
     id: String(item.id),
     name: item.name,
     image: item.image ?? "",
-    category: item.category ?? "",
+    category: item.category_name ?? "",
     players: 0,
     minBet: item.min_bet ?? 0,
     maxBet: item.max_bet ?? 0,
     rating: 4.5,
-    isHot: index < 2,
-    isNew: index < 3,
-    provider: item.provider ?? "",
+    isHot: item.is_top_game ?? index < 2,
+    isNew: item.is_popular_game ?? index < 3,
+    provider: item.provider_name ?? item.provider_code ?? "",
+    game_uid: item.game_uid,
+    category_id: item.category,
+    provider_id: item.provider,
+    is_top_game: item.is_top_game,
+    is_popular_game: item.is_popular_game,
+    is_lobby: item.is_lobby,
+    link: item.link,
   };
 }
 

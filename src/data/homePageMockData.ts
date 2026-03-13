@@ -23,6 +23,15 @@ export interface GameCardShape {
   isHot?: boolean;
   isNew?: boolean;
   provider?: string;
+  /** From API: game uid for launch; when set, components can use for links. */
+  game_uid?: string;
+  category_id?: number;
+  provider_id?: number;
+  is_top_game?: boolean;
+  is_popular_game?: boolean;
+  is_lobby?: boolean;
+  /** Direct link to game detail (e.g. /games/123). */
+  link?: string;
 }
 
 export interface PromoShape {

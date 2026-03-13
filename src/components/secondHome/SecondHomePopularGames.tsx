@@ -40,7 +40,7 @@ export function SecondHomePopularGames({ games, sectionTitle, sectionSvg }: Seco
         {games.map((game) => (
           <Link
             key={game.id}
-            to={`/games/${game.id}`}
+            to={game.link ?? `/games/${game.id}`}
             className="flex-shrink-0 w-[140px] snap-start rounded-xl overflow-hidden border border-white/10 hover:border-primary/40 transition-all hover:scale-[1.02]"
             style={{ width: CARD_WIDTH }}
           >
