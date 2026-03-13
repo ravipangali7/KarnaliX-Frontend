@@ -89,18 +89,10 @@ export const HomeHeader = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border">
       <div className="container flex flex-col min-w-0">
-        <div className="relative flex items-center justify-between h-14 px-2 mobile:px-4 gap-2">
+        <div className="flex items-center justify-between h-14 px-2 mobile:px-4 gap-2">
           <Link to="/" className="flex items-center gap-2 min-w-0 flex-shrink-0">
             <img src={logoUrl} alt={siteName} className="h-8 rounded-lg object-contain" />
             {/* <span className="font-gaming font-bold text-lg gradient-text tracking-tight hidden sm:inline">{siteName}</span> */}
-          </Link>
-
-          {/* Mobile: Deposit centered in header */}
-          <Link
-            to={isPlayer ? "/player/wallet" : "/login"}
-            className="sm:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 text-sm font-semibold transition-colors"
-          >
-            Deposit
           </Link>
 
           <nav className="hidden mobile:flex items-center gap-1">
@@ -165,10 +157,7 @@ export const HomeHeader = () => {
             </div>
             <Link
               to={isPlayer ? "/player/wallet" : "/login"}
-              className={cn(
-                "hidden sm:inline-flex",
-                "rounded-lg border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 text-sm font-semibold transition-colors"
-              )}
+              className="inline-flex rounded-lg border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 text-sm font-semibold transition-colors shrink-0 min-h-[44px] items-center justify-center touch-manipulation"
             >
               Deposit
             </Link>
