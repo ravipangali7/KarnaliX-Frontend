@@ -7,3 +7,23 @@ import type { User } from "@/contexts/AuthContext";
 export function getCurrencySymbol(user: User | null): string {
   return user?.currency_symbol ?? "₹";
 }
+
+const symbol = "₹";
+
+/** Format a balance/amount for display. */
+export function fmt(value: string | number | null | undefined): string {
+  if (value == null || value === "") return `${symbol}0`;
+  const n = Number(value);
+  return Number.isNaN(n) ? `${symbol}0` : `${symbol}${n.toLocaleString()}`;
+}
+
+/** Format P/L or win/loss (signed) for display. */
+export function fmtPL(value: string | number | null | undefined): string {
+  if (value == null || value === "") return `${symbol}0`;
+  const n = Number(value);
+  if (Number.isNaN(n)) return `${symbol}0`;
+  const formatted = n.toLocaleString();
+  if (n > 0) return `+${symbol}${formatted}`;
+  if (n < 0) return `-${symbol}${Math.abs(n).toLocaleString()}`;
+  return `${symbol}0`;
+}
