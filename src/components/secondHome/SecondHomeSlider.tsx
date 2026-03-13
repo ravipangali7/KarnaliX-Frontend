@@ -22,10 +22,9 @@ function isExternalHref(href: string): boolean {
   return t.startsWith("http://") || t.startsWith("https://");
 }
 
-function hasCta(slide: SliderSlide): boolean {
+function hasCtaLink(slide: SliderSlide): boolean {
   const link = (slide.ctaHref ?? "").trim();
-  const label = (slide.ctaText ?? "").trim();
-  return link.length > 0 && link !== "#" && label.length > 0;
+  return link.length > 0 && link !== "#";
 }
 
 export function SecondHomeSlider({ slides, hideTitle }: SecondHomeSliderProps) {
@@ -53,8 +52,9 @@ export function SecondHomeSlider({ slides, hideTitle }: SecondHomeSliderProps) {
       <Carousel opts={{ loop: true }} setApi={setApi} className="w-full">
         <CarouselContent>
           {slides.map((slide) => {
-            const clickable = hasCta(slide);
+            const clickable = hasCtaLink(slide);
             const href = (slide.ctaHref ?? "").trim();
+            const ctaLabel = (slide.ctaText ?? "").trim();
             const content = (
               <div className="relative flex min-h-[200px] md:min-h-[280px] w-full items-center justify-between gap-6 px-4 py-8 md:px-8 md:py-12 rounded-none">
                 {slide.image && (
@@ -73,7 +73,7 @@ export function SecondHomeSlider({ slides, hideTitle }: SecondHomeSliderProps) {
                       )}
                     </div>
                   )}
-                  {clickable && (
+                  {clickable && ctaLabel && (
                     <span className="flex-shrink-0 inline-flex bg-white text-primary font-bold px-8 h-12 rounded-md items-center justify-center">
                       {slide.ctaText}
                     </span>
