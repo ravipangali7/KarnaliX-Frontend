@@ -7,6 +7,7 @@ import { GameCard } from "@/components/shared/GameCard";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import { getGame, getGames, getGameImageUrl } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
+import { getDisplayWhatsAppUrl } from "@/lib/whatsappDisplay";
 import { getPlayerWallet, launchGameByMode } from "@/api/player";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Game } from "@/api/games";
@@ -92,7 +93,8 @@ const GameDetailPage = () => {
   const gameHistory: { id: string; username: string; result: string; betAmount: number; winAmount: number }[] = [];
   const livePlayers = Math.floor(Math.random() * 200) + 50;
   const todayWins = Math.floor(Math.random() * 500000) + 100000;
-  const whatsapp = (siteSetting as { whatsapp_number?: string })?.whatsapp_number ?? "";
+  const siteWhatsapp = (siteSetting as { whatsapp_number?: string })?.whatsapp_number ?? "";
+  const waUrl = getDisplayWhatsAppUrl(siteWhatsapp, user, "Hi, I want to make an instant deposit.");
 
   return (
     <div className="container px-2 mobile:px-4 py-4 space-y-4 mobile:space-y-5 min-w-0 max-w-full">
@@ -225,8 +227,8 @@ const GameDetailPage = () => {
                   Add Fund
                 </Button>
               </a>
-              {whatsapp && (
-                <a href={`https://wa.me/${String(whatsapp).replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer">
+              {waUrl && (
+                <a href={waUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" className="w-full border-success text-success mt-2" size="sm">
                     💬 Instant Deposit via WhatsApp
                   </Button>
