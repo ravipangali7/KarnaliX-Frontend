@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,7 @@ const ROLE = "powerhouse" as const;
 const USER_TYPE = "supers" as const;
 
 const AdminSupers = () => {
+  const { refreshUser } = useAuth();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -146,7 +148,7 @@ const AdminSupers = () => {
   const [deleting, setDeleting] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const listParams: ListParams = {};
   if (dateFrom) listParams.date_from = dateFrom;
@@ -156,6 +158,11 @@ const AdminSupers = () => {
     queryFn: () => getSupers(listParams),
     refetchInterval: autoRefresh ? 10000 : false,
   });
+  useEffect(() => {
+    if (!autoRefresh || !refreshUser) return;
+    const id = setInterval(() => refreshUser(), 10000);
+    return () => clearInterval(id);
+  }, [autoRefresh, refreshUser]);
   const rows = (Array.isArray(supersRaw) ? supersRaw : []) as SuperRow[];
 
   const EDITABLE_CELLS: Record<string, string> = {
