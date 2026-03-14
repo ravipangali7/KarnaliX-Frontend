@@ -23,6 +23,7 @@ import {
   createMaster,
   updateMaster,
   deleteMaster,
+  setDefaultMaster,
   directDeposit,
   directWithdraw,
   regeneratePin,
@@ -32,7 +33,7 @@ import {
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { fmt, fmtPL } from "@/utils/currency";
-import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, ArrowRightLeft, Trash2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Key, Eye, Edit, RefreshCw, ArrowRightLeft, Trash2, Star } from "lucide-react";
 import { PinDialog } from "@/components/shared/PinDialog";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { TableBadge } from "@/components/admin/TableBadge";
@@ -45,9 +46,10 @@ type MasterRow = Record<string, unknown> & {
   total_balance?: string; total_win_loss?: string;
   status?: string; created_at?: string; pin?: string;
   commission_percentage?: string;
+  is_default?: boolean;
 };
 
-type PendingAction = "deposit" | "withdraw" | "resetPassword" | "regeneratePin" | "settlement" | null;
+type PendingAction = "deposit" | "withdraw" | "resetPassword" | "regeneratePin" | "settlement" | "setDefaultMaster" | null;
 
 interface InlineEditState {
   row: MasterRow;
@@ -167,6 +169,8 @@ const AdminMasters = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [masterToDelete, setMasterToDelete] = useState<MasterRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [defaultConfirmOpen, setDefaultConfirmOpen] = useState(false);
+  const [masterForDefault, setMasterForDefault] = useState<MasterRow | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -323,6 +327,25 @@ const AdminMasters = () => {
         </span>
       ),
       sortKey: "status",
+    },
+    {
+      header: "Default",
+      accessor: (row: MasterRow) => (
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 text-xs cursor-pointer hover:opacity-90"
+          onClick={() => { setMasterForDefault(row); setDefaultConfirmOpen(true); }}
+          title={row.is_default ? "Default master" : "Set as default master"}
+        >
+          {row.is_default ? (
+            <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+          ) : (
+            <Star className="h-4 w-4 text-muted-foreground" />
+          )}
+          {row.is_default ? "Default" : "Set default"}
+        </button>
+      ),
+      sortKey: "is_default",
     },
     {
       header: "Joined",
@@ -682,6 +705,33 @@ const AdminMasters = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={defaultConfirmOpen} onOpenChange={(open) => { setDefaultConfirmOpen(open); if (!open) setMasterForDefault(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Set default master?</AlertDialogTitle>
+            <AlertDialogDescription>
+              New signups without a referral will be assigned to &quot;{masterForDefault?.username ?? ""}&quot;. Enter your PIN to confirm.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (masterForDefault?.id != null) {
+                  setPendingAction("setDefaultMaster");
+                  setPendingPayload({ masterId: masterForDefault.id });
+                  setDefaultConfirmOpen(false);
+                  setMasterForDefault(null);
+                  setPinOpen(true);
+                }
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Settlement */}
       <Dialog open={settlementOpen} onOpenChange={setSettlementOpen}>
         <DialogContent className="max-w-xs">
@@ -758,6 +808,11 @@ const AdminMasters = () => {
               await settleMaster(masterId, { pin });
               queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
               toast({ title: "Settlement completed." });
+            } else if (pendingAction === "setDefaultMaster") {
+              const masterId = pendingPayload.masterId as number;
+              await setDefaultMaster(masterId, { pin }, role);
+              queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
+              toast({ title: "Default master set." });
             }
             setPinOpen(false); setPendingAction(null); setPendingPayload({});
           } catch (e: unknown) {

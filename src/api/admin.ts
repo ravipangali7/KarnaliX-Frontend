@@ -91,6 +91,13 @@ export async function updateMaster(id: number, body: unknown, role: "powerhouse"
 export async function deleteMaster(id: number, role: "powerhouse" | "super" = "powerhouse") {
   return apiDelete(`${prefix(role)}/masters/${id}/delete/`);
 }
+export async function setDefaultMaster(
+  masterId: number,
+  body: { pin: string },
+  role: "powerhouse" | "super"
+) {
+  return apiPost(`${prefix(role)}/masters/${masterId}/set-default/`, body);
+}
 
 export async function getPlayers(role: "powerhouse" | "super" | "master" = "powerhouse", params?: ListParams) {
   const res = await apiGet(`${prefix(role)}/players/${buildQueryString(params)}`);
