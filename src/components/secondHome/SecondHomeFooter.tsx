@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSiteSetting, getCmsFooterPages, getPublicPaymentMethods } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
+import { getDisplayWhatsAppNumber, getDisplayWhatsAppUrl } from "@/lib/whatsappDisplay";
 import { Phone, Mail, MessageCircle, Shield, Award, Headphones } from "lucide-react";
 import {
   footerContact as defaultFooterContact,
@@ -34,9 +35,10 @@ export function SecondHomeFooter() {
   const siteName = s?.name?.trim() || "KarnaliX";
   const phone = Array.isArray(s?.phones) && s.phones.length > 0 ? String(s.phones[0]) : defaultFooterContact.phone;
   const email = Array.isArray(s?.emails) && s.emails.length > 0 ? String(s.emails[0]) : defaultFooterContact.email;
-  const whatsapp = (s?.whatsapp_number as string)?.trim() || defaultFooterContact.whatsapp;
+  const siteWhatsapp = (s?.whatsapp_number as string)?.trim() || defaultFooterContact.whatsapp;
+  const displayWhatsapp = getDisplayWhatsAppNumber(siteWhatsapp, user);
+  const waUrl = getDisplayWhatsAppUrl(siteWhatsapp, user);
   const tagline = (s?.footer_description as string)?.trim() || defaultFooterContact.tagline;
-  const waUrl = `https://wa.me/${whatsapp.replace(/[^0-9]/g, "")}`;
 
   const cmsItems = cmsPages as { id?: number; title?: string; slug?: string }[];
   const legalLinks =
@@ -121,17 +123,26 @@ export function SecondHomeFooter() {
                 </span>
                 {email}
               </a>
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors group"
-              >
-                <span className="h-7 w-7 rounded-lg border border-border bg-muted/50 flex items-center justify-center group-hover:border-primary/30 transition-colors">
-                  <MessageCircle className="h-3.5 w-3.5" />
+              {waUrl ? (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors group"
+                >
+                  <span className="h-7 w-7 rounded-lg border border-border bg-muted/50 flex items-center justify-center group-hover:border-primary/30 transition-colors">
+                    <MessageCircle className="h-3.5 w-3.5" />
+                  </span>
+                  WhatsApp
+                </a>
+              ) : (
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="h-7 w-7 rounded-lg border border-border bg-muted/50 flex items-center justify-center">
+                    <MessageCircle className="h-3.5 w-3.5" />
+                  </span>
+                  WhatsApp
                 </span>
-                WhatsApp
-              </a>
+              )}
             </div>
           </div>
 

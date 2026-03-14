@@ -1,12 +1,20 @@
 import { MessageCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { footerContact } from "@/data/homePageMockData";
-
-const waUrl = `https://wa.me/${footerContact.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Hi, I need support from KarnaliX.")}`;
+import { getSiteSetting } from "@/api/site";
+import { getDisplayWhatsAppUrl } from "@/lib/whatsappDisplay";
+import { footerContact as defaultFooterContact } from "@/data/homePageMockData";
 
 export const WhatsAppButton = () => {
   const { user } = useAuth();
-  if (user) return null;
+  const { data: siteSetting = {} } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  const s = siteSetting as { whatsapp_number?: string };
+  const siteWhatsapp = (s?.whatsapp_number as string)?.trim() || defaultFooterContact.whatsapp;
+  const waUrl = getDisplayWhatsAppUrl(siteWhatsapp, user, "Hi, I need support from KarnaliX.");
+
+  const showButton = !user || user.role === "player";
+  if (!showButton || !waUrl) return null;
+
   return (
     <a
       href={waUrl}
