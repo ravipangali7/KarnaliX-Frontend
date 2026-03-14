@@ -148,25 +148,31 @@ const getNavItems = (role: string): NavItem[] => {
 
 const formatBal = (v: string | number | null | undefined) => (v != null ? `₹${Number(v).toLocaleString()}` : "₹0");
 
-const getBalanceHeaders = (role: string, user: { main_balance?: string; super_balance?: string | null; master_balance?: string | null; player_balance?: string | null; pl_balance?: string; total_balance?: string | number } | null) => {
+type BalanceItem = { label: string; value: string; plNumeric?: number };
+
+const getBalanceHeaders = (role: string, user: { main_balance?: string; super_balance?: string | null; master_balance?: string | null; player_balance?: string | null; pl_balance?: string; total_balance?: string | number } | null): BalanceItem[] => {
   if (!user) return [];
+  const plNum = Number(user.pl_balance ?? 0);
+  const plItem: BalanceItem = { label: "P/L", value: formatBal(user.pl_balance), plNumeric: plNum };
   if (role === "powerhouse") return [
     { label: "Main", value: formatBal(user.main_balance) },
     { label: "Super Bal", value: formatBal(user.super_balance) },
     { label: "Master Bal", value: formatBal(user.master_balance) },
     { label: "Player Bal", value: formatBal(user.player_balance) },
+    plItem,
     { label: "Total", value: formatBal(user.total_balance) },
   ];
   if (role === "super") return [
     { label: "Main", value: formatBal(user.main_balance) },
     { label: "Master Bal", value: formatBal(user.master_balance) },
     { label: "Player Bal", value: formatBal(user.player_balance) },
+    plItem,
     { label: "Total", value: formatBal(user.total_balance) },
   ];
   return [
     { label: "Main", value: formatBal(user.main_balance) },
     { label: "Player Bal", value: formatBal(user.player_balance) },
-    { label: "P/L", value: formatBal(user.pl_balance) },
+    plItem,
     { label: "Total", value: formatBal(user.total_balance) },
   ];
 };
@@ -416,7 +422,7 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
                 {balances.map((b) => (
                   <div key={b.label} className="px-2 py-1 rounded-md bg-muted text-xs">
                     <span className="text-muted-foreground">{b.label}: </span>
-                    <span className="font-semibold text-primary">{b.value}</span>
+                    <span className={`font-semibold ${b.plNumeric !== undefined ? (b.plNumeric >= 0 ? "text-success" : "text-destructive") : "text-primary"}`}>{b.value}</span>
                   </div>
                 ))}
               </div>
@@ -433,7 +439,7 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
             {balances.map((b) => (
               <div key={b.label} className="flex-shrink-0 px-2 py-1 rounded-md bg-muted text-[10px]">
                 <span className="text-muted-foreground">{b.label}: </span>
-                <span className="font-semibold text-primary">{b.value}</span>
+                <span className={`font-semibold ${b.plNumeric !== undefined ? (b.plNumeric >= 0 ? "text-success" : "text-destructive") : "text-primary"}`}>{b.value}</span>
               </div>
             ))}
           </div>

@@ -137,6 +137,35 @@ function SiteFavicon() {
   return null;
 }
 
+function SiteMetaImage() {
+  const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  useEffect(() => {
+    const logo = (siteSetting as { logo?: string } | undefined)?.logo?.trim();
+    const imageUrl = logo ? getMediaUrl(logo) : `${typeof window !== "undefined" ? window.location.origin : ""}/karnali-logo.png`;
+    const setMeta = (selector: string, attr: "property" | "name", key: string, content: string) => {
+      let el = document.querySelector<HTMLMetaElement>(selector);
+      if (!el) {
+        el = document.createElement("meta");
+        if (attr === "property") el.setAttribute("property", key);
+        else el.setAttribute("name", key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, key);
+      el.content = content;
+    };
+    setMeta('meta[property="og:image"]', "property", "og:image", imageUrl);
+    setMeta('meta[name="twitter:image"]', "name", "twitter:image", imageUrl);
+    let card = document.querySelector<HTMLMetaElement>('meta[name="twitter:card"]');
+    if (!card) {
+      card = document.createElement("meta");
+      card.setAttribute("name", "twitter:card");
+      document.head.appendChild(card);
+    }
+    card.content = card.content || "summary_large_image";
+  }, [siteSetting]);
+  return null;
+}
+
 function HomePageSwitch() {
   if (HOME_PAGE_VARIANT === "second") {
     return (
@@ -164,6 +193,7 @@ const App = () => {
             <PlayerNotificationProvider>
               <ScrollToTop />
               <SiteFavicon />
+              <SiteMetaImage />
               <SiteThemeApplier />
               <GlobalMessageFab />
               <Routes>
