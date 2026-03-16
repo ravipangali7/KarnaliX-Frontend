@@ -84,8 +84,9 @@ export async function getPublicCountries(): Promise<CountryOption[]> {
   }
 }
 
-/** Site setting shape for WhatsApp/phones (whatsapp_number, phones array). */
+/** Site setting shape for WhatsApp/phones (whatsapp_number, phones array), and name for branding. */
 export type SiteSettingRecord = Record<string, unknown> & {
+  name?: string;
   whatsapp_number?: string;
   phones?: string[];
 };

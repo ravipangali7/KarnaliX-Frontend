@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDashboard, getUnreadMessageCount } from "@/api/admin";
+import { getSiteSetting } from "@/api/site";
 import { Badge } from "@/components/ui/badge";
 
 interface AdminLayoutProps {
@@ -212,6 +213,9 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
     return group.children.some((c) => isActive(c.path));
   };
 
+  const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  const siteName = (siteSetting as { name?: string } | undefined)?.name?.trim() || "Karnali X";
+
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
   return (
@@ -219,7 +223,7 @@ export const AdminLayout = ({ role }: AdminLayoutProps) => {
       {/* Desktop Sidebar */}
       <aside className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${collapsed ? "w-16" : "w-60"}`}>
         <div className="h-14 flex items-center px-3 gap-2 border-b border-sidebar-border">
-          <img src={"/karnali-logo.png"} alt="Karnali X" className="h-8 w-8 rounded flex-shrink-0" />
+          <img src={"/karnali-logo.png"} alt={siteName} className="h-8 w-8 rounded flex-shrink-0" />
           {!collapsed && <span className="font-gaming font-bold text-xs neon-text tracking-wider truncate">{roleLabel}</span>}
         </div>
 
