@@ -35,11 +35,13 @@ export function ActivePopups() {
     queryFn: getActivePopups,
   });
   const [currentIndex, setCurrentIndex] = useState(0);
+  // Force re-compute when we close (sessionStorage changes); use state so useMemo deps update
+  const [closeCounter, setCloseCounter] = useState(0);
 
   const unseen = useMemo(() => {
     const seen = getSeenIds();
     return (popups as PopupApi[]).filter((p) => !seen.includes(p.id));
-  }, [popups]);
+  }, [popups, closeCounter]);
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -51,6 +53,7 @@ export function ActivePopups() {
   const handleClose = () => {
     if (current) {
       markSeen(current.id);
+      setCloseCounter((c) => c + 1);
       setCurrentIndex(0);
     }
   };
