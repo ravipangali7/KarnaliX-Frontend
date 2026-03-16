@@ -1,5 +1,4 @@
-import { apiGet, apiPost, getMediaUrl } from "@/lib/api";
-import type { ComingSoonShape } from "@/data/homePageMockData";
+import { apiGet, getMediaUrl } from "@/lib/api";
 
 export interface GameCategory {
   id: number;
@@ -146,46 +145,3 @@ export async function getGame(id: string | number): Promise<Game | null> {
   return unwrapSingle<Game>(res as unknown);
 }
 
-/** Coming-soon list item from API (subset of Game + coming_soon_*). */
-export interface ComingSoonGameApi {
-  id: number;
-  name: string;
-  image?: string;
-  image_url?: string;
-  coming_soon_launch_date?: string | null;
-  coming_soon_description?: string;
-}
-
-function formatLaunchDate(value: string | null | undefined): string | undefined {
-  if (!value) return undefined;
-  try {
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return value;
-    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  } catch {
-    return value;
-  }
-}
-
-/** Fetch coming-soon games from backend; returns shape expected by ComingSoon component. */
-export async function getComingSoonGames(): Promise<ComingSoonShape[]> {
-  try {
-    const res = await apiGet<ComingSoonGameApi[]>("/public/coming-soon-games/");
-    const list = unwrapList<ComingSoonGameApi>(res as unknown);
-    return list.map((item) => ({
-      id: String(item.id),
-      name: item.name,
-      image: getGameImageUrl(item as unknown as Game),
-      launchDate: formatLaunchDate(item.coming_soon_launch_date ?? undefined),
-      description: item.coming_soon_description ?? undefined,
-    }));
-  } catch {
-    return [];
-  }
-}
-
-/** Enroll current user for a coming-soon game (requires auth). Idempotent. */
-export async function enrollComingSoon(gameId: number): Promise<{ detail: string; enrolled?: boolean }> {
-  const res = await apiPost<{ detail: string; enrolled?: boolean }>("/public/coming-soon-enroll/", { game_id: gameId });
-  return (res as { detail?: string; enrolled?: boolean }) ?? { detail: "Enrolled.", enrolled: true };
-}

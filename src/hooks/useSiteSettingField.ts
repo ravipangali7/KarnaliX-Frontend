@@ -9,7 +9,6 @@ type SiteSettingJsonField =
   | "site_providers_json"
   | "site_categories_game_json"
   | "site_popular_games_json"
-  | "site_coming_soon_json"
   | "site_refer_bonus_json"
   | "site_payments_accepted_json";
 type SiteSettingThemeField = "site_theme_json";

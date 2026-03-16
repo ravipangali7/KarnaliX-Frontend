@@ -110,7 +110,6 @@ const PowerhouseSiteSettings = () => {
   const [siteProvidersJson, setSiteProvidersJson] = useState<SectionJson>({});
   const [siteCategoriesGameJson, setSiteCategoriesGameJson] = useState<SectionJson>({});
   const [sitePopularGamesJson, setSitePopularGamesJson] = useState<SectionJson>({});
-  const [siteComingSoonJson, setSiteComingSoonJson] = useState<SectionJson>({});
   const [siteReferBonusJson, setSiteReferBonusJson] = useState<SectionJson>({});
   const [sitePaymentsAcceptedJson, setSitePaymentsAcceptedJson] = useState<SectionJson>({});
   const [siteFooterJson, setSiteFooterJson] = useState<SectionJson>({});
@@ -187,7 +186,6 @@ const PowerhouseSiteSettings = () => {
     setSiteProvidersJson(parseSection(s.site_providers_json));
     setSiteCategoriesGameJson(parseSection(s.site_categories_game_json));
     setSitePopularGamesJson(parseSection(s.site_popular_games_json));
-    setSiteComingSoonJson(parseSection(s.site_coming_soon_json));
     setSiteReferBonusJson(parseSection(s.site_refer_bonus_json));
     setSitePaymentsAcceptedJson(parseSection(s.site_payments_accepted_json));
     setSiteFooterJson(parseSection(s.site_footer_json));
@@ -223,7 +221,6 @@ const PowerhouseSiteSettings = () => {
       site_providers_json: siteProvidersJson,
       site_categories_game_json: siteCategoriesGameJson,
       site_popular_games_json: sitePopularGamesJson,
-      site_coming_soon_json: siteComingSoonJson,
       site_refer_bonus_json: siteReferBonusJson,
       site_payments_accepted_json: sitePaymentsAcceptedJson,
       site_footer_json: siteFooterJson,
@@ -255,7 +252,6 @@ const PowerhouseSiteSettings = () => {
         formData.set("site_providers_json", JSON.stringify(siteProvidersJson));
         formData.set("site_categories_game_json", JSON.stringify(siteCategoriesGameJson));
         formData.set("site_popular_games_json", JSON.stringify(sitePopularGamesJson));
-        formData.set("site_coming_soon_json", JSON.stringify(siteComingSoonJson));
         formData.set("site_refer_bonus_json", JSON.stringify(siteReferBonusJson));
         formData.set("site_payments_accepted_json", JSON.stringify(sitePaymentsAcceptedJson));
         formData.set("site_footer_json", JSON.stringify(siteFooterJson));

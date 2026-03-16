@@ -55,11 +55,13 @@ export function ActivePopups() {
     }
   };
 
-  const ctaLink = current?.cta_link?.trim() || "#";
+  const ctaLinkRaw = current?.cta_link?.trim() || "";
+  const ctaLink = ctaLinkRaw || "#";
+  const hasRealCta = ctaLinkRaw.length > 0 && ctaLinkRaw !== "#";
   const isInternal = ctaLink.startsWith("/") && !ctaLink.startsWith("//");
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog key={current?.id} open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-xl">{current?.title}</DialogTitle>
@@ -81,25 +83,28 @@ export function ActivePopups() {
           )}
           <div className="flex justify-end gap-2">
             {current && (
-              isInternal ? (
-                <Button asChild className="gold-gradient text-primary-foreground">
-                  <Link to={ctaLink} onClick={handleClose}>
-                    {current.cta_label || "OK"}
-                  </Link>
-                </Button>
+              hasRealCta ? (
+                isInternal ? (
+                  <Button asChild className="gold-gradient text-primary-foreground">
+                    <Link to={ctaLink} onClick={handleClose}>
+                      {current.cta_label || "OK"}
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild className="gold-gradient text-primary-foreground">
+                    <a
+                      href={ctaLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleClose}
+                    >
+                      {current.cta_label || "OK"}
+                    </a>
+                  </Button>
+                )
               ) : (
-                <Button
-                  asChild
-                  className="gold-gradient text-primary-foreground"
-                >
-                  <a
-                    href={ctaLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleClose}
-                  >
-                    {current.cta_label || "OK"}
-                  </a>
+                <Button variant="secondary" onClick={handleClose}>
+                  Close
                 </Button>
               )
             )}

@@ -86,6 +86,7 @@ import PowerhouseSiteSettings from "@/pages/admin/PowerhouseSiteSettings";
 import PowerhouseSlider from "@/pages/admin/PowerhouseSlider";
 import PowerhousePopup from "@/pages/admin/PowerhousePopup";
 import PowerhousePromotions from "@/pages/admin/PowerhousePromotions";
+import PowerhouseComingSoon from "@/pages/admin/PowerhouseComingSoon";
 import PowerhouseComingSoonEnrollments from "@/pages/admin/PowerhouseComingSoonEnrollments";
 import PowerhouseCMS from "@/pages/admin/PowerhouseCMS";
 import PowerhouseTestimonials from "@/pages/admin/PowerhouseTestimonials";
@@ -301,6 +302,7 @@ const App = () => {
               <Route path="/powerhouse/slider" element={<PowerhouseSlider />} />
               <Route path="/powerhouse/popup" element={<PowerhousePopup />} />
               <Route path="/powerhouse/promotions" element={<PowerhousePromotions />} />
+              <Route path="/powerhouse/coming-soon" element={<PowerhouseComingSoon />} />
               <Route path="/powerhouse/coming-soon-enrollments" element={<PowerhouseComingSoonEnrollments />} />
               <Route path="/powerhouse/bonus-rules" element={<PowerhouseBonusRules />} />
               <Route path="/powerhouse/game-log" element={<AdminGameLog />} />

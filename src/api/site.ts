@@ -178,6 +178,8 @@ export interface PromotionApi {
   image?: string | null;
   image_url?: string | null;
   description: string;
+  cta_label?: string | null;
+  cta_link?: string | null;
   is_active: boolean;
   order?: number;
   created_at?: string;
@@ -187,6 +189,25 @@ export interface PromotionApi {
 export async function getPromotions(): Promise<PromotionApi[]> {
   const res = await apiGet("/public/promotions/");
   return (Array.isArray(res) ? res : []) as PromotionApi[];
+}
+
+/** Coming Soon item from public API (home page). */
+export interface ComingSoonApi {
+  id: number;
+  name: string;
+  image?: string | null;
+  image_url?: string | null;
+  description?: string;
+  coming_date?: string | null;
+  is_active: boolean;
+  order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function getComingSoonList(): Promise<ComingSoonApi[]> {
+  const res = await apiGet("/public/coming-soon/");
+  return (Array.isArray(res) ? res : []) as ComingSoonApi[];
 }
 
 export interface PublicPaymentMethod {

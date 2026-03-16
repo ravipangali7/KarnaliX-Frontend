@@ -1,11 +1,7 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Clock, ChevronLeft, ChevronRight, Bell } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { comingSoon as defaultComingSoon } from "@/data/homePageMockData";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { enrollComingSoon } from "@/api/games";
-import { toast } from "@/hooks/use-toast";
 import type { ComingSoonShape } from "@/data/homePageMockData";
 
 interface ComingSoonProps {
@@ -14,28 +10,8 @@ interface ComingSoonProps {
 
 export function ComingSoon({ comingSoon: comingSoonProp }: ComingSoonProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const comingSoon = comingSoonProp && comingSoonProp.length > 0 ? comingSoonProp : defaultComingSoon;
 
-  const handleNotifyMe = async (item: ComingSoonShape) => {
-    const gameId = item.id != null ? Number(item.id) : NaN;
-    if (!Number.isInteger(gameId) || gameId <= 0) {
-      toast({ title: "This game cannot be subscribed yet.", variant: "destructive" });
-      return;
-    }
-    if (!user) {
-      navigate("/login");
-      toast({ title: "Please log in to get notified when this game launches." });
-      return;
-    }
-    try {
-      await enrollComingSoon(gameId);
-      toast({ title: "You’re on the list! We’ll notify you when this game is available." });
-    } catch {
-      toast({ title: "Could not subscribe. Try again later.", variant: "destructive" });
-    }
-  };
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -95,11 +71,7 @@ export function ComingSoon({ comingSoon: comingSoonProp }: ComingSoonProps) {
                 </div>
                 <div className="p-4">
                   <h3 className="font-bold text-lg mb-2 text-foreground">{item.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{item.description ?? ""}</p>
-                  <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => handleNotifyMe(item)}>
-                    <Bell className="w-4 h-4" />
-                    Notify Me
-                  </Button>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{item.description ?? ""}</p>
                 </div>
               </div>
             </div>

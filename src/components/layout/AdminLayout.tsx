@@ -75,6 +75,7 @@ const getNavItems = (role: string): NavItem[] => {
           { label: "Slider", path: "/slider", icon: Image },
           { label: "Popup", path: "/popup", icon: LayoutPanelTop },
           { label: "Promotion", path: "/promotions", icon: Megaphone },
+          { label: "Coming Soon", path: "/coming-soon", icon: Clock },
           { label: "Country", path: "/countries", icon: MapPin },
           { label: "CMS Page", path: "/cms", icon: FileText },
           { label: "Testimonial", path: "/testimonials", icon: Star },

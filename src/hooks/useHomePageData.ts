@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSiteSetting, getTestimonials, getCmsFooterPages } from "@/api/site";
-import { getGames, getCategories, getProviders, getGameImageUrl, getComingSoonGames, type Game, type GameCategory, type GameProvider } from "@/api/games";
+import { getSiteSetting, getTestimonials, getCmsFooterPages, getComingSoonList, type ComingSoonApi } from "@/api/site";
+import { getGames, getCategories, getProviders, getGameImageUrl, type Game, type GameCategory, type GameProvider } from "@/api/games";
 import { getBonusRules, mapBonusRulesToPromoShapes } from "@/api/bonus";
 import { getMediaUrl } from "@/lib/api";
 import type {
@@ -157,8 +157,8 @@ export function useHomePageData(): {
     queryFn: getCmsFooterPages,
   });
   const { data: comingSoonApi } = useQuery({
-    queryKey: ["comingSoonGames"],
-    queryFn: getComingSoonGames,
+    queryKey: ["comingSoon"],
+    queryFn: getComingSoonList,
   });
   const { data: bonusRules = [] } = useQuery({
     queryKey: ["bonusRules"],
@@ -290,6 +290,36 @@ export function useHomePageData(): {
         }
       : defaultFooterLinks;
 
+  function mapComingSoonApiToShape(list: ComingSoonApi[]): ComingSoonShape[] {
+    return list.map((item) => {
+      const img = item.image_url ?? item.image;
+      const image = typeof img === "string" && img.startsWith("http") ? img : (img ? getMediaUrl(img) : "");
+      let launchDate: string | undefined;
+      if (item.coming_date) {
+        try {
+          const d = new Date(item.coming_date);
+          if (!Number.isNaN(d.getTime())) {
+            launchDate = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+          } else {
+            launchDate = item.coming_date;
+          }
+        } catch {
+          launchDate = item.coming_date;
+        }
+      }
+      return {
+        id: String(item.id),
+        name: item.name,
+        image: image || "",
+        launchDate,
+        description: item.description ?? undefined,
+      };
+    });
+  }
+  const comingSoonMapped = Array.isArray(comingSoonApi) && comingSoonApi.length > 0
+    ? mapComingSoonApiToShape(comingSoonApi as ComingSoonApi[])
+    : defaultComingSoon;
+
   const data: HomePageData = {
     hero,
     heroStats,
@@ -302,7 +332,7 @@ export function useHomePageData(): {
     providers: providersMapped,
     testimonials: testimonialsMapped,
     recentWins,
-    comingSoon: Array.isArray(comingSoonApi) && comingSoonApi.length > 0 ? comingSoonApi : defaultComingSoon,
+    comingSoon: comingSoonMapped,
     liveOddsTicker,
     footerContact,
     footerLinks,

@@ -76,7 +76,7 @@ const PromotionPage = () => {
                   <p className="text-muted-foreground text-sm line-clamp-3 flex-1">
                     {descriptionPreview(promo.description)}
                   </p>
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex flex-wrap gap-2 mt-4">
                     <Button
                       variant="outline"
                       size="sm"
@@ -85,6 +85,17 @@ const PromotionPage = () => {
                     >
                       Read More
                     </Button>
+                    {promo.cta_label?.trim() && promo.cta_link?.trim() && (
+                      promo.cta_link.startsWith("http") ? (
+                        <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
+                          <a href={promo.cta_link} target="_blank" rel="noopener noreferrer">{promo.cta_label}</a>
+                        </Button>
+                      ) : (
+                        <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
+                          <Link to={promo.cta_link}>{promo.cta_label}</Link>
+                        </Button>
+                      )
+                    )}
                     <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90" asChild>
                       <Link to={depositHref}>Deposit</Link>
                     </Button>
@@ -129,6 +140,17 @@ const PromotionPage = () => {
                 <Button variant="outline" onClick={() => setSelectedPromotion(null)}>
                   Close
                 </Button>
+                {selectedPromotion.cta_label?.trim() && selectedPromotion.cta_link?.trim() && (
+                  selectedPromotion.cta_link.startsWith("http") ? (
+                    <Button asChild className="bg-primary hover:bg-primary/90">
+                      <a href={selectedPromotion.cta_link} target="_blank" rel="noopener noreferrer">{selectedPromotion.cta_label}</a>
+                    </Button>
+                  ) : (
+                    <Button asChild className="bg-primary hover:bg-primary/90">
+                      <Link to={selectedPromotion.cta_link}>{selectedPromotion.cta_label}</Link>
+                    </Button>
+                  )
+                )}
                 <Button asChild className="bg-primary hover:bg-primary/90">
                   <Link to={depositHref}>Deposit</Link>
                 </Button>
