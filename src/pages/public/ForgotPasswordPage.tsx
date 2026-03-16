@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState<ForgotSearchResult | null>(null);
-  const [channel, setChannel] = useState<"phone" | "email">("phone");
+  const [channel, setChannel] = useState<"phone" | "email" | "whatsapp">("phone");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -65,12 +65,14 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  const sendOtp = async (userId: number, ch: "phone" | "email") => {
+  const sendOtp = async (userId: number, ch: "phone" | "email" | "whatsapp") => {
     setError("");
     setLoading(true);
     try {
       await forgotPasswordSendOtp(userId, ch);
-      toast({ title: ch === "phone" ? "OTP sent to your phone." : "OTP sent to your email." });
+      const title =
+        ch === "phone" ? "OTP sent to your phone." : ch === "whatsapp" ? "OTP sent via WhatsApp." : "OTP sent to your email.";
+      toast({ title });
       setStep("otp");
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Failed to send OTP.";
@@ -81,7 +83,7 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  const handleChooseChannel = (ch: "phone" | "email") => {
+  const handleChooseChannel = (ch: "phone" | "email" | "whatsapp") => {
     if (!user) return;
     setChannel(ch);
     sendOtp(user.id, ch);
@@ -186,6 +188,17 @@ export default function ForgotPasswordPage() {
                   disabled={loading}
                 >
                   <Mail className="h-4 w-4" /> Send OTP to {user.email_mask}
+                </Button>
+              )}
+              {user.has_phone && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 justify-start gap-2 border-green-600 text-green-600 hover:bg-green-600/10 hover:text-green-600"
+                  onClick={() => handleChooseChannel("whatsapp")}
+                  disabled={loading}
+                >
+                  <MessageCircle className="h-4 w-4" /> Send OTP via WhatsApp
                 </Button>
               )}
               {!user.has_phone && !user.has_email && user.whatsapp_number && (
