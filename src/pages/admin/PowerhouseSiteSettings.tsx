@@ -101,6 +101,7 @@ const PowerhouseSiteSettings = () => {
   const [totalWinnings, setTotalWinnings] = useState("");
   const [instantPayouts, setInstantPayouts] = useState("");
   const [footerDescription, setFooterDescription] = useState("");
+  const [scrollingText, setScrollingText] = useState("");
   const [promoBanners, setPromoBanners] = useState<PromoBannerSlide[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -177,6 +178,7 @@ const PowerhouseSiteSettings = () => {
     setTotalWinnings(s.total_winnings != null ? String(s.total_winnings) : "");
     setInstantPayouts(s.instant_payouts != null ? String(s.instant_payouts) : "");
     setFooterDescription(String(s.footer_description ?? ""));
+    setScrollingText(String(s.scrolling_text ?? ""));
     const banners = s.promo_banners as PromoBannerSlide[] | undefined;
     setPromoBanners(Array.isArray(banners) ? banners.map((b) => ({ ...b })) : []);
     // Load new JSON section fields
@@ -215,6 +217,7 @@ const PowerhouseSiteSettings = () => {
       total_winnings: t ? t : "0",
       instant_payouts: i ? parseInt(i, 10) : 0,
       footer_description: footerDescription.trim(),
+      scrolling_text: scrollingText,
       promo_banners: promoBanners,
       site_categories_json: siteCategoriesJson,
       site_top_games_json: siteTopGamesJson,
@@ -242,6 +245,7 @@ const PowerhouseSiteSettings = () => {
         formData.set("hero_title", heroTitle.trim());
         formData.set("hero_subtitle", heroSubtitle.trim());
         formData.set("footer_description", footerDescription.trim());
+        formData.set("scrolling_text", scrollingText);
         formData.set("promo_banners", JSON.stringify(promoBanners));
         formData.set("active_players", activePlayers.trim());
         formData.set("games_available", gamesAvailable.trim());
@@ -504,9 +508,18 @@ const PowerhouseSiteSettings = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-display">Footer</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <label className="text-sm font-medium mb-1.5 block">Footer description / tagline</label>
           <Textarea value={footerDescription} onChange={(e) => setFooterDescription(e.target.value)} rows={2} placeholder="Short tagline under logo" />
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Header scrolling text</label>
+            <Textarea
+              value={scrollingText}
+              onChange={(e) => setScrollingText(e.target.value)}
+              rows={3}
+              placeholder="Ticker message shown in site header. Whitespace is preserved."
+            />
+          </div>
         </CardContent>
       </Card>
 
