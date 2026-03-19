@@ -116,6 +116,10 @@ const PowerhouseSiteSettings = () => {
   const [siteFooterJson, setSiteFooterJson] = useState<SectionJson>({});
   const [siteWelcomeDepositJson, setSiteWelcomeDepositJson] = useState<SectionJson>({});
   const [siteThemeJson, setSiteThemeJson] = useState<Record<string, string>>({});
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
+  const [googleClientId, setGoogleClientId] = useState("");
+  const [googleClientSecret, setGoogleClientSecret] = useState("");
+  const [googleRedirectUri, setGoogleRedirectUri] = useState("");
 
   // Data for selectors
   const { data: allCategoriesRaw = [] } = useQuery({ queryKey: ["admin-categories"], queryFn: getCategoriesAdmin });
@@ -198,6 +202,10 @@ const PowerhouseSiteSettings = () => {
         ? filterAllowedTheme(theme as Record<string, unknown>)
         : {}
     );
+    setGoogleAuthEnabled(Boolean(s.google_auth_enabled));
+    setGoogleClientId(String(s.google_client_id ?? ""));
+    setGoogleClientSecret(String(s.google_client_secret ?? ""));
+    setGoogleRedirectUri(String(s.google_redirect_uri ?? ""));
   }, [siteSettings]);
 
   const buildPayload = () => {
@@ -229,6 +237,10 @@ const PowerhouseSiteSettings = () => {
       site_footer_json: siteFooterJson,
       site_welcome_deposit_json: siteWelcomeDepositJson,
       site_theme_json: filterAllowedTheme(siteThemeJson),
+      google_auth_enabled: googleAuthEnabled,
+      google_client_id: googleClientId.trim(),
+      google_client_secret: googleClientSecret.trim(),
+      google_redirect_uri: googleRedirectUri.trim(),
     };
   };
 
@@ -261,6 +273,10 @@ const PowerhouseSiteSettings = () => {
         formData.set("site_footer_json", JSON.stringify(siteFooterJson));
         formData.set("site_welcome_deposit_json", JSON.stringify(siteWelcomeDepositJson));
         formData.set("site_theme_json", JSON.stringify(filterAllowedTheme(siteThemeJson)));
+        formData.set("google_auth_enabled", String(googleAuthEnabled));
+        formData.set("google_client_id", googleClientId.trim());
+        formData.set("google_client_secret", googleClientSecret.trim());
+        formData.set("google_redirect_uri", googleRedirectUri.trim());
         if (logoFile) formData.set("logo", logoFile);
         if (faviconFile) formData.set("favicon", faviconFile);
         await updateSiteSettingsForm(formData);
@@ -519,6 +535,35 @@ const PowerhouseSiteSettings = () => {
               rows={3}
               placeholder="Ticker message shown in site header. Whitespace is preserved."
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display">Google Authentication</CardTitle>
+          <p className="text-xs text-muted-foreground">Configure Google sign-in credentials and toggle availability on public auth pages.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={googleAuthEnabled}
+              onChange={(e) => setGoogleAuthEnabled(e.target.checked)}
+            />
+            Enable Google Authentication
+          </label>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Google Client ID</label>
+            <Input value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} placeholder="Google OAuth client id" />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Google Client Secret</label>
+            <Input value={googleClientSecret} onChange={(e) => setGoogleClientSecret(e.target.value)} placeholder="Google OAuth client secret" />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Google Redirect URI</label>
+            <Input value={googleRedirectUri} onChange={(e) => setGoogleRedirectUri(e.target.value)} placeholder="https://example.com/auth/google/callback" />
           </div>
         </CardContent>
       </Card>

@@ -10,8 +10,6 @@ import { getMediaUrl } from "@/lib/api";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PlayerNotificationProvider } from "@/contexts/PlayerNotificationContext";
-
-const googleClientId = "386184793784-njlhdvqjh0698tnc5tffi79m5pjqpig4.apps.googleusercontent.com";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SiteThemeApplier } from "@/components/SiteThemeApplier";
 
@@ -182,168 +180,179 @@ function HomePageSwitch() {
   );
 }
 
-const App = () => {
+function AppShell() {
+  const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
+  const rawGoogleClientId = (siteSetting as { google_client_id?: string } | undefined)?.google_client_id;
+  const googleClientId = (rawGoogleClientId ?? "").trim();
+  const googleAuthEnabled = Boolean((siteSetting as { google_auth_enabled?: boolean } | undefined)?.google_auth_enabled);
+
   const content = (
+    <BrowserRouter>
+      <PlayerNotificationProvider>
+        <ScrollToTop />
+        <SiteFavicon />
+        <SiteMetaImage />
+        <SiteThemeApplier />
+        <GlobalMessageFab />
+        <Routes>
+      {/* Public Website */}
+      <Route path="/" element={<HomePageSwitch />} />
+      <Route element={<PublicLayout />}>
+        <Route path="/games" element={<GamesPage />} />
+        <Route path="/games/popular" element={<PopularGamesPage />} />
+        <Route path="/games/top" element={<TopGamesPage />} />
+        <Route path="/games/:id" element={<GameDetailPage />} />
+        <Route path="/categories" element={<CategoryListPage />} />
+        <Route path="/categories/:categoryId" element={<CategoryPage />} />
+        <Route path="/providers" element={<ProvidersPage />} />
+        <Route path="/providers/:id" element={<ProviderPage />} />
+      <Route path="/bonus" element={<BonusPage />} />
+      <Route path="/promotions" element={<PromotionPage />} />
+      <Route path="/wallet" element={<WalletPage />} />
+      </Route>
+
+      {/* In-app game play (full-screen iframe + back button only), player only */}
+      <Route path="/games/:id/play" element={<ProtectedRoute allowedRole="player"><GamePlayPage /></ProtectedRoute>} />
+
+      {/* Auth (no layout) */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+      {/* Player Dashboard (inside site header/footer) */}
+      <Route element={<ProtectedRoute allowedRole="player"><PlayerSiteLayout /></ProtectedRoute>}>
+        <Route path="/player" element={<PlayerLayout />}>
+          <Route index element={<PlayerDashboard />} />
+          <Route path="messages" element={<PlayerMessages />} />
+          <Route path="wallet" element={<PlayerWallet />} />
+          <Route path="transactions" element={<PlayerTransactions />} />
+          <Route path="game-results" element={<PlayerGameResults />} />
+          <Route path="game-results/:id" element={<PlayerGameLogDetail />} />
+          <Route path="payment-modes" element={<PlayerPaymentModes />} />
+          <Route path="change-password" element={<PlayerChangePassword />} />
+          <Route path="profile" element={<PlayerProfile />} />
+          <Route path="referral" element={<PlayerReferralPage />} />
+          <Route path="referral/:id" element={<PlayerReferralDetailPage />} />
+        </Route>
+      </Route>
+
+      {/* Master Dashboard (no dashboard page: redirect to List of User) */}
+      <Route element={<ProtectedRoute allowedRole="master"><AdminLayout role="master" /></ProtectedRoute>}>
+        <Route path="/master" element={<Navigate to="/master/players" replace />} />
+        <Route path="/master/players" element={<AdminPlayers />} />
+        <Route path="/master/players/:id/report" element={<AdminPlayerReport />} />
+        <Route path="/master/account-statement" element={<AdminAccountStatement />} />
+        <Route path="/master/bonus-statement" element={<AdminBonusStatement />} />
+        <Route path="/master/deposits" element={<AdminDeposits />} />
+        <Route path="/master/withdrawals" element={<AdminWithdrawals />} />
+        <Route path="/master/bonus-requests" element={<AdminBonusRequests />} />
+        <Route path="/master/client-request/total-dw" element={<AdminTotalDW />} />
+        <Route path="/master/payment-modes" element={<MasterPaymentModes />} />
+        <Route path="/master/payment-mode-verification" element={<AdminPaymentModeVerification />} />
+        <Route path="/master/activity" element={<AdminActivityLog />} />
+        <Route path="/master/messages" element={<AdminMessages role="master" />} />
+        <Route path="/master/profile" element={<AdminProfile />} />
+        <Route path="/master/change-password" element={<AdminChangePassword />} />
+      </Route>
+
+      {/* Super Dashboard (no dashboard page: redirect to List of Master) */}
+      <Route element={<ProtectedRoute allowedRole="super"><AdminLayout role="super" /></ProtectedRoute>}>
+        <Route path="/super" element={<Navigate to="/super/masters" replace />} />
+        <Route path="/super/masters" element={<AdminMasters />} />
+        <Route path="/super/players" element={<AdminPlayers />} />
+        <Route path="/super/players/:id/report" element={<AdminPlayerReport />} />
+        <Route path="/super/account-statement" element={<AdminAccountStatement />} />
+        <Route path="/super/bonus-statement" element={<AdminBonusStatement />} />
+        <Route path="/super/deposits" element={<AdminDeposits />} />
+        <Route path="/super/withdrawals" element={<AdminWithdrawals />} />
+        <Route path="/super/bonus-requests" element={<AdminBonusRequests />} />
+        <Route path="/super/client-request/total-dw" element={<AdminTotalDW />} />
+        <Route path="/super/client-request/super-master-dw" element={<AdminSuperMasterDW />} />
+        <Route path="/super/client-request/super-dw-state" element={<AdminSuperDWState />} />
+        <Route path="/super/payment-method" element={<Navigate to="/super/payment-mode-verification" replace />} />
+        <Route path="/super/payment-mode-verification" element={<AdminPaymentModeVerification />} />
+        <Route path="/super/activity" element={<AdminActivityLog />} />
+        <Route path="/super/messages" element={<AdminMessages role="super" />} />
+        <Route path="/super/profile" element={<AdminProfile />} />
+        <Route path="/super/change-password" element={<AdminChangePassword />} />
+      </Route>
+
+      {/* Powerhouse Dashboard */}
+      <Route element={<ProtectedRoute allowedRole="powerhouse"><AdminLayout role="powerhouse" /></ProtectedRoute>}>
+        <Route path="/powerhouse" element={<Navigate to="/powerhouse/dashboard" replace />} />
+        <Route path="/powerhouse/dashboard" element={<AdminDashboard role="powerhouse" />} />
+        <Route path="/powerhouse/messages" element={<AdminMessages role="powerhouse" />} />
+        <Route path="/powerhouse/supers" element={<AdminSupers />} />
+        <Route path="/powerhouse/masters" element={<AdminMasters />} />
+        <Route path="/powerhouse/players" element={<AdminPlayers />} />
+        <Route path="/powerhouse/players/:id/report" element={<AdminPlayerReport />} />
+        <Route path="/powerhouse/payment-mode-verification" element={<AdminPaymentModeVerification />} />
+        <Route path="/powerhouse/account-statement" element={<AdminAccountStatement />} />
+        <Route path="/powerhouse/bonus-statement" element={<AdminBonusStatement />} />
+        <Route path="/powerhouse/deposits" element={<AdminDeposits />} />
+        <Route path="/powerhouse/withdrawals" element={<AdminWithdrawals />} />
+        <Route path="/powerhouse/bonus-requests" element={<AdminBonusRequests />} />
+        <Route path="/powerhouse/client-request/total-dw" element={<AdminTotalDW />} />
+        <Route path="/powerhouse/client-request/super-master-dw" element={<AdminSuperMasterDW />} />
+        <Route path="/powerhouse/client-request/super-dw-state" element={<AdminSuperDWState />} />
+        <Route path="/powerhouse/categories" element={<PowerhouseCategories />} />
+        <Route path="/powerhouse/providers" element={<PowerhouseProviders />} />
+        <Route path="/powerhouse/games" element={<PowerhouseGames />} />
+        <Route path="/powerhouse/slider" element={<PowerhouseSlider />} />
+        <Route path="/powerhouse/popup" element={<PowerhousePopup />} />
+        <Route path="/powerhouse/promotions" element={<PowerhousePromotions />} />
+        <Route path="/powerhouse/coming-soon" element={<PowerhouseComingSoon />} />
+        <Route path="/powerhouse/coming-soon-enrollments" element={<PowerhouseComingSoonEnrollments />} />
+        <Route path="/powerhouse/bonus-rules" element={<PowerhouseBonusRules />} />
+        <Route path="/powerhouse/game-log" element={<AdminGameLog />} />
+        <Route path="/powerhouse/game-log/:id" element={<AdminGameLogDetail />} />
+        <Route path="/powerhouse/transactions" element={<AdminTransactions />} />
+        <Route path="/powerhouse/accounting" element={<AdminAccounting />} />
+        <Route path="/powerhouse/activity" element={<AdminActivityLog />} />
+        <Route path="/powerhouse/super-settings" element={<PowerhouseSuperSettings />} />
+        <Route path="/powerhouse/site-settings" element={<PowerhouseSiteSettings />} />
+        <Route path="/powerhouse/site-home-category" element={<PowerhouseSiteHomeCategory />} />
+        <Route path="/powerhouse/site-home-top-games" element={<PowerhouseSiteHomeTopGames />} />
+        <Route path="/powerhouse/site-home-provider" element={<PowerhouseSiteHomeProvider />} />
+        <Route path="/powerhouse/site-home-category-game" element={<PowerhouseSiteHomeCategoryGame />} />
+        <Route path="/powerhouse/site-home-popular-game" element={<PowerhouseSiteHomePopularGame />} />
+        <Route path="/powerhouse/site-home-coming-soon" element={<PowerhouseSiteHomeComingSoon />} />
+        <Route path="/powerhouse/site-home-refer-bonus" element={<PowerhouseSiteHomeReferBonus />} />
+        <Route path="/powerhouse/site-home-payment-accepted" element={<PowerhouseSiteHomePaymentAccepted />} />
+        <Route path="/powerhouse/site-theme" element={<PowerhouseSiteTheme />} />
+        <Route path="/powerhouse/cms" element={<PowerhouseCMS />} />
+        <Route path="/powerhouse/testimonials" element={<PowerhouseTestimonials />} />
+        <Route path="/powerhouse/payment-methods" element={<PowerhousePaymentMethods />} />
+        <Route path="/powerhouse/countries" element={<PowerhouseCountries />} />
+        <Route path="/powerhouse/profile" element={<AdminProfile />} />
+        <Route path="/powerhouse/change-password" element={<AdminChangePassword />} />
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
+        </Routes>
+      </PlayerNotificationProvider>
+    </BrowserRouter>
+  );
+  return googleAuthEnabled && googleClientId ? (
+    <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>
+  ) : (
+    content
+  );
+}
+
+const App = () => {
+  return (
   <ThemeProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <PlayerNotificationProvider>
-              <ScrollToTop />
-              <SiteFavicon />
-              <SiteMetaImage />
-              <SiteThemeApplier />
-              <GlobalMessageFab />
-              <Routes>
-            {/* Public Website */}
-            <Route path="/" element={<HomePageSwitch />} />
-            <Route element={<PublicLayout />}>
-              <Route path="/games" element={<GamesPage />} />
-              <Route path="/games/popular" element={<PopularGamesPage />} />
-              <Route path="/games/top" element={<TopGamesPage />} />
-              <Route path="/games/:id" element={<GameDetailPage />} />
-              <Route path="/categories" element={<CategoryListPage />} />
-              <Route path="/categories/:categoryId" element={<CategoryPage />} />
-              <Route path="/providers" element={<ProvidersPage />} />
-              <Route path="/providers/:id" element={<ProviderPage />} />
-            <Route path="/bonus" element={<BonusPage />} />
-            <Route path="/promotions" element={<PromotionPage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            </Route>
-
-            {/* In-app game play (full-screen iframe + back button only), player only */}
-            <Route path="/games/:id/play" element={<ProtectedRoute allowedRole="player"><GamePlayPage /></ProtectedRoute>} />
-
-            {/* Auth (no layout) */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
-            {/* Player Dashboard (inside site header/footer) */}
-            <Route element={<ProtectedRoute allowedRole="player"><PlayerSiteLayout /></ProtectedRoute>}>
-              <Route path="/player" element={<PlayerLayout />}>
-                <Route index element={<PlayerDashboard />} />
-                <Route path="messages" element={<PlayerMessages />} />
-                <Route path="wallet" element={<PlayerWallet />} />
-                <Route path="transactions" element={<PlayerTransactions />} />
-                <Route path="game-results" element={<PlayerGameResults />} />
-                <Route path="game-results/:id" element={<PlayerGameLogDetail />} />
-                <Route path="payment-modes" element={<PlayerPaymentModes />} />
-                <Route path="change-password" element={<PlayerChangePassword />} />
-                <Route path="profile" element={<PlayerProfile />} />
-                <Route path="referral" element={<PlayerReferralPage />} />
-                <Route path="referral/:id" element={<PlayerReferralDetailPage />} />
-              </Route>
-            </Route>
-
-            {/* Master Dashboard (no dashboard page: redirect to List of User) */}
-            <Route element={<ProtectedRoute allowedRole="master"><AdminLayout role="master" /></ProtectedRoute>}>
-              <Route path="/master" element={<Navigate to="/master/players" replace />} />
-              <Route path="/master/players" element={<AdminPlayers />} />
-              <Route path="/master/players/:id/report" element={<AdminPlayerReport />} />
-              <Route path="/master/account-statement" element={<AdminAccountStatement />} />
-              <Route path="/master/bonus-statement" element={<AdminBonusStatement />} />
-              <Route path="/master/deposits" element={<AdminDeposits />} />
-              <Route path="/master/withdrawals" element={<AdminWithdrawals />} />
-              <Route path="/master/bonus-requests" element={<AdminBonusRequests />} />
-              <Route path="/master/client-request/total-dw" element={<AdminTotalDW />} />
-              <Route path="/master/payment-modes" element={<MasterPaymentModes />} />
-              <Route path="/master/payment-mode-verification" element={<AdminPaymentModeVerification />} />
-              <Route path="/master/activity" element={<AdminActivityLog />} />
-              <Route path="/master/messages" element={<AdminMessages role="master" />} />
-              <Route path="/master/profile" element={<AdminProfile />} />
-              <Route path="/master/change-password" element={<AdminChangePassword />} />
-            </Route>
-
-            {/* Super Dashboard (no dashboard page: redirect to List of Master) */}
-            <Route element={<ProtectedRoute allowedRole="super"><AdminLayout role="super" /></ProtectedRoute>}>
-              <Route path="/super" element={<Navigate to="/super/masters" replace />} />
-              <Route path="/super/masters" element={<AdminMasters />} />
-              <Route path="/super/players" element={<AdminPlayers />} />
-              <Route path="/super/players/:id/report" element={<AdminPlayerReport />} />
-              <Route path="/super/account-statement" element={<AdminAccountStatement />} />
-              <Route path="/super/bonus-statement" element={<AdminBonusStatement />} />
-              <Route path="/super/deposits" element={<AdminDeposits />} />
-              <Route path="/super/withdrawals" element={<AdminWithdrawals />} />
-              <Route path="/super/bonus-requests" element={<AdminBonusRequests />} />
-              <Route path="/super/client-request/total-dw" element={<AdminTotalDW />} />
-              <Route path="/super/client-request/super-master-dw" element={<AdminSuperMasterDW />} />
-              <Route path="/super/client-request/super-dw-state" element={<AdminSuperDWState />} />
-              <Route path="/super/payment-method" element={<Navigate to="/super/payment-mode-verification" replace />} />
-              <Route path="/super/payment-mode-verification" element={<AdminPaymentModeVerification />} />
-              <Route path="/super/activity" element={<AdminActivityLog />} />
-              <Route path="/super/messages" element={<AdminMessages role="super" />} />
-              <Route path="/super/profile" element={<AdminProfile />} />
-              <Route path="/super/change-password" element={<AdminChangePassword />} />
-            </Route>
-
-            {/* Powerhouse Dashboard */}
-            <Route element={<ProtectedRoute allowedRole="powerhouse"><AdminLayout role="powerhouse" /></ProtectedRoute>}>
-              <Route path="/powerhouse" element={<Navigate to="/powerhouse/dashboard" replace />} />
-              <Route path="/powerhouse/dashboard" element={<AdminDashboard role="powerhouse" />} />
-              <Route path="/powerhouse/messages" element={<AdminMessages role="powerhouse" />} />
-              <Route path="/powerhouse/supers" element={<AdminSupers />} />
-              <Route path="/powerhouse/masters" element={<AdminMasters />} />
-              <Route path="/powerhouse/players" element={<AdminPlayers />} />
-              <Route path="/powerhouse/players/:id/report" element={<AdminPlayerReport />} />
-              <Route path="/powerhouse/payment-mode-verification" element={<AdminPaymentModeVerification />} />
-              <Route path="/powerhouse/account-statement" element={<AdminAccountStatement />} />
-              <Route path="/powerhouse/bonus-statement" element={<AdminBonusStatement />} />
-              <Route path="/powerhouse/deposits" element={<AdminDeposits />} />
-              <Route path="/powerhouse/withdrawals" element={<AdminWithdrawals />} />
-              <Route path="/powerhouse/bonus-requests" element={<AdminBonusRequests />} />
-              <Route path="/powerhouse/client-request/total-dw" element={<AdminTotalDW />} />
-              <Route path="/powerhouse/client-request/super-master-dw" element={<AdminSuperMasterDW />} />
-              <Route path="/powerhouse/client-request/super-dw-state" element={<AdminSuperDWState />} />
-              <Route path="/powerhouse/categories" element={<PowerhouseCategories />} />
-              <Route path="/powerhouse/providers" element={<PowerhouseProviders />} />
-              <Route path="/powerhouse/games" element={<PowerhouseGames />} />
-              <Route path="/powerhouse/slider" element={<PowerhouseSlider />} />
-              <Route path="/powerhouse/popup" element={<PowerhousePopup />} />
-              <Route path="/powerhouse/promotions" element={<PowerhousePromotions />} />
-              <Route path="/powerhouse/coming-soon" element={<PowerhouseComingSoon />} />
-              <Route path="/powerhouse/coming-soon-enrollments" element={<PowerhouseComingSoonEnrollments />} />
-              <Route path="/powerhouse/bonus-rules" element={<PowerhouseBonusRules />} />
-              <Route path="/powerhouse/game-log" element={<AdminGameLog />} />
-              <Route path="/powerhouse/game-log/:id" element={<AdminGameLogDetail />} />
-              <Route path="/powerhouse/transactions" element={<AdminTransactions />} />
-              <Route path="/powerhouse/accounting" element={<AdminAccounting />} />
-              <Route path="/powerhouse/activity" element={<AdminActivityLog />} />
-              <Route path="/powerhouse/super-settings" element={<PowerhouseSuperSettings />} />
-              <Route path="/powerhouse/site-settings" element={<PowerhouseSiteSettings />} />
-              <Route path="/powerhouse/site-home-category" element={<PowerhouseSiteHomeCategory />} />
-              <Route path="/powerhouse/site-home-top-games" element={<PowerhouseSiteHomeTopGames />} />
-              <Route path="/powerhouse/site-home-provider" element={<PowerhouseSiteHomeProvider />} />
-              <Route path="/powerhouse/site-home-category-game" element={<PowerhouseSiteHomeCategoryGame />} />
-              <Route path="/powerhouse/site-home-popular-game" element={<PowerhouseSiteHomePopularGame />} />
-              <Route path="/powerhouse/site-home-coming-soon" element={<PowerhouseSiteHomeComingSoon />} />
-              <Route path="/powerhouse/site-home-refer-bonus" element={<PowerhouseSiteHomeReferBonus />} />
-              <Route path="/powerhouse/site-home-payment-accepted" element={<PowerhouseSiteHomePaymentAccepted />} />
-              <Route path="/powerhouse/site-theme" element={<PowerhouseSiteTheme />} />
-              <Route path="/powerhouse/cms" element={<PowerhouseCMS />} />
-              <Route path="/powerhouse/testimonials" element={<PowerhouseTestimonials />} />
-              <Route path="/powerhouse/payment-methods" element={<PowerhousePaymentMethods />} />
-              <Route path="/powerhouse/countries" element={<PowerhouseCountries />} />
-              <Route path="/powerhouse/profile" element={<AdminProfile />} />
-              <Route path="/powerhouse/change-password" element={<AdminChangePassword />} />
-            </Route>
-
-            <Route path="*" element={<NotFound />} />
-              </Routes>
-            </PlayerNotificationProvider>
-          </BrowserRouter>
+          <AppShell />
         </TooltipProvider>
       </QueryClientProvider>
     </AuthProvider>
   </ThemeProvider>
-  );
-  return googleClientId ? (
-    <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>
-  ) : (
-    content
   );
 };
 
