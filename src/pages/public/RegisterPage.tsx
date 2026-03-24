@@ -12,6 +12,7 @@ import { getSiteSetting } from "@/api/site";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { signupCheckPhone, signupSendOtp, signupVerifyOtp } from "@/api/auth";
+import { isCurrencySiteNoSms } from "@/lib/hostOtpPolicy";
 
 type Step = "phone" | "otp" | "name" | "password";
 
@@ -43,7 +44,9 @@ const RegisterPage = () => {
   const [showGoogleUsernameStep, setShowGoogleUsernameStep] = useState(false);
   const { register, loginWithGoogle, googleComplete } = useAuth();
   const navigate = useNavigate();
-  const [otpChannel, setOtpChannel] = useState<"sms" | "whatsapp">("sms");
+  const [otpChannel, setOtpChannel] = useState<"sms" | "whatsapp">(() =>
+    isCurrencySiteNoSms() ? "whatsapp" : "sms"
+  );
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const googleAuthEnabled = Boolean((siteSetting as { google_auth_enabled?: boolean } | undefined)?.google_auth_enabled);
   const googleClientId = ((siteSetting as { google_client_id?: string } | undefined)?.google_client_id ?? "").trim();
@@ -103,6 +106,10 @@ const RegisterPage = () => {
     if (refFromUrl) setReferralCode(refFromUrl);
   }, [refFromUrl]);
 
+  useEffect(() => {
+    if (isCurrencySiteNoSms()) setOtpChannel("whatsapp");
+  }, []);
+
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const digits = phone.replace(/\D/g, "");
@@ -127,7 +134,10 @@ const RegisterPage = () => {
       const detail = (err as { detail?: string })?.detail ?? "Failed. Try again.";
       setError(detail);
       if (detail.toLowerCase().includes("whatsapp") && detail.toLowerCase().includes("not configured")) {
-        toast({ title: "WhatsApp not available. Try SMS.", variant: "destructive" });
+        toast({
+          title: isCurrencySiteNoSms() ? "WhatsApp OTP is not available." : "WhatsApp not available. Try SMS.",
+          variant: "destructive",
+        });
       }
     } finally {
       setLoading(false);
@@ -284,26 +294,32 @@ const RegisterPage = () => {
               </div>
               <div className="space-y-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">OTP via</p>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={otpChannel === "sms" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 h-10"
-                    onClick={() => setOtpChannel("sms")}
-                  >
-                    SMS
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={otpChannel === "whatsapp" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600/10 hover:text-green-600 data-[state=active]:bg-green-600/20"
-                    onClick={() => setOtpChannel("whatsapp")}
-                  >
-                    WhatsApp
-                  </Button>
-                </div>
+                {isCurrencySiteNoSms() ? (
+                  <p className="text-xs text-muted-foreground rounded-md border border-green-600/40 bg-green-600/5 px-3 py-2">
+                    Code will be sent via WhatsApp.
+                  </p>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={otpChannel === "sms" ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1 h-10"
+                      onClick={() => setOtpChannel("sms")}
+                    >
+                      SMS
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={otpChannel === "whatsapp" ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600/10 hover:text-green-600 data-[state=active]:bg-green-600/20"
+                      onClick={() => setOtpChannel("whatsapp")}
+                    >
+                      WhatsApp
+                    </Button>
+                  </div>
+                )}
               </div>
               {refFromUrl ? (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">

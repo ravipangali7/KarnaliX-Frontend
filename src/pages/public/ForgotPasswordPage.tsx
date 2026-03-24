@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isCurrencySiteNoSms } from "@/lib/hostOtpPolicy";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,9 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState<ForgotSearchResult | null>(null);
-  const [channel, setChannel] = useState<"phone" | "email" | "whatsapp">("phone");
+  const [channel, setChannel] = useState<"phone" | "email" | "whatsapp">(() =>
+    isCurrencySiteNoSms() ? "email" : "phone"
+  );
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,8 +56,11 @@ export default function ForgotPasswordPage() {
       } else if (result.has_phone && result.has_email) {
         setStep("channel");
       } else {
-        setChannel(result.has_phone ? "phone" : "email");
-        await sendOtp(result.id, result.has_phone ? "phone" : "email");
+        const noSms = isCurrencySiteNoSms();
+        const phoneCh: "phone" | "whatsapp" = noSms ? "whatsapp" : "phone";
+        const ch = result.has_phone ? phoneCh : "email";
+        setChannel(ch);
+        await sendOtp(result.id, ch);
         setStep("otp");
       }
     } catch (err: unknown) {
@@ -71,7 +77,11 @@ export default function ForgotPasswordPage() {
     try {
       await forgotPasswordSendOtp(userId, ch);
       const title =
-        ch === "phone" ? "OTP sent to your phone." : ch === "whatsapp" ? "OTP sent via WhatsApp." : "OTP sent to your email.";
+        ch === "phone"
+          ? "OTP sent to your phone."
+          : ch === "whatsapp"
+            ? "OTP sent via WhatsApp."
+            : "OTP sent to your email.";
       toast({ title });
       setStep("otp");
     } catch (err: unknown) {
@@ -168,7 +178,7 @@ export default function ForgotPasswordPage() {
 
           {step === "channel" && user && (
             <div className="space-y-3">
-              {user.has_phone && user.phone_mask && (
+              {user.has_phone && user.phone_mask && !isCurrencySiteNoSms() && (
                 <Button
                   type="button"
                   variant="outline"
