@@ -11,6 +11,7 @@ import { useMessageSocket } from "@/hooks/useMessageSocket";
 import { ChatInterface, type ApiMessage, type SendPayload } from "@/components/shared/ChatInterface";
 import AdminMessages from "@/pages/admin/AdminMessages";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const POLL_INTERVAL_MS = 4000;
@@ -120,7 +121,11 @@ export const GlobalMessageFab = () => {
       <button
         type="button"
         onClick={handleFabClick}
-        className="fixed bottom-20 right-4 z-40 md:bottom-6 h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform"
+        className={cn(
+          "fixed right-4 z-40 h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform",
+          /* Admin panels: sit higher so listing pagination (DataTable footer) is not covered */
+          adminRole != null ? "bottom-28 md:bottom-28" : "bottom-20 md:bottom-6"
+        )}
         style={{ backgroundColor: fabColor }}
         aria-label={isPlayer ? "Open notifications" : "Open messages"}
       >

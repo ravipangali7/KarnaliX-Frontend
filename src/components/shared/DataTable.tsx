@@ -171,7 +171,7 @@ export function DataTable<T extends { id: string | number }>({
         <div
           className={
             isThemed
-              ? "flex items-center justify-between text-xs rounded-lg border-2 border-primary/25 bg-gradient-to-r from-primary/10 to-accent/10 px-3 py-2 font-medium"
+              ? "flex items-center justify-between text-xs rounded-lg border-2 border-primary/25 bg-gradient-to-r from-primary/10 to-accent/10 px-3 py-2 pr-14 sm:pr-20 font-medium mb-1"
               : "flex items-center justify-between text-xs text-muted-foreground"
           }
         >
