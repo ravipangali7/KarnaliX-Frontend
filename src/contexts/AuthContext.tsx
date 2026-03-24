@@ -38,15 +38,7 @@ export type GoogleNeedsUsername = { needs_username: true; email: string; name: s
 
 interface AuthContextValue extends AuthState {
   login: (username: string, password: string, countryCode?: string) => Promise<User>;
-  register: (data: {
-    signup_token: string;
-    name: string;
-    password: string;
-    phone?: string;
-    email?: string;
-    referral_code?: string;
-    country_code?: string;
-  }) => Promise<void>;
+  register: (data: { signup_token: string; phone: string; name: string; password: string; referral_code?: string; country_code?: string }) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<User | GoogleNeedsUsername>;
   googleComplete: (idToken: string, username: string, password: string) => Promise<User>;
   logout: () => void;
@@ -131,23 +123,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(
     async (data: {
       signup_token: string;
+      phone: string;
       name: string;
       password: string;
-      phone?: string;
-      email?: string;
       referral_code?: string;
       country_code?: string;
     }) => {
-      const body: Record<string, string> = {
-        signup_token: data.signup_token,
-        name: data.name,
-        password: data.password,
-      };
-      if (data.phone) body.phone = data.phone;
-      if (data.email) body.email = data.email;
-      if (data.referral_code) body.referral_code = data.referral_code;
-      if (data.country_code) body.country_code = data.country_code;
-      const res = await apiPost<{ token: string; user: User }>("/public/auth/register/", body);
+      const res = await apiPost<{ token: string; user: User }>("/public/auth/register/", data);
       const out = res as unknown as { token: string; user: User };
       if (out.token && out.user) {
         localStorage.setItem(TOKEN_KEY, out.token);

@@ -14,13 +14,6 @@ function getToken(): string | null {
   return localStorage.getItem('token');
 }
 
-/** Lets the API apply the same OTP channel rules as the player site when API host differs. */
-function playerHostHeaders(): Record<string, string> {
-  if (typeof window === 'undefined') return {};
-  const h = window.location.hostname;
-  return h ? { 'X-Player-Host': h } : {};
-}
-
 export type ApiResponse<T = unknown> = {
   data?: T;
   detail?: string;
@@ -35,7 +28,6 @@ export async function api<T = unknown>(
   const token = getToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    ...playerHostHeaders(),
     ...(options.headers as Record<string, string>),
   };
   if (token) {
@@ -72,7 +64,7 @@ export async function apiPost<T = unknown>(path: string, body?: unknown): Promis
 export async function apiPostForm<T = unknown>(path: string, formData: FormData): Promise<ApiResponse<T>> {
   const url = path.startsWith('http') ? path : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
   const token = getToken();
-  const headers: HeadersInit = { ...playerHostHeaders() };
+  const headers: HeadersInit = {};
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Token ${token}`;
   }
@@ -99,7 +91,7 @@ export async function apiPostForm<T = unknown>(path: string, formData: FormData)
 export async function apiPatchForm<T = unknown>(path: string, formData: FormData): Promise<ApiResponse<T>> {
   const url = path.startsWith('http') ? path : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
   const token = getToken();
-  const headers: HeadersInit = { ...playerHostHeaders() };
+  const headers: HeadersInit = {};
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Token ${token}`;
   }
