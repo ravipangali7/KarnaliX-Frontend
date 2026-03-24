@@ -34,6 +34,9 @@ const PowerhouseSuperSettings = () => {
   const [whatsappOtpTemplateName, setWhatsappOtpTemplateName] = useState("");
   const [whatsappOtpTemplateLanguage, setWhatsappOtpTemplateLanguage] = useState("en_US");
   const [whatsappOtpTemplateBodyParam, setWhatsappOtpTemplateBodyParam] = useState(false);
+  const [flexgrewApiKey, setFlexgrewApiKey] = useState("");
+  const [flexgrewBaseUrl, setFlexgrewBaseUrl] = useState("");
+  const [flexgrewOtpTemplateId, setFlexgrewOtpTemplateId] = useState("");
   const [rejectSuggestionRows, setRejectSuggestionRows] = useState<SuggestionRow[]>(() => [newRow()]);
   const [saving, setSaving] = useState(false);
 
@@ -54,6 +57,11 @@ const PowerhouseSuperSettings = () => {
     setWhatsappOtpTemplateName(String(s.whatsapp_otp_template_name ?? ""));
     setWhatsappOtpTemplateLanguage(String(s.whatsapp_otp_template_language ?? "en_US") || "en_US");
     setWhatsappOtpTemplateBodyParam(s.whatsapp_otp_template_body_param === true);
+    setFlexgrewApiKey(String(s.flexgrew_api_key ?? ""));
+    setFlexgrewBaseUrl(String(s.flexgrew_base_url ?? ""));
+    setFlexgrewOtpTemplateId(
+      s.flexgrew_otp_template_id != null && s.flexgrew_otp_template_id !== "" ? String(s.flexgrew_otp_template_id) : ""
+    );
     const rr = s.reject_reason_suggestions;
     if (rr != null && typeof rr === "object") {
       const raw = (rr as { data?: unknown }).data;
@@ -85,6 +93,12 @@ const PowerhouseSuperSettings = () => {
 
   const handleSave = async () => {
     const suggestionData = rejectSuggestionRows.map((r) => r.value.trim()).filter((s) => s !== "");
+    const tidRaw = flexgrewOtpTemplateId.trim();
+    let flexgrewTemplateIdPayload: number | null = null;
+    if (tidRaw !== "") {
+      const n = parseInt(tidRaw, 10);
+      if (!Number.isNaN(n) && n > 0) flexgrewTemplateIdPayload = n;
+    }
     setSaving(true);
     try {
       await saveSuperSettings({
@@ -103,6 +117,9 @@ const PowerhouseSuperSettings = () => {
         whatsapp_otp_template_name: whatsappOtpTemplateName.trim(),
         whatsapp_otp_template_language: whatsappOtpTemplateLanguage.trim() || "en_US",
         whatsapp_otp_template_body_param: whatsappOtpTemplateBodyParam,
+        flexgrew_api_key: flexgrewApiKey.trim(),
+        flexgrew_base_url: flexgrewBaseUrl.trim(),
+        flexgrew_otp_template_id: flexgrewTemplateIdPayload,
         reject_reason_suggestions: { data: suggestionData },
       });
       queryClient.invalidateQueries({ queryKey: ["admin-super-settings"] });
@@ -261,6 +278,46 @@ const PowerhouseSuperSettings = () => {
               <code className="text-[11px] bg-muted px-1 rounded">hello_world</code>.
             </span>
           </label>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-display">Flexgrew (WhatsApp fallback)</CardTitle>
+          <p className="text-xs text-muted-foreground font-normal pt-1">
+            Used only when Meta access token + phone number ID are not set. Base URL defaults to https://flexgrew.cloud/api.
+            For cold OTP outside the 24h window, set an OTP template ID from Flexgrew (GET /api/templates); variable{" "}
+            <code className="text-[11px] bg-muted px-1 rounded">1</code> receives the 6-digit code.
+          </p>
+        </CardHeader>
+        <CardContent className="p-4 pt-2 space-y-3">
+          <div>
+            <label className="text-xs text-muted-foreground">Flexgrew API key</label>
+            <Input
+              value={flexgrewApiKey}
+              onChange={(e) => setFlexgrewApiKey(e.target.value)}
+              type="password"
+              autoComplete="off"
+              placeholder="Bearer token from Flexgrew"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Base URL (optional)</label>
+            <Input
+              value={flexgrewBaseUrl}
+              onChange={(e) => setFlexgrewBaseUrl(e.target.value)}
+              placeholder="https://flexgrew.cloud/api"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">OTP template ID (optional)</label>
+            <Input
+              value={flexgrewOtpTemplateId}
+              onChange={(e) => setFlexgrewOtpTemplateId(e.target.value)}
+              placeholder="e.g. 15 — uses POST .../chats/:uuid/template"
+              inputMode="numeric"
+            />
+          </div>
         </CardContent>
       </Card>
 
