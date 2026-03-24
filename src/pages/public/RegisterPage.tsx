@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { GoogleLogin } from "@react-oauth/google";
@@ -11,13 +11,22 @@ import { COUNTRY_CODES } from "@/constants/countryCodes";
 import { getSiteSetting } from "@/api/site";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { signupCheckPhone, signupSendOtp, signupVerifyOtp } from "@/api/auth";
+import { signupCheckPhone, signupCheckEmail, signupSendOtp, signupVerifyOtp } from "@/api/auth";
+import { getOtpPolicy } from "@/lib/otpDomainPolicy";
 
 type Step = "phone" | "otp" | "name" | "password";
 
 function maskPhone(phone: string): string {
   if (!phone || phone.length < 4) return "****";
   return "*".repeat(phone.length - 4) + phone.slice(-4);
+}
+
+function maskEmail(addr: string): string {
+  if (!addr || !addr.includes("@")) return "***";
+  const [local, domain] = addr.split("@", 2);
+  if (local.length <= 1) return `***@${domain}`;
+  if (local.length === 2) return `${local[0]}*@${domain}`;
+  return `${local[0]}${"*".repeat(Math.min(local.length - 2, 4))}${local.slice(-1)}@${domain}`;
 }
 
 const RegisterPage = () => {
@@ -43,7 +52,10 @@ const RegisterPage = () => {
   const [showGoogleUsernameStep, setShowGoogleUsernameStep] = useState(false);
   const { register, loginWithGoogle, googleComplete } = useAuth();
   const navigate = useNavigate();
-  const [otpChannel, setOtpChannel] = useState<"sms" | "whatsapp">("sms");
+  const otpPolicy = useMemo(() => getOtpPolicy(), []);
+  const [signupTab, setSignupTab] = useState<"email" | "phone_whatsapp">("email");
+  const [email, setEmail] = useState("");
+  const [verifiedEmail, setVerifiedEmail] = useState("");
   const { data: siteSetting } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const googleAuthEnabled = Boolean((siteSetting as { google_auth_enabled?: boolean } | undefined)?.google_auth_enabled);
   const googleClientId = ((siteSetting as { google_client_id?: string } | undefined)?.google_client_id ?? "").trim();
@@ -119,16 +131,46 @@ const RegisterPage = () => {
         setError("An account with this phone already exists. Please log in.");
         return;
       }
-      await signupSendOtp(fullPhone, otpChannel);
+      const channel = otpPolicy === "sms_only" ? "sms" : "whatsapp";
+      await signupSendOtp({ phone: fullPhone, channel });
       setVerifiedPhone(fullPhone);
-      toast({ title: otpChannel === "whatsapp" ? "OTP sent via WhatsApp." : "OTP sent to your phone." });
+      setVerifiedEmail("");
+      toast({ title: channel === "whatsapp" ? "OTP sent via WhatsApp." : "OTP sent to your phone." });
       setStep("otp");
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Failed. Try again.";
       setError(detail);
-      if (detail.toLowerCase().includes("whatsapp") && detail.toLowerCase().includes("not configured")) {
-        toast({ title: "WhatsApp not available. Try SMS.", variant: "destructive" });
+      if (otpPolicy === "email_whatsapp" && detail.toLowerCase().includes("whatsapp") && detail.toLowerCase().includes("not configured")) {
+        toast({ title: "WhatsApp not available. Contact support.", variant: "destructive" });
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const em = email.trim().toLowerCase();
+    if (!em || !em.includes("@")) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const { exists } = await signupCheckEmail(em);
+      if (exists) {
+        setError("An account with this email already exists. Please log in.");
+        return;
+      }
+      await signupSendOtp({ email: em, channel: "email" });
+      setVerifiedEmail(em);
+      setVerifiedPhone("");
+      toast({ title: "OTP sent to your email." });
+      setStep("otp");
+    } catch (err: unknown) {
+      const detail = (err as { detail?: string })?.detail ?? "Failed. Try again.";
+      setError(detail);
     } finally {
       setLoading(false);
     }
@@ -139,7 +181,9 @@ const RegisterPage = () => {
     setError("");
     setLoading(true);
     try {
-      const { signup_token } = await signupVerifyOtp(verifiedPhone, otp);
+      const { signup_token } = verifiedEmail
+        ? await signupVerifyOtp({ email: verifiedEmail, otp })
+        : await signupVerifyOtp({ phone: verifiedPhone, otp });
       setSignupToken(signup_token);
       setStep("name");
     } catch (err: unknown) {
@@ -169,14 +213,24 @@ const RegisterPage = () => {
     setError("");
     setLoading(true);
     try {
-      await register({
-        signup_token: signupToken,
-        phone: verifiedPhone,
-        name: name.trim(),
-        password,
-        referral_code: refFromUrl.trim() || referralCode.trim() || undefined,
-        country_code: countryCode || undefined,
-      });
+      if (verifiedEmail) {
+        await register({
+          signup_token: signupToken,
+          email: verifiedEmail,
+          name: name.trim(),
+          password,
+          referral_code: refFromUrl.trim() || referralCode.trim() || undefined,
+        });
+      } else {
+        await register({
+          signup_token: signupToken,
+          phone: verifiedPhone,
+          name: name.trim(),
+          password,
+          referral_code: refFromUrl.trim() || referralCode.trim() || undefined,
+          country_code: countryCode || undefined,
+        });
+      }
       navigate("/player", { replace: true });
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Registration failed.";
@@ -197,7 +251,12 @@ const RegisterPage = () => {
           </div>
           <CardTitle className="font-gaming text-xl neon-text tracking-wide">CREATE ACCOUNT</CardTitle>
           <p className="text-xs text-muted-foreground">
-            {step === "phone" && "Enter your phone number"}
+            {step === "phone" &&
+              (otpPolicy === "sms_only"
+                ? "Enter your phone number"
+                : signupTab === "email"
+                  ? "Enter your email address"
+                  : "Enter your phone (OTP via WhatsApp)")}
             {step === "otp" && "Enter the code we sent"}
             {step === "name" && "Your name"}
             {step === "password" && "Choose a password"}
@@ -258,7 +317,72 @@ const RegisterPage = () => {
             </form>
           ) : (
           <>
-          {step === "phone" && (
+          {step === "phone" && otpPolicy === "email_whatsapp" && (
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sign up with</p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={signupTab === "email" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 h-10"
+                  onClick={() => {
+                    setSignupTab("email");
+                    setError("");
+                  }}
+                >
+                  Email
+                </Button>
+                <Button
+                  type="button"
+                  variant={signupTab === "phone_whatsapp" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600/10 hover:text-green-600"
+                  onClick={() => {
+                    setSignupTab("phone_whatsapp");
+                    setError("");
+                  }}
+                >
+                  WhatsApp
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "phone" && otpPolicy === "email_whatsapp" && signupTab === "email" && (
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+              {error && <p className="text-xs text-destructive">{error}</p>}
+              <Input
+                type="email"
+                placeholder="Email address"
+                className="h-11"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+              {refFromUrl ? (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Referral</p>
+                  <p className="text-sm font-medium text-foreground">You are referred by <span className="text-primary font-semibold">{refFromUrl}</span></p>
+                </div>
+              ) : (
+                referralCode && (
+                  <Input
+                    placeholder="Referral code (optional)"
+                    className="h-11"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                  />
+                )
+              )}
+              <Button type="submit" className="w-full gold-gradient text-primary-foreground font-display font-semibold h-11 neon-glow-sm" disabled={loading}>
+                {loading ? "Sending OTP..." : "Continue"}
+              </Button>
+            </form>
+          )}
+
+          {step === "phone" && (otpPolicy === "sms_only" || (otpPolicy === "email_whatsapp" && signupTab === "phone_whatsapp")) && (
             <form onSubmit={handlePhoneSubmit} className="space-y-3">
               {error && <p className="text-xs text-destructive">{error}</p>}
               <div className="flex gap-2">
@@ -282,29 +406,12 @@ const RegisterPage = () => {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">OTP via</p>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={otpChannel === "sms" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 h-10"
-                    onClick={() => setOtpChannel("sms")}
-                  >
-                    SMS
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={otpChannel === "whatsapp" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600/10 hover:text-green-600 data-[state=active]:bg-green-600/20"
-                    onClick={() => setOtpChannel("whatsapp")}
-                  >
-                    WhatsApp
-                  </Button>
-                </div>
-              </div>
+              {otpPolicy === "sms_only" && (
+                <p className="text-[10px] text-muted-foreground">We will send a verification code by SMS.</p>
+              )}
+              {otpPolicy === "email_whatsapp" && (
+                <p className="text-[10px] text-muted-foreground">We will send a verification code via WhatsApp.</p>
+              )}
               {refFromUrl ? (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Referral</p>
@@ -328,7 +435,9 @@ const RegisterPage = () => {
 
           {step === "otp" && (
             <form onSubmit={handleOtpSubmit} className="space-y-3">
-              <p className="text-xs text-muted-foreground">Code sent to {maskPhone(verifiedPhone)}</p>
+              <p className="text-xs text-muted-foreground">
+                Code sent to {verifiedEmail ? maskEmail(verifiedEmail) : maskPhone(verifiedPhone)}
+              </p>
               <Input
                 placeholder="6-digit code"
                 className="h-11"

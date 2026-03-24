@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,13 @@ import {
   forgotPasswordVerifyReset,
   type ForgotSearchResult,
 } from "@/api/auth";
+import { getOtpPolicy } from "@/lib/otpDomainPolicy";
 
 type Step = "search" | "channel" | "otp" | "done";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const otpPolicy = useMemo(() => getOtpPolicy(), []);
   const [step, setStep] = useState<Step>("search");
   const [searchInput, setSearchInput] = useState("");
   const [searchBy, setSearchBy] = useState<"phone" | "username" | "email">("username");
@@ -42,7 +44,7 @@ export default function ForgotPasswordPage() {
       setUser(result);
       if (!result.has_phone && !result.has_email) {
         if (result.whatsapp_number) {
-          setStep("channel"); // show WhatsApp option only
+          setStep("channel");
         } else {
           toast({
             title: "No contact method",
@@ -50,12 +52,30 @@ export default function ForgotPasswordPage() {
             variant: "destructive",
           });
         }
-      } else if (result.has_phone && result.has_email) {
-        setStep("channel");
+      } else if (otpPolicy === "sms_only") {
+        if (result.has_phone && result.has_email) {
+          setStep("channel");
+        } else if (result.has_phone) {
+          setChannel("phone");
+          await sendOtp(result.id, "phone");
+          setStep("otp");
+        } else {
+          setChannel("email");
+          await sendOtp(result.id, "email");
+          setStep("otp");
+        }
       } else {
-        setChannel(result.has_phone ? "phone" : "email");
-        await sendOtp(result.id, result.has_phone ? "phone" : "email");
-        setStep("otp");
+        if (result.has_phone && result.has_email) {
+          setStep("channel");
+        } else if (result.has_phone) {
+          setChannel("whatsapp");
+          await sendOtp(result.id, "whatsapp");
+          setStep("otp");
+        } else {
+          setChannel("email");
+          await sendOtp(result.id, "email");
+          setStep("otp");
+        }
       }
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Search failed.";
@@ -168,7 +188,7 @@ export default function ForgotPasswordPage() {
 
           {step === "channel" && user && (
             <div className="space-y-3">
-              {user.has_phone && user.phone_mask && (
+              {otpPolicy === "sms_only" && user.has_phone && user.phone_mask && (
                 <Button
                   type="button"
                   variant="outline"
@@ -176,10 +196,10 @@ export default function ForgotPasswordPage() {
                   onClick={() => handleChooseChannel("phone")}
                   disabled={loading}
                 >
-                  <Phone className="h-4 w-4" /> Send OTP to {user.phone_mask}
+                  <Phone className="h-4 w-4" /> Send OTP to {user.phone_mask} (SMS)
                 </Button>
               )}
-              {user.has_email && user.email_mask && (
+              {otpPolicy === "sms_only" && user.has_email && user.email_mask && (
                 <Button
                   type="button"
                   variant="outline"
@@ -190,7 +210,18 @@ export default function ForgotPasswordPage() {
                   <Mail className="h-4 w-4" /> Send OTP to {user.email_mask}
                 </Button>
               )}
-              {user.has_phone && (
+              {otpPolicy === "email_whatsapp" && user.has_email && user.email_mask && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 justify-start gap-2"
+                  onClick={() => handleChooseChannel("email")}
+                  disabled={loading}
+                >
+                  <Mail className="h-4 w-4" /> Send OTP to {user.email_mask}
+                </Button>
+              )}
+              {otpPolicy === "email_whatsapp" && user.has_phone && (
                 <Button
                   type="button"
                   variant="outline"

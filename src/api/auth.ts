@@ -54,14 +54,29 @@ export async function signupCheckPhone(phone: string): Promise<{ exists: boolean
   return res as unknown as { exists: boolean };
 }
 
-export type SignupOtpChannel = "sms" | "whatsapp";
-
-export async function signupSendOtp(phone: string, channel: SignupOtpChannel = "sms"): Promise<void> {
-  await apiPost("/public/auth/signup/send-otp/", { phone, channel });
+export async function signupCheckEmail(email: string): Promise<{ exists: boolean }> {
+  const res = await apiPost<{ exists: boolean }>("/public/auth/signup/check-email/", { email });
+  return res as unknown as { exists: boolean };
 }
 
-export async function signupVerifyOtp(phone: string, otp: string): Promise<{ signup_token: string }> {
-  const res = await apiPost<{ signup_token: string }>("/public/auth/signup/verify-otp/", { phone, otp });
+export type SignupSendOtpParams =
+  | { phone: string; channel: "sms" | "whatsapp" }
+  | { email: string; channel: "email" };
+
+export async function signupSendOtp(params: SignupSendOtpParams): Promise<void> {
+  if (params.channel === "email") {
+    await apiPost("/public/auth/signup/send-otp/", { email: params.email, channel: "email" });
+  } else {
+    await apiPost("/public/auth/signup/send-otp/", { phone: params.phone, channel: params.channel });
+  }
+}
+
+export type SignupVerifyOtpParams = { phone: string; otp: string } | { email: string; otp: string };
+
+export async function signupVerifyOtp(params: SignupVerifyOtpParams): Promise<{ signup_token: string }> {
+  const body =
+    "email" in params ? { email: params.email, otp: params.otp } : { phone: params.phone, otp: params.otp };
+  const res = await apiPost<{ signup_token: string }>("/public/auth/signup/verify-otp/", body);
   return res as unknown as { signup_token: string };
 }
 
