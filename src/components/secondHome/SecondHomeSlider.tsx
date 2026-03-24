@@ -56,7 +56,7 @@ export function SecondHomeSlider({ slides, hideTitle }: SecondHomeSliderProps) {
             const href = (slide.ctaHref ?? "").trim();
             const ctaLabel = (slide.ctaText ?? "").trim();
             const content = (
-              <div className="relative flex min-h-[280px] md:min-h-[400px] w-full items-center justify-between gap-6 px-4 py-8 md:px-8 md:py-12 rounded-none">
+              <div className="relative flex min-h-[280px] md:min-h-[600px] w-full items-center justify-between gap-6 px-4 py-8 md:px-8 md:py-12 rounded-none">
                 {slide.image && (
                   <div className="absolute inset-0 overflow-hidden rounded-none">
                     <img src={slide.image} alt="" className="h-full w-full object-cover" />
