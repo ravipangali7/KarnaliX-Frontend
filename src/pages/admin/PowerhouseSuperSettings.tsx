@@ -280,8 +280,9 @@ const PowerhouseSuperSettings = () => {
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-display">Flexgrew (WhatsApp fallback)</CardTitle>
           <p className="text-xs text-muted-foreground font-normal pt-1">
-            Used only when Meta access token + phone number ID are not set. Base URL defaults to https://flexgrew.cloud/api.
-            For cold OTP outside the 24h window, set an OTP template ID from Flexgrew (GET /api/templates); variable{" "}
+            Used when Meta is not configured, or when Meta token fails (then OTP is sent via Flexgrew). Base URL defaults
+            to <code className="text-[11px] bg-muted px-1 rounded">https://flexgrew.cloud/api</code>; you may use{" "}
+            <code className="text-[11px] bg-muted px-1 rounded">https://flexgrew.cloud</code> (the <code className="text-[11px] bg-muted px-1 rounded">/api</code> path is added automatically). For cold OTP outside the 24h window, set an OTP template ID from Flexgrew (GET /api/templates); variable{" "}
             <code className="text-[11px] bg-muted px-1 rounded">1</code> receives the 6-digit code.
           </p>
         </CardHeader>
@@ -298,6 +299,9 @@ const PowerhouseSuperSettings = () => {
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Base URL (optional)</label>
+            <p className="text-[11px] text-muted-foreground mb-1">
+              Must point at the JSON API root (usually ends with <code className="bg-muted px-1 rounded">/api</code>). Leave empty for the default.
+            </p>
             <Input
               value={flexgrewBaseUrl}
               onChange={(e) => setFlexgrewBaseUrl(e.target.value)}
