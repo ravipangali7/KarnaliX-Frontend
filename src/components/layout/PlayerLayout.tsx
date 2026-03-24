@@ -28,6 +28,7 @@ export const PlayerLayout = () => {
     const refetchBalance = () => {
       queryClient.invalidateQueries({ queryKey: ["playerWallet"] });
       queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["player-master-whatsapp"] });
       refreshUser?.();
     };
     const onVisible = () => {

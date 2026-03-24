@@ -6,7 +6,16 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCurrencySymbol } from "@/utils/currency";
-import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, getDepositBonusEligibility, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
+import {
+  getPlayerWallet,
+  getPlayerMasterWhatsApp,
+  getPaymentModes,
+  getDepositPaymentModes,
+  getDepositBonusEligibility,
+  depositRequest,
+  depositRequestWithScreenshot,
+  withdrawRequest,
+} from "@/api/player";
 import { getPublicPaymentMethods, getSiteSetting } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
 import { getMasterDepositWhatsAppUrl, getMasterWithdrawWhatsAppUrl, userWithWalletMasterWhatsApp } from "@/lib/whatsappDisplay";
@@ -38,9 +47,18 @@ const PlayerWallet = () => {
   const screenshotInputRef = useRef<HTMLInputElement>(null);
 
   const { data: wallet = {} } = useQuery({ queryKey: ["player-wallet"], queryFn: getPlayerWallet });
+  const { data: masterWa = {} } = useQuery({
+    queryKey: ["player-master-whatsapp"],
+    queryFn: getPlayerMasterWhatsApp,
+    enabled: depositOpen || withdrawOpen,
+  });
+  const mergedForWa = useMemo(
+    () => ({ ...(wallet as Record<string, unknown>), ...(masterWa as Record<string, unknown>) }),
+    [wallet, masterWa]
+  );
   const waUser = useMemo(
-    () => userWithWalletMasterWhatsApp(user, wallet as Record<string, unknown>),
-    [user, wallet]
+    () => userWithWalletMasterWhatsApp(user, mergedForWa),
+    [user, mergedForWa]
   );
   const { data: depositPaymentModes = [] } = useQuery({
     queryKey: ["player-deposit-payment-modes"],
@@ -457,6 +475,7 @@ const PlayerWallet = () => {
                     });
                   }
                   queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
+                  queryClient.invalidateQueries({ queryKey: ["player-master-whatsapp"] });
                   toast({ title: "Deposit request submitted." });
                   setDepositOpen(false);
                   setAmount("");
@@ -594,6 +613,7 @@ const PlayerWallet = () => {
                   setSelectedPM(null);
                   setWithdrawWallet("main");
                   queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
+                  queryClient.invalidateQueries({ queryKey: ["player-master-whatsapp"] });
                 } catch (e: unknown) {
                   const err = e as { detail?: string | Record<string, string[]>; status?: number };
                   const raw = err?.detail;

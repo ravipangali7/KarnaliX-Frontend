@@ -94,6 +94,12 @@ export async function getPlayerWallet() {
   return res as unknown as Record<string, unknown>;
 }
 
+/** Parent master WhatsApp (deposit / withdraw / general); fetch when opening wallet modals for fresh DB values. */
+export async function getPlayerMasterWhatsApp() {
+  const res = await apiGet<Record<string, unknown>>(`${P}/master-whatsapp/`);
+  return res as unknown as Record<string, unknown>;
+}
+
 export async function getPlayerTransactions() {
   const res = await apiGet(`${P}/transactions/`);
   return (res as unknown as Record<string, unknown>[]) ?? [];

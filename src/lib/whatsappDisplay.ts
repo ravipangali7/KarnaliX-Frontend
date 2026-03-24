@@ -10,17 +10,21 @@ export function userWithWalletMasterWhatsApp(
 ): User | null {
   if (!user || user.role !== "player") return user;
   const w = wallet ?? {};
-  const fromWallet = (key: string): string | null | undefined => {
-    const v = w[key];
+  /** Support snake_case (DRF) and camelCase if a proxy transforms JSON. */
+  const fromWallet = (snake: string, camel: string): string | null | undefined => {
+    const v = w[snake] ?? w[camel];
     if (v == null) return undefined;
     const s = String(v).trim();
     return s ? s : undefined;
   };
   return {
     ...user,
-    parent_whatsapp_number: fromWallet("master_whatsapp_number") ?? user.parent_whatsapp_number ?? null,
-    parent_whatsapp_deposit: fromWallet("master_whatsapp_deposit") ?? user.parent_whatsapp_deposit ?? null,
-    parent_whatsapp_withdraw: fromWallet("master_whatsapp_withdraw") ?? user.parent_whatsapp_withdraw ?? null,
+    parent_whatsapp_number:
+      fromWallet("master_whatsapp_number", "masterWhatsappNumber") ?? user.parent_whatsapp_number ?? null,
+    parent_whatsapp_deposit:
+      fromWallet("master_whatsapp_deposit", "masterWhatsappDeposit") ?? user.parent_whatsapp_deposit ?? null,
+    parent_whatsapp_withdraw:
+      fromWallet("master_whatsapp_withdraw", "masterWhatsappWithdraw") ?? user.parent_whatsapp_withdraw ?? null,
   };
 }
 
@@ -44,11 +48,14 @@ export function getDisplayWhatsAppNumber(
 }
 
 /**
- * Normalize number to digits; 9–10 digits get 977 prefix for wa.me.
+ * Normalize to wa.me-style international digits.
+ * 11–15 digits: treat as already including country code.
+ * 9–10 digits: prepend 977 (Nepal-style local) for legacy behavior.
  */
 function normalizeForWaMe(raw: string): string {
   const digits = (raw || "").replace(/\D/g, "");
   if (digits.length < 9) return digits;
+  if (digits.length >= 11 && digits.length <= 15) return digits;
   return digits.length <= 10 ? "977" + digits : digits;
 }
 
@@ -66,9 +73,14 @@ export function getDisplayWhatsAppUrl(
 
 function buildWaMeUrlFromRawNumber(raw: string, prefillText?: string): string | null {
   const trimmed = (raw || "").trim();
-  if (!trimmed || !trimmed.replace(/\D/g, "")) return null;
-  const normalized = normalizeForWaMe(trimmed);
-  if (normalized.length < 9) return null;
+  const digitsOnly = trimmed.replace(/\D/g, "");
+  if (!trimmed || !digitsOnly) return null;
+  let normalized = normalizeForWaMe(trimmed);
+  // If 977-prefix path failed validation but we have plausible intl digits, use as-is
+  if (normalized.length < 9 && digitsOnly.length >= 9 && digitsOnly.length <= 15) {
+    normalized = digitsOnly;
+  }
+  if (normalized.length < 8) return null;
   const base = `https://wa.me/${normalized}`;
   if (prefillText && prefillText.trim()) {
     return `${base}?text=${encodeURIComponent(prefillText.trim())}`;

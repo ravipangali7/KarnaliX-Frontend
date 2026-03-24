@@ -9,7 +9,7 @@ import { getGame, getGames, getGameImageUrl } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
 import { getMasterDepositWhatsAppUrl, getMasterWithdrawWhatsAppUrl, userWithWalletMasterWhatsApp } from "@/lib/whatsappDisplay";
 import { footerContact as defaultFooterContact } from "@/data/homePageMockData";
-import { getPlayerWallet, launchGameByMode } from "@/api/player";
+import { getPlayerWallet, getPlayerMasterWhatsApp, launchGameByMode } from "@/api/player";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Game } from "@/api/games";
 import { Shield, Zap, Lock, Users, Trophy, Clock, Flame, TrendingUp, Crown, Dice1, Target, Eye } from "lucide-react";
@@ -42,9 +42,21 @@ const GameDetailPage = () => {
     queryFn: getPlayerWallet,
     enabled: !!isPlayer,
   });
+  const { data: masterWa = {} } = useQuery({
+    queryKey: ["player-master-whatsapp"],
+    queryFn: getPlayerMasterWhatsApp,
+    enabled: !!isPlayer,
+  });
+  const mergedForWa = useMemo(
+    () => ({
+      ...((wallet ?? {}) as Record<string, unknown>),
+      ...(masterWa as Record<string, unknown>),
+    }),
+    [wallet, masterWa]
+  );
   const waUser = useMemo(
-    () => userWithWalletMasterWhatsApp(user ?? null, wallet as Record<string, unknown> | undefined),
-    [user, wallet]
+    () => userWithWalletMasterWhatsApp(user ?? null, mergedForWa),
+    [user, mergedForWa]
   );
 
   // When user returns from game tab (visibility or window focus), refetch wallet and auth so balance updates
@@ -54,6 +66,7 @@ const GameDetailPage = () => {
       if (!isPlayer) return;
       queryClient.invalidateQueries({ queryKey: ["playerWallet"] });
       queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["player-master-whatsapp"] });
       refreshUser?.();
     };
     const onVisible = () => {
