@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +9,7 @@ import { getCurrencySymbol } from "@/utils/currency";
 import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, getDepositBonusEligibility, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
 import { getPublicPaymentMethods, getSiteSetting } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
-import { getMasterDepositWhatsAppUrl, getMasterWithdrawWhatsAppUrl } from "@/lib/whatsappDisplay";
+import { getMasterDepositWhatsAppUrl, getMasterWithdrawWhatsAppUrl, userWithWalletMasterWhatsApp } from "@/lib/whatsappDisplay";
 import { footerContact as defaultFooterContact } from "@/data/homePageMockData";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp, Gift } from "lucide-react";
@@ -38,6 +38,10 @@ const PlayerWallet = () => {
   const screenshotInputRef = useRef<HTMLInputElement>(null);
 
   const { data: wallet = {} } = useQuery({ queryKey: ["player-wallet"], queryFn: getPlayerWallet });
+  const waUser = useMemo(
+    () => userWithWalletMasterWhatsApp(user, wallet as Record<string, unknown>),
+    [user, wallet]
+  );
   const { data: depositPaymentModes = [] } = useQuery({
     queryKey: ["player-deposit-payment-modes"],
     queryFn: getDepositPaymentModes,
@@ -64,11 +68,11 @@ const PlayerWallet = () => {
   });
   const siteWhatsapp =
     String((siteSetting as { whatsapp_number?: string }).whatsapp_number ?? "").trim() || defaultFooterContact.whatsapp;
-  const depositWaUrl = user
-    ? getMasterDepositWhatsAppUrl(siteWhatsapp, user, `Hi, I need help with a deposit. Username: ${user.username}`)
+  const depositWaUrl = waUser
+    ? getMasterDepositWhatsAppUrl(siteWhatsapp, waUser, `Hi, I need help with a deposit. Username: ${waUser.username}`)
     : null;
-  const withdrawWaUrl = user
-    ? getMasterWithdrawWhatsAppUrl(siteWhatsapp, user, `Hi, I need help with a withdrawal. Username: ${user.username}`)
+  const withdrawWaUrl = waUser
+    ? getMasterWithdrawWhatsAppUrl(siteWhatsapp, waUser, `Hi, I need help with a withdrawal. Username: ${waUser.username}`)
     : null;
   const paymentMethodImageMap = (publicPaymentMethods as { id: number; name: string; image_url?: string | null }[]).reduce(
     (acc, pm) => {

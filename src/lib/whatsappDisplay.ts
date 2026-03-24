@@ -1,6 +1,30 @@
 import type { User } from "@/contexts/AuthContext";
 
 /**
+ * Merge master WhatsApp fields from GET /player/wallet/ (fresh DB) over auth /me/ user.
+ * Fixes stale localStorage user missing `parent_whatsapp_deposit` / `parent_whatsapp_withdraw`.
+ */
+export function userWithWalletMasterWhatsApp(
+  user: User | null,
+  wallet: Record<string, unknown> | null | undefined
+): User | null {
+  if (!user || user.role !== "player") return user;
+  const w = wallet ?? {};
+  const fromWallet = (key: string): string | null | undefined => {
+    const v = w[key];
+    if (v == null) return undefined;
+    const s = String(v).trim();
+    return s ? s : undefined;
+  };
+  return {
+    ...user,
+    parent_whatsapp_number: fromWallet("master_whatsapp_number") ?? user.parent_whatsapp_number ?? null,
+    parent_whatsapp_deposit: fromWallet("master_whatsapp_deposit") ?? user.parent_whatsapp_deposit ?? null,
+    parent_whatsapp_withdraw: fromWallet("master_whatsapp_withdraw") ?? user.parent_whatsapp_withdraw ?? null,
+  };
+}
+
+/**
  * Get the WhatsApp number to display and use for links on site and player dashboard:
  * - Not logged in: site setting WhatsApp
  * - Logged in as player: parent master's WhatsApp, else site setting

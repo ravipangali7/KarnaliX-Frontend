@@ -1,13 +1,13 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GameCard } from "@/components/shared/GameCard";
 import { GameImageWithFallback } from "@/components/shared/GameImageWithFallback";
 import { getGame, getGames, getGameImageUrl } from "@/api/games";
 import { getSiteSetting } from "@/api/site";
-import { getMasterDepositWhatsAppUrl, getMasterWithdrawWhatsAppUrl } from "@/lib/whatsappDisplay";
+import { getMasterDepositWhatsAppUrl, getMasterWithdrawWhatsAppUrl, userWithWalletMasterWhatsApp } from "@/lib/whatsappDisplay";
 import { footerContact as defaultFooterContact } from "@/data/homePageMockData";
 import { getPlayerWallet, launchGameByMode } from "@/api/player";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +42,10 @@ const GameDetailPage = () => {
     queryFn: getPlayerWallet,
     enabled: !!isPlayer,
   });
+  const waUser = useMemo(
+    () => userWithWalletMasterWhatsApp(user ?? null, wallet as Record<string, unknown> | undefined),
+    [user, wallet]
+  );
 
   // When user returns from game tab (visibility or window focus), refetch wallet and auth so balance updates
   useEffect(() => {
@@ -98,14 +102,14 @@ const GameDetailPage = () => {
     String((siteSetting as { whatsapp_number?: string })?.whatsapp_number ?? "").trim() || defaultFooterContact.whatsapp;
   const instantDepositWaUrl = getMasterDepositWhatsAppUrl(
     siteWhatsapp,
-    user,
-    `Hi, I want to make an instant deposit.${user?.username ? ` Username: ${user.username}` : ""}`
+    waUser,
+    `Hi, I want to make an instant deposit.${waUser?.username ? ` Username: ${waUser.username}` : ""}`
   );
-  const instantWithdrawWaUrl = isPlayer
+  const instantWithdrawWaUrl = isPlayer && waUser
     ? getMasterWithdrawWhatsAppUrl(
         siteWhatsapp,
-        user,
-        `Hi, I want to make an instant withdrawal. Username: ${user?.username ?? ""}`
+        waUser,
+        `Hi, I want to make an instant withdrawal. Username: ${waUser.username ?? ""}`
       )
     : null;
 
