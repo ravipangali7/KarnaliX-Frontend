@@ -39,6 +39,53 @@ type WithdrawRow = Record<string, unknown> & {
   reference_id?: string;
 };
 
+function WithdrawalPaymentDetailsBlock({
+  row,
+  paymentMethodImageMap,
+}: {
+  row: WithdrawRow;
+  paymentMethodImageMap: Record<number, string>;
+}) {
+  const pmd = row.payment_mode_detail;
+  const accountStr = String(row.account_details ?? row.accountDetails ?? "").trim();
+  const fallbackMethod = String(row.payment_mode_name ?? row.payment_mode ?? "").trim();
+  const detailsObj =
+    pmd?.details != null && typeof pmd.details === "object" ? (pmd.details as Record<string, unknown>) : null;
+  const hasDetailKeys = !!detailsObj && Object.keys(detailsObj).length > 0;
+  const methodName = String(pmd?.payment_method_name ?? fallbackMethod).trim();
+  const pmId = pmd?.payment_method != null ? Number(pmd.payment_method) : null;
+  const pmImageUrl = pmId != null ? paymentMethodImageMap[pmId] : null;
+  const pmdQr = pmd?.qr_image_url ? getMediaUrl(String(pmd.qr_image_url)) : null;
+  const rowQr = row.payment_mode_qr_image ? getMediaUrl(String(row.payment_mode_qr_image)) : null;
+  const qrUrl = pmdQr ?? rowQr ?? null;
+  const statusRaw = pmd ? String(pmd.status_display ?? pmd.status ?? "").trim() : "";
+  const statusLabel = statusRaw || undefined;
+  const summaryText = !hasDetailKeys && accountStr ? accountStr : undefined;
+  const showPanel = !!(methodName || statusLabel || hasDetailKeys || summaryText || qrUrl);
+
+  if (!showPanel) {
+    return <p className="text-sm text-muted-foreground">No payment details on file.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {pmImageUrl ? (
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-xs">Method</span>
+          <img src={getMediaUrl(pmImageUrl)} alt="" className="h-6 w-auto max-w-12 object-contain rounded border border-border" />
+        </div>
+      ) : null}
+      <PaymentDetailsPanel
+        methodName={methodName || undefined}
+        details={hasDetailKeys ? detailsObj : null}
+        statusLabel={statusLabel}
+        qrUrl={qrUrl}
+        summaryText={summaryText}
+      />
+    </div>
+  );
+}
+
 const AdminWithdrawals = () => {
   const { user, refreshUser } = useAuth();
   const role = (user?.role === "powerhouse" || user?.role === "super" || user?.role === "master") ? user.role : "master";
@@ -78,6 +125,7 @@ const AdminWithdrawals = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [selectedW, setSelectedW] = useState<WithdrawRow | null>(null);
   const [cellView, setCellView] = useState<{ label: string; value: ReactNode } | null>(null);
+  const [paymentDetailsRow, setPaymentDetailsRow] = useState<WithdrawRow | null>(null);
   const [withdrawEdit, setWithdrawEdit] = useState<{ row: WithdrawRow; field: "status" | "amount" } | null>(null);
   const [withdrawEditValue, setWithdrawEditValue] = useState("");
   const [withdrawEditSaving, setWithdrawEditSaving] = useState(false);
@@ -117,7 +165,21 @@ const AdminWithdrawals = () => {
         );
       },
     },
-    { header: "payment details", sortKey: "payment_mode_name", accessor: (row: WithdrawRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Payment details", String(row.account_details ?? row.accountDetails ?? row.payment_mode_name ?? row.payment_mode ?? "—"))}>{String(row.account_details ?? row.accountDetails ?? row.payment_mode_name ?? row.payment_mode ?? "—")}</span> },
+    {
+      header: "payment details",
+      sortKey: "payment_mode_name",
+      accessor: (row: WithdrawRow) => (
+        <span
+          className="cursor-pointer hover:underline text-primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            setPaymentDetailsRow(row);
+          }}
+        >
+          {String(row.account_details ?? row.accountDetails ?? row.payment_mode_name ?? row.payment_mode ?? "—")}
+        </span>
+      ),
+    },
     {
       header: "remarks",
       sortKey: "remarks",
@@ -258,6 +320,21 @@ const AdminWithdrawals = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Payment details (same panel + Copy all as deposit / Eye report) */}
+      <Dialog open={paymentDetailsRow != null} onOpenChange={(open) => { if (!open) setPaymentDetailsRow(null); }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-base">Payment details</DialogTitle>
+          </DialogHeader>
+          {paymentDetailsRow ? (
+            <WithdrawalPaymentDetailsBlock row={paymentDetailsRow} paymentMethodImageMap={paymentMethodImageMap} />
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPaymentDetailsRow(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* View-only cell modal */}
       <Dialog open={!!cellView} onOpenChange={(open) => { if (!open) setCellView(null); }}>
         <DialogContent className="max-w-sm">
@@ -288,7 +365,6 @@ const AdminWithdrawals = () => {
                   <div><span className="text-muted-foreground text-xs">ID</span><p className="font-medium">{String(selectedW.id ?? "")}</p></div>
                   <div><span className="text-muted-foreground text-xs">Amount</span><p className="font-bold text-accent">₹{Number(selectedW.amount ?? 0).toLocaleString()}</p></div>
                   <div><span className="text-muted-foreground text-xs">Method</span><p className="font-medium">{String(selectedW.payment_mode_name ?? selectedW.payment_mode ?? "")}</p></div>
-                  <div><span className="text-muted-foreground text-xs">Account</span><p className="font-medium">{String(selectedW.account_details ?? selectedW.accountDetails ?? "")}</p></div>
                   <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selectedW.status ?? "pending")} /></p></div>
                   <div><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{selectedW.created_at ? new Date(String(selectedW.created_at)).toLocaleString() : ""}</p></div>
                   {(selectedW.reference_id != null && String(selectedW.reference_id).trim() !== "") && (
@@ -299,41 +375,9 @@ const AdminWithdrawals = () => {
                   )}
                 </div>
               </div>
-              <div className="space-y-3">
-                {selectedW.payment_mode_qr_image && (
-                  <div>
-                    <span className="text-muted-foreground text-xs">Payment QR</span>
-                    <img src={getMediaUrl(String(selectedW.payment_mode_qr_image))} alt="Payment QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
-                  </div>
-                )}
-                {selectedW.payment_mode_detail && (
-                  <div className="border-t pt-3 mt-3 md:border-t-0 md:pt-0 md:mt-0 space-y-2">
-                    {(() => {
-                      const pmId = selectedW.payment_mode_detail?.payment_method != null ? Number(selectedW.payment_mode_detail.payment_method) : null;
-                      const pmImageUrl = pmId != null ? paymentMethodImageMap[pmId] : null;
-                      return pmImageUrl ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground text-xs">Method</span>
-                          <img src={getMediaUrl(pmImageUrl)} alt="" className="h-6 w-auto max-w-12 object-contain rounded border border-border" />
-                        </div>
-                      ) : null;
-                    })()}
-                    <PaymentDetailsPanel
-                      methodName={String(selectedW.payment_mode_detail.payment_method_name ?? "")}
-                      details={
-                        selectedW.payment_mode_detail.details != null && typeof selectedW.payment_mode_detail.details === "object"
-                          ? (selectedW.payment_mode_detail.details as Record<string, unknown>)
-                          : null
-                      }
-                      statusLabel={String(selectedW.payment_mode_detail.status_display ?? selectedW.payment_mode_detail.status ?? "")}
-                      qrUrl={
-                        selectedW.payment_mode_detail.qr_image_url
-                          ? getMediaUrl(String(selectedW.payment_mode_detail.qr_image_url))
-                          : null
-                      }
-                    />
-                  </div>
-                )}
+              <div className="space-y-3 border-t pt-3 mt-3 md:border-t-0 md:pt-0 md:mt-0">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</p>
+                <WithdrawalPaymentDetailsBlock row={selectedW} paymentMethodImageMap={paymentMethodImageMap} />
               </div>
             </div>
           )}

@@ -6,6 +6,8 @@ export function buildPaymentDetailsCopyText(opts: {
   details?: Record<string, unknown> | null;
   statusLabel?: string;
   qrNote?: string;
+  summaryLabel?: string;
+  summaryText?: string;
 }): string {
   const lines: string[] = [];
   if (opts.methodName) lines.push(`Method: ${opts.methodName}`);
@@ -15,6 +17,8 @@ export function buildPaymentDetailsCopyText(opts: {
       lines.push(`${k.replace(/_/g, " ")}: ${String(v ?? "")}`);
     }
   }
+  const sum = opts.summaryText?.trim();
+  if (sum) lines.push(`${opts.summaryLabel ?? "Details"}: ${sum}`);
   if (opts.qrNote) lines.push(opts.qrNote);
   return lines.join("\n");
 }
@@ -26,14 +30,29 @@ type PaymentDetailsPanelProps = {
   qrUrl?: string | null;
   qrAlt?: string;
   className?: string;
+  /** Plain-text line(s) when there is no structured `details` object (e.g. serialized account string). */
+  summaryText?: string;
+  summaryLabel?: string;
 };
 
-export function PaymentDetailsPanel({ methodName, details, statusLabel, qrUrl, qrAlt = "Payment QR", className }: PaymentDetailsPanelProps) {
+export function PaymentDetailsPanel({
+  methodName,
+  details,
+  statusLabel,
+  qrUrl,
+  qrAlt = "Payment QR",
+  className,
+  summaryText,
+  summaryLabel = "Account / payment details",
+}: PaymentDetailsPanelProps) {
   const hasDetails = details != null && typeof details === "object" && Object.keys(details).length > 0;
+  const sum = summaryText?.trim();
   const copyText = buildPaymentDetailsCopyText({
     methodName,
     details: hasDetails ? details : null,
     statusLabel,
+    summaryLabel,
+    summaryText: sum,
     qrNote: qrUrl ? "[QR image available in app]" : undefined,
   });
 
@@ -78,6 +97,12 @@ export function PaymentDetailsPanel({ methodName, details, statusLabel, qrUrl, q
               <span className="font-mono font-medium break-all">{String(v ?? "")}</span>
             </div>
           ))}
+        </div>
+      )}
+      {sum && (
+        <div>
+          <span className="text-muted-foreground text-xs block">{summaryLabel}</span>
+          <p className="text-sm font-mono font-medium break-all whitespace-pre-wrap">{sum}</p>
         </div>
       )}
       {qrUrl && (
