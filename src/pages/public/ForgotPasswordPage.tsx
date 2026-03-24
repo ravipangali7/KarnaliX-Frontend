@@ -75,14 +75,15 @@ export default function ForgotPasswordPage() {
     setError("");
     setLoading(true);
     try {
-      await forgotPasswordSendOtp(userId, ch);
-      const title =
+      const sent = await forgotPasswordSendOtp(userId, ch);
+      const fallback =
         ch === "phone"
           ? "OTP sent to your phone."
           : ch === "whatsapp"
             ? "OTP sent via WhatsApp."
             : "OTP sent to your email.";
-      toast({ title });
+      const raw = typeof sent.detail === "string" && sent.detail.trim() ? sent.detail : fallback;
+      toast({ title: raw.length > 220 ? `${raw.slice(0, 217)}…` : raw });
       setStep("otp");
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Failed to send OTP.";

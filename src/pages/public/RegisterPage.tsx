@@ -126,9 +126,15 @@ const RegisterPage = () => {
         setError("An account with this phone already exists. Please log in.");
         return;
       }
-      await signupSendOtp(fullPhone, otpChannel);
+      const sent = await signupSendOtp(fullPhone, otpChannel);
       setVerifiedPhone(fullPhone);
-      toast({ title: otpChannel === "whatsapp" ? "OTP sent via WhatsApp." : "OTP sent to your phone." });
+      const msg =
+        typeof sent.detail === "string" && sent.detail.trim()
+          ? sent.detail
+          : otpChannel === "whatsapp"
+            ? "OTP sent via WhatsApp."
+            : "OTP sent to your phone.";
+      toast({ title: msg.length > 220 ? `${msg.slice(0, 217)}…` : msg });
       setStep("otp");
     } catch (err: unknown) {
       const detail = (err as { detail?: string })?.detail ?? "Failed. Try again.";

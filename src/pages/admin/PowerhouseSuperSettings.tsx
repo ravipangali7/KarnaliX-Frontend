@@ -32,7 +32,7 @@ const PowerhouseSuperSettings = () => {
   const [whatsappApiVersion, setWhatsappApiVersion] = useState("v22.0");
   const [whatsappOtpTemplateName, setWhatsappOtpTemplateName] = useState("");
   const [whatsappOtpTemplateLanguage, setWhatsappOtpTemplateLanguage] = useState("en_US");
-  const [whatsappOtpTemplateBodyParam, setWhatsappOtpTemplateBodyParam] = useState(true);
+  const [whatsappOtpTemplateBodyParam, setWhatsappOtpTemplateBodyParam] = useState(false);
   const [rejectSuggestionRows, setRejectSuggestionRows] = useState<SuggestionRow[]>(() => [newRow()]);
   const [saving, setSaving] = useState(false);
 
@@ -51,7 +51,7 @@ const PowerhouseSuperSettings = () => {
     setWhatsappApiVersion(String(s.whatsapp_api_version ?? "v22.0") || "v22.0");
     setWhatsappOtpTemplateName(String(s.whatsapp_otp_template_name ?? ""));
     setWhatsappOtpTemplateLanguage(String(s.whatsapp_otp_template_language ?? "en_US") || "en_US");
-    setWhatsappOtpTemplateBodyParam(s.whatsapp_otp_template_body_param !== false);
+    setWhatsappOtpTemplateBodyParam(s.whatsapp_otp_template_body_param === true);
     const rr = s.reject_reason_suggestions;
     if (rr != null && typeof rr === "object") {
       const raw = (rr as { data?: unknown }).data;
@@ -179,10 +179,28 @@ const PowerhouseSuperSettings = () => {
       <Card>
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-display">WhatsApp OTP (Meta Cloud API)</CardTitle>
-          <p className="text-xs text-muted-foreground font-normal pt-1">
-            Used for signup and forgot-password when the user chooses WhatsApp. If access token and phone number ID are set here, Meta Graph API is used; otherwise Flexgrew (env) is used when configured.
-            Use an approved template with one body variable for the 6-digit code, or turn off &quot;OTP in template body&quot; for fixed templates like hello_world (not for real OTP).
-          </p>
+          <div className="text-xs text-muted-foreground font-normal pt-1 space-y-2">
+            <p>
+              Used when players choose WhatsApp on register or forgot password. Paste your Meta token and Phone number ID
+              from{" "}
+              <a
+                href="https://developers.facebook.com/apps/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2"
+              >
+                developers.facebook.com
+              </a>
+              .
+            </p>
+            <p>
+              <strong className="text-foreground font-medium">Easy start:</strong> template name <code className="text-[11px] bg-muted px-1 rounded">hello_world</code>, language{" "}
+              <code className="text-[11px] bg-muted px-1 rounded">en_US</code>, leave the checkbox below <strong>off</strong> — this sends a test message and avoids Meta errors. Players on the main site then get the real code by SMS automatically until you set up a custom template.
+            </p>
+            <p>
+              <strong className="text-foreground font-medium">Real code inside WhatsApp:</strong> in Meta Business Suite create a template whose body includes one variable (e.g. &quot;Your code is {"{{1}}"}&quot;), wait for approval, enter that template name here, and turn the checkbox <strong>on</strong>.
+            </p>
+          </div>
         </CardHeader>
         <CardContent className="p-4 pt-2 space-y-3">
           <div>
@@ -209,18 +227,22 @@ const PowerhouseSuperSettings = () => {
           </div>
           <div>
             <label className="text-xs text-muted-foreground">OTP template name</label>
-            <Input value={whatsappOtpTemplateName} onChange={(e) => setWhatsappOtpTemplateName(e.target.value)} placeholder="your_template_name" />
+            <Input value={whatsappOtpTemplateName} onChange={(e) => setWhatsappOtpTemplateName(e.target.value)} placeholder="hello_world or your_approved_template" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Template language code</label>
             <Input value={whatsappOtpTemplateLanguage} onChange={(e) => setWhatsappOtpTemplateLanguage(e.target.value)} placeholder="en_US" />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
+          <label className="flex items-start gap-2 cursor-pointer text-sm leading-snug">
             <Checkbox
+              className="mt-0.5"
               checked={whatsappOtpTemplateBodyParam}
               onCheckedChange={(v) => setWhatsappOtpTemplateBodyParam(v === true)}
             />
-            <span>Send 6-digit OTP as template body parameter</span>
+            <span>
+              Put the 6-digit code in the message (required for custom templates with one body variable). Leave off for{" "}
+              <code className="text-[11px] bg-muted px-1 rounded">hello_world</code>.
+            </span>
           </label>
         </CardContent>
       </Card>

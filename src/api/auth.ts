@@ -22,11 +22,17 @@ export async function forgotPasswordSearch(payload: ForgotSearchPayload): Promis
   return res as unknown as ForgotSearchResult;
 }
 
+export type SendOtpResult = { detail?: string; delivery?: string };
+
 export async function forgotPasswordSendOtp(
   userId: number,
   channel: "phone" | "email" | "whatsapp"
-): Promise<void> {
-  await apiPost("/public/auth/forgot-password/send-otp/", { user_id: userId, channel });
+): Promise<SendOtpResult> {
+  const res = await apiPost<SendOtpResult>("/public/auth/forgot-password/send-otp/", {
+    user_id: userId,
+    channel,
+  });
+  return (res as SendOtpResult) ?? {};
 }
 
 export async function forgotPasswordVerifyReset(
@@ -56,8 +62,9 @@ export async function signupCheckPhone(phone: string): Promise<{ exists: boolean
 
 export type SignupOtpChannel = "sms" | "whatsapp";
 
-export async function signupSendOtp(phone: string, channel: SignupOtpChannel = "sms"): Promise<void> {
-  await apiPost("/public/auth/signup/send-otp/", { phone, channel });
+export async function signupSendOtp(phone: string, channel: SignupOtpChannel = "sms"): Promise<SendOtpResult> {
+  const res = await apiPost<SendOtpResult>("/public/auth/signup/send-otp/", { phone, channel });
+  return (res as SendOtpResult) ?? {};
 }
 
 export async function signupVerifyOtp(phone: string, otp: string): Promise<{ signup_token: string }> {
