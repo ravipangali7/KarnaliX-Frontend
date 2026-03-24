@@ -7,15 +7,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCurrencySymbol } from "@/utils/currency";
 import { getPlayerWallet, getPaymentModes, getDepositPaymentModes, getDepositBonusEligibility, depositRequest, depositRequestWithScreenshot, withdrawRequest } from "@/api/player";
-import { getPublicPaymentMethods } from "@/api/site";
+import { getPublicPaymentMethods, getSiteSetting } from "@/api/site";
 import { getMediaUrl } from "@/lib/api";
+import { getMasterDepositWhatsAppUrl, getMasterWithdrawWhatsAppUrl } from "@/lib/whatsappDisplay";
+import { footerContact as defaultFooterContact } from "@/data/homePageMockData";
 import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
-import { PaymentDetailsPanel } from "@/components/shared/PaymentDetailsPanel";
+import { PaymentDetailsPanel, buildPaymentDetailsCopyText } from "@/components/shared/PaymentDetailsPanel";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 25000];
 
@@ -55,6 +57,19 @@ const PlayerWallet = () => {
     queryFn: getPublicPaymentMethods,
     enabled: depositOpen || withdrawOpen,
   });
+  const { data: siteSetting = {} } = useQuery({
+    queryKey: ["siteSetting"],
+    queryFn: getSiteSetting,
+    enabled: depositOpen || withdrawOpen,
+  });
+  const siteWhatsapp =
+    String((siteSetting as { whatsapp_number?: string }).whatsapp_number ?? "").trim() || defaultFooterContact.whatsapp;
+  const depositWaUrl = user
+    ? getMasterDepositWhatsAppUrl(siteWhatsapp, user, `Hi, I need help with a deposit. Username: ${user.username}`)
+    : null;
+  const withdrawWaUrl = user
+    ? getMasterWithdrawWhatsAppUrl(siteWhatsapp, user, `Hi, I need help with a withdrawal. Username: ${user.username}`)
+    : null;
   const paymentMethodImageMap = (publicPaymentMethods as { id: number; name: string; image_url?: string | null }[]).reduce(
     (acc, pm) => {
       if (pm.image_url) acc[pm.id] = pm.image_url;
@@ -282,15 +297,48 @@ const PlayerWallet = () => {
                 const displayName = String(selectedMode?.payment_method_name ?? "");
                 const details = selectedMode?.details as Record<string, unknown> | null | undefined;
                 const hasDetails = details != null && typeof details === "object" && Object.keys(details).length > 0;
+                const qrUrl = selectedMode?.qr_image_url ? getMediaUrl(String(selectedMode.qr_image_url)) : null;
+                const paymentCopyText = buildPaymentDetailsCopyText({
+                  methodName: displayName || undefined,
+                  details: hasDetails ? (details as Record<string, unknown>) : null,
+                  qrNote: qrUrl ? "[QR image available in app]" : undefined,
+                });
+                const copyPaymentDetails = async () => {
+                  if (!paymentCopyText.trim()) {
+                    toast({ title: "Nothing to copy", variant: "destructive" });
+                    return;
+                  }
+                  try {
+                    await navigator.clipboard.writeText(paymentCopyText);
+                    toast({ title: "Copied payment details." });
+                  } catch {
+                    toast({ title: "Could not copy", variant: "destructive" });
+                  }
+                };
                 return (
                   <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">2. Pay to this account</p>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <p className="text-xs font-semibold text-muted-foreground">2. Pay to this account</p>
+                      <Button type="button" variant="secondary" size="sm" className="h-8 text-xs shrink-0" onClick={copyPaymentDetails}>
+                        Copy payment details
+                      </Button>
+                    </div>
                     <PaymentDetailsPanel
                       methodName={displayName}
                       details={hasDetails ? (details as Record<string, unknown>) : null}
-                      qrUrl={selectedMode?.qr_image_url ? getMediaUrl(String(selectedMode.qr_image_url)) : null}
+                      qrUrl={qrUrl}
                       qrAlt="Payment QR"
+                      copyPlacement="hidden"
                     />
+                    {depositWaUrl ? (
+                      <Button asChild variant="outline" size="sm" className="w-full mt-2 text-xs font-gaming border-[#25D366]/50 text-[#25D366] hover:bg-[#25D366]/10">
+                        <a href={depositWaUrl} target="_blank" rel="noopener noreferrer">
+                          Deposit via WhatsApp
+                        </a>
+                      </Button>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground mt-2">Deposit via WhatsApp is unavailable until your master or site adds a WhatsApp number.</p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-2">Transfer the amount to the account above. Then enter the amount and upload your payment screenshot in the right column.</p>
                   </div>
                 );
@@ -506,6 +554,15 @@ const PlayerWallet = () => {
               <label className="text-xs text-muted-foreground font-medium mb-2 block">Password (to confirm)</label>
               <Input type="password" placeholder="Enter password" value={withdrawPassword} onChange={(e) => setWithdrawPassword(e.target.value)} className="h-11" />
             </div>
+            {withdrawWaUrl ? (
+              <Button asChild variant="outline" size="sm" className="w-full text-xs font-gaming border-[#25D366]/50 text-[#25D366] hover:bg-[#25D366]/10">
+                <a href={withdrawWaUrl} target="_blank" rel="noopener noreferrer">
+                  Withdraw via WhatsApp
+                </a>
+              </Button>
+            ) : (
+              <p className="text-[10px] text-muted-foreground">Withdraw via WhatsApp is unavailable until your master or site adds a WhatsApp number.</p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWithdrawOpen(false)} disabled={withdrawSubmitting}>Cancel</Button>

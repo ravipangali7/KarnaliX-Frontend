@@ -14,7 +14,8 @@ import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { TableBadge } from "@/components/admin/TableBadge";
-import { Check, X, Eye, RefreshCw } from "lucide-react";
+import { Check, X, Eye, RefreshCw, Copy } from "lucide-react";
+import { buildDepositRowCopyText, copyTextToClipboard } from "@/lib/copyDepositWithdrawDetail";
 import { RejectReasonSuggestionsRow } from "@/components/admin/RejectReasonSuggestionsRow";
 import { PaymentDetailsPanel } from "@/components/shared/PaymentDetailsPanel";
 
@@ -139,6 +140,24 @@ const AdminDeposits = () => {
             </>
           )}
         </div>
+      ),
+    },
+    {
+      header: "Action",
+      accessor: (row: DepositRow) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          title="Copy full deposit details"
+          onClick={async (e) => {
+            e.stopPropagation();
+            const ok = await copyTextToClipboard(buildDepositRowCopyText(row));
+            toast(ok ? { title: "Copied deposit details." } : { title: "Could not copy", variant: "destructive" });
+          }}
+        >
+          <Copy className="h-3 w-3" />
+        </Button>
       ),
     },
   ];

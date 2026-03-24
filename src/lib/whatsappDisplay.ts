@@ -37,12 +37,65 @@ export function getDisplayWhatsAppUrl(
   prefillText?: string
 ): string | null {
   const number = getDisplayWhatsAppNumber(siteWhatsapp, user);
-  if (!number || !number.replace(/\D/g, "")) return null;
-  const normalized = normalizeForWaMe(number);
+  return buildWaMeUrlFromRawNumber(number, prefillText);
+}
+
+function buildWaMeUrlFromRawNumber(raw: string, prefillText?: string): string | null {
+  const trimmed = (raw || "").trim();
+  if (!trimmed || !trimmed.replace(/\D/g, "")) return null;
+  const normalized = normalizeForWaMe(trimmed);
   if (normalized.length < 9) return null;
   const base = `https://wa.me/${normalized}`;
   if (prefillText && prefillText.trim()) {
     return `${base}?text=${encodeURIComponent(prefillText.trim())}`;
   }
   return base;
+}
+
+/**
+ * Player deposit via WhatsApp: master `whatsapp_deposit`, then parent's general WhatsApp, then site.
+ */
+export function getMasterDepositWhatsAppUrl(
+  siteWhatsapp: string,
+  user: User | null,
+  prefillText?: string
+): string | null {
+  if (!user || user.role !== "player") {
+    return getDisplayWhatsAppUrl(siteWhatsapp, user, prefillText);
+  }
+  const site = (siteWhatsapp || "").trim();
+  const candidates = [
+    (user.parent_whatsapp_deposit ?? "").trim(),
+    (user.parent_whatsapp_number ?? "").trim(),
+    site,
+  ];
+  for (const raw of candidates) {
+    const url = buildWaMeUrlFromRawNumber(raw, prefillText);
+    if (url) return url;
+  }
+  return null;
+}
+
+/**
+ * Player withdraw via WhatsApp: master `whatsapp_withdraw`, then parent's general WhatsApp, then site.
+ */
+export function getMasterWithdrawWhatsAppUrl(
+  siteWhatsapp: string,
+  user: User | null,
+  prefillText?: string
+): string | null {
+  if (!user || user.role !== "player") {
+    return getDisplayWhatsAppUrl(siteWhatsapp, user, prefillText);
+  }
+  const site = (siteWhatsapp || "").trim();
+  const candidates = [
+    (user.parent_whatsapp_withdraw ?? "").trim(),
+    (user.parent_whatsapp_number ?? "").trim(),
+    site,
+  ];
+  for (const raw of candidates) {
+    const url = buildWaMeUrlFromRawNumber(raw, prefillText);
+    if (url) return url;
+  }
+  return null;
 }

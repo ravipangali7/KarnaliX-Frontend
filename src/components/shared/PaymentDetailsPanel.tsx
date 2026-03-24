@@ -33,6 +33,8 @@ type PaymentDetailsPanelProps = {
   /** Plain-text line(s) when there is no structured `details` object (e.g. serialized account string). */
   summaryText?: string;
   summaryLabel?: string;
+  /** `"header"` (default): Copy button in panel header. `"hidden"`: no copy control (use an external button). */
+  copyPlacement?: "header" | "hidden";
 };
 
 export function PaymentDetailsPanel({
@@ -44,6 +46,7 @@ export function PaymentDetailsPanel({
   className,
   summaryText,
   summaryLabel = "Account / payment details",
+  copyPlacement = "header",
 }: PaymentDetailsPanelProps) {
   const hasDetails = details != null && typeof details === "object" && Object.keys(details).length > 0;
   const sum = summaryText?.trim();
@@ -73,9 +76,11 @@ export function PaymentDetailsPanel({
     <div className={`rounded-lg border border-border bg-muted/20 p-3 space-y-3 ${className ?? ""}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Payment details</p>
-        <Button type="button" variant="secondary" size="sm" className="h-8 text-xs" onClick={copyAll}>
-          Copy all
-        </Button>
+        {copyPlacement === "header" ? (
+          <Button type="button" variant="secondary" size="sm" className="h-8 text-xs" onClick={copyAll}>
+            Copy all
+          </Button>
+        ) : null}
       </div>
       {methodName && (
         <p className="text-sm">

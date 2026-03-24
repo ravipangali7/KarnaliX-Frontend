@@ -47,9 +47,11 @@ type MasterRow = Record<string, unknown> & {
   status?: string; created_at?: string; pin?: string;
   commission_percentage?: string;
   is_default?: boolean;
+  whatsapp_deposit?: string;
+  whatsapp_withdraw?: string;
 };
 
-type PendingAction = "deposit" | "withdraw" | "resetPassword" | "regeneratePin" | "settlement" | "setDefaultMaster" | null;
+type PendingAction = "deposit" | "withdraw" | "resetPassword" | "regeneratePin" | "settlement" | "setDefaultMaster" | "saveMasterEdit" | null;
 
 interface InlineEditState {
   row: MasterRow;
@@ -166,6 +168,8 @@ const AdminMasters = () => {
   const [editName, setEditName] = useState("");
   const [editCommission, setEditCommission] = useState("10");
   const [editWhatsapp, setEditWhatsapp] = useState("");
+  const [editWhatsappDeposit, setEditWhatsappDeposit] = useState("");
+  const [editWhatsappWithdraw, setEditWhatsappWithdraw] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [inlineEdit, setInlineEdit] = useState<InlineEditState | null>(null);
   const [pendingCellSave, setPendingCellSave] = useState<{ id: number; field: string; value: unknown } | null>(null);
@@ -370,7 +374,7 @@ const AdminMasters = () => {
           <Button variant="ghost" size="icon" className="h-7 w-7 text-warning" title="Regenerate PIN" onClick={() => { setSelectedUser(row); setPendingAction("regeneratePin"); setPendingPayload({ userId: row.id }); setPinOpen(true); }}><RefreshCw className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7 text-neon" title="Settlement" onClick={() => { setSelectedUser(row); setSettlementOpen(true); }}><ArrowRightLeft className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" title="View" onClick={() => { setSelectedUser(row); setViewOpen(true); }}><Eye className="h-3 w-3" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditName(String(row.name ?? "")); setEditCommission(String(row.commission_percentage ?? "10")); setEditWhatsapp(String(row.whatsapp_number ?? "")); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => { setSelectedUser(row); setEditName(String(row.name ?? "")); setEditCommission(String(row.commission_percentage ?? "10")); setEditWhatsapp(String(row.whatsapp_number ?? "")); setEditWhatsappDeposit(String(row.whatsapp_deposit ?? "")); setEditWhatsappWithdraw(String(row.whatsapp_withdraw ?? "")); setEditOpen(true); }}><Edit className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Delete" onClick={() => { setMasterToDelete(row); setDeleteOpen(true); }}><Trash2 className="h-3 w-3" /></Button>
         </div>
       ),
@@ -566,6 +570,18 @@ const AdminMasters = () => {
                     <Input value={editWhatsapp} onChange={(e) => setEditWhatsapp(e.target.value)} placeholder="WhatsApp number" />
                   </div>
                 )}
+                {role === "super" && (
+                  <>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-muted-foreground block mb-1">WhatsApp (deposit)</label>
+                      <Input value={editWhatsappDeposit} onChange={(e) => setEditWhatsappDeposit(e.target.value)} placeholder="Number for player deposit support" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-muted-foreground block mb-1">WhatsApp (withdraw)</label>
+                      <Input value={editWhatsappWithdraw} onChange={(e) => setEditWhatsappWithdraw(e.target.value)} placeholder="Number for player withdrawal support" />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -580,6 +596,17 @@ const AdminMasters = () => {
                 try {
                   const payload: Record<string, string> = { name: editName.trim(), commission_percentage: editCommission || "10" };
                   if (role === "super" || role === "powerhouse") payload.whatsapp_number = editWhatsapp.trim();
+                  if (role === "super") {
+                    payload.whatsapp_deposit = editWhatsappDeposit.trim();
+                    payload.whatsapp_withdraw = editWhatsappWithdraw.trim();
+                  }
+                  if (role === "super") {
+                    setPendingAction("saveMasterEdit");
+                    setPendingPayload({ masterId: selectedUser.id as number, masterEditBody: payload });
+                    setEditOpen(false);
+                    setPinOpen(true);
+                    return;
+                  }
                   await updateMaster(selectedUser.id as number, payload, role);
                   queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
                   toast({ title: "Master updated successfully." });
@@ -835,6 +862,12 @@ const AdminMasters = () => {
               await setDefaultMaster(masterId, { pin }, role);
               queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
               toast({ title: "Default master set." });
+            } else if (pendingAction === "saveMasterEdit") {
+              const masterId = pendingPayload.masterId as number;
+              const masterEditBody = pendingPayload.masterEditBody as Record<string, string>;
+              await updateMaster(masterId, { ...masterEditBody, pin }, role);
+              queryClient.invalidateQueries({ queryKey: ["admin-masters", role] });
+              toast({ title: "Master updated successfully." });
             }
             setPinOpen(false); setPendingAction(null); setPendingPayload({});
           } catch (e: unknown) {
