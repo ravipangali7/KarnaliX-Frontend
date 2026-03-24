@@ -94,11 +94,6 @@ const PowerhouseSuperSettings = () => {
   const handleSave = async () => {
     const suggestionData = rejectSuggestionRows.map((r) => r.value.trim()).filter((s) => s !== "");
     const tidRaw = flexgrewOtpTemplateId.trim();
-    let flexgrewTemplateIdPayload: number | null = null;
-    if (tidRaw !== "") {
-      const n = parseInt(tidRaw, 10);
-      if (!Number.isNaN(n) && n > 0) flexgrewTemplateIdPayload = n;
-    }
     setSaving(true);
     try {
       await saveSuperSettings({
@@ -119,7 +114,7 @@ const PowerhouseSuperSettings = () => {
         whatsapp_otp_template_body_param: whatsappOtpTemplateBodyParam,
         flexgrew_api_key: flexgrewApiKey.trim(),
         flexgrew_base_url: flexgrewBaseUrl.trim(),
-        flexgrew_otp_template_id: flexgrewTemplateIdPayload,
+        flexgrew_otp_template_id: tidRaw === "" ? null : tidRaw,
         reject_reason_suggestions: { data: suggestionData },
       });
       queryClient.invalidateQueries({ queryKey: ["admin-super-settings"] });
