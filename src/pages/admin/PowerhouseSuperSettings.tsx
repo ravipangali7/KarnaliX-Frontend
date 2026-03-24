@@ -28,6 +28,7 @@ const PowerhouseSuperSettings = () => {
   const [gameApiLaunchUrl, setGameApiLaunchUrl] = useState("");
   const [gameApiSecret, setGameApiSecret] = useState("");
   const [whatsappSecretKey, setWhatsappSecretKey] = useState("");
+  const [whatsappVerifyToken, setWhatsappVerifyToken] = useState("");
   const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState("");
   const [whatsappApiVersion, setWhatsappApiVersion] = useState("v22.0");
   const [whatsappOtpTemplateName, setWhatsappOtpTemplateName] = useState("");
@@ -47,6 +48,7 @@ const PowerhouseSuperSettings = () => {
     setGameApiLaunchUrl(String(s.game_api_launch_url ?? ""));
     setGameApiSecret(String(s.game_api_secret ?? ""));
     setWhatsappSecretKey(String(s.whatsapp_secret_key ?? ""));
+    setWhatsappVerifyToken(String(s.whatsapp_verify_token ?? ""));
     setWhatsappPhoneNumberId(String(s.whatsapp_phone_number_id ?? ""));
     setWhatsappApiVersion(String(s.whatsapp_api_version ?? "v22.0") || "v22.0");
     setWhatsappOtpTemplateName(String(s.whatsapp_otp_template_name ?? ""));
@@ -95,6 +97,7 @@ const PowerhouseSuperSettings = () => {
         game_api_launch_url: gameApiLaunchUrl.trim(),
         game_api_secret: gameApiSecret.trim(),
         whatsapp_secret_key: whatsappSecretKey.trim(),
+        whatsapp_verify_token: whatsappVerifyToken.trim(),
         whatsapp_phone_number_id: whatsappPhoneNumberId.trim(),
         whatsapp_api_version: whatsappApiVersion.trim() || "v22.0",
         whatsapp_otp_template_name: whatsappOtpTemplateName.trim(),
@@ -200,6 +203,10 @@ const PowerhouseSuperSettings = () => {
             <p>
               <strong className="text-foreground font-medium">Real code inside WhatsApp:</strong> in Meta Business Suite create a template whose body includes one variable (e.g. &quot;Your code is {"{{1}}"}&quot;), wait for approval, enter that template name here, and turn the checkbox <strong>on</strong>.
             </p>
+            <p>
+              <strong className="text-foreground font-medium">Webhook URL (Meta Dashboard):</strong>{" "}
+              <code className="text-[11px] bg-muted px-1 rounded break-all">https://&lt;your-domain&gt;/webhook/whatsapp/</code> — same verify token as below.
+            </p>
           </div>
         </CardHeader>
         <CardContent className="p-4 pt-2 space-y-3">
@@ -211,6 +218,16 @@ const PowerhouseSuperSettings = () => {
               type="password"
               autoComplete="off"
               placeholder="Long-lived token from Meta"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Webhook verify token</label>
+            <Input
+              value={whatsappVerifyToken}
+              onChange={(e) => setWhatsappVerifyToken(e.target.value)}
+              type="password"
+              autoComplete="off"
+              placeholder="Any secret you choose — must match Meta → WhatsApp → Webhook"
             />
           </div>
           <div>
