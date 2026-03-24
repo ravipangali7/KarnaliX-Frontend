@@ -14,6 +14,7 @@ import { getMediaUrl } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { Check, X, Eye } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { RejectReasonSuggestionsRow } from "@/components/admin/RejectReasonSuggestionsRow";
 
 type PaymentModeRow = Record<string, unknown> & {
   id?: number;
@@ -249,6 +250,7 @@ const AdminPaymentModeVerification = () => {
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Reject Payment Method</DialogTitle></DialogHeader>
           <Textarea placeholder="Rejection reason (optional)..." rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <RejectReasonSuggestionsRow onPick={(text) => setRejectReason(text)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancel</Button>
             <Button

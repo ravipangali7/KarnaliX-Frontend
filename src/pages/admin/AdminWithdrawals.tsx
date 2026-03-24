@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode, type MouseEvent } from "react";
+import { useState, useEffect, useMemo, type ReactNode, type MouseEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { DataTable } from "@/components/shared/DataTable";
@@ -15,9 +15,29 @@ import { toast } from "@/hooks/use-toast";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { TableBadge } from "@/components/admin/TableBadge";
 import { Check, X, Eye, RefreshCw } from "lucide-react";
+import { RejectReasonSuggestionsRow } from "@/components/admin/RejectReasonSuggestionsRow";
+import { PaymentDetailsPanel } from "@/components/shared/PaymentDetailsPanel";
 
 type PaymentModeDetail = Record<string, unknown> & { payment_method?: number; payment_method_name?: string; details?: Record<string, unknown>; status_display?: string; qr_image_url?: string };
-type WithdrawRow = Record<string, unknown> & { id?: number; user_username?: string; user_name?: string; user_phone?: string; user_email?: string; user_whatsapp_number?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; payment_mode_detail?: PaymentModeDetail | null; status?: string; created_at?: string; account_details?: string; accountDetails?: string };
+type WithdrawRow = Record<string, unknown> & {
+  id?: number;
+  user_username?: string;
+  user_name?: string;
+  user_phone?: string;
+  user_email?: string;
+  user_whatsapp_number?: string;
+  amount?: string;
+  payment_mode?: string;
+  payment_mode_name?: string;
+  payment_mode_qr_image?: string;
+  payment_mode_detail?: PaymentModeDetail | null;
+  status?: string;
+  created_at?: string;
+  account_details?: string;
+  accountDetails?: string;
+  remarks?: string;
+  reference_id?: string;
+};
 
 const AdminWithdrawals = () => {
   const { user, refreshUser } = useAuth();
@@ -27,10 +47,20 @@ const AdminWithdrawals = () => {
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const listParams: ListParams = {};
-  if (dateFrom) listParams.date_from = dateFrom;
-  if (dateTo) listParams.date_to = dateTo;
-  if (statusFilter) listParams.status = statusFilter;
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+  const listParams: ListParams = useMemo(() => {
+    const p: ListParams = {};
+    if (dateFrom) p.date_from = dateFrom;
+    if (dateTo) p.date_to = dateTo;
+    if (statusFilter) p.status = statusFilter;
+    if (debouncedSearch) p.search = debouncedSearch;
+    return p;
+  }, [dateFrom, dateTo, statusFilter, debouncedSearch]);
   const { data: withdrawals = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-withdrawals", role, listParams],
     queryFn: () => getWithdrawals(role, listParams),
@@ -73,7 +103,35 @@ const AdminWithdrawals = () => {
 
   const columns = [
     { header: "username", sortKey: "user_username", accessor: (row: WithdrawRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Username", String(row.user_username ?? row.username ?? ""))}>{String(row.user_username ?? row.username ?? "")}</span> },
+    {
+      header: "Transaction / Ref ID",
+      sortKey: "reference_id",
+      accessor: (row: WithdrawRow) => {
+        const ref = String(row.reference_id ?? "").trim();
+        return ref ? (
+          <span className="cursor-pointer hover:underline text-primary max-w-[100px] truncate block" onClick={openCell("Transaction / Reference ID", ref)} title={ref}>
+            {ref}
+          </span>
+        ) : (
+          "—"
+        );
+      },
+    },
     { header: "payment details", sortKey: "payment_mode_name", accessor: (row: WithdrawRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Payment details", String(row.account_details ?? row.accountDetails ?? row.payment_mode_name ?? row.payment_mode ?? "—"))}>{String(row.account_details ?? row.accountDetails ?? row.payment_mode_name ?? row.payment_mode ?? "—")}</span> },
+    {
+      header: "remarks",
+      sortKey: "remarks",
+      accessor: (row: WithdrawRow) => {
+        const remarks = String(row.remarks ?? "").trim();
+        return remarks ? (
+          <span className="cursor-pointer hover:underline text-primary max-w-[100px] truncate block" onClick={openCell("Remarks", remarks)} title={remarks}>
+            {remarks}
+          </span>
+        ) : (
+          "—"
+        );
+      },
+    },
     {
       header: "Status",
       sortKey: "status",
@@ -132,8 +190,14 @@ const AdminWithdrawals = () => {
           <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
           <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
         </label>
+        <Input
+          className="h-9 max-w-xs text-sm"
+          placeholder="Search username or reference ID…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
       </div>
-      <DataTable data={rows} columns={columns} searchKey="user_username" searchPlaceholder="Search withdrawals..." variant="adminListing" />
+      <DataTable data={rows} columns={columns} hideSearch variant="adminListing" />
 
       {/* Edit withdrawal (status / amount) */}
       <Dialog open={!!withdrawEdit} onOpenChange={(open) => { if (!open) setWithdrawEdit(null); }}>
@@ -227,6 +291,12 @@ const AdminWithdrawals = () => {
                   <div><span className="text-muted-foreground text-xs">Account</span><p className="font-medium">{String(selectedW.account_details ?? selectedW.accountDetails ?? "")}</p></div>
                   <div><span className="text-muted-foreground text-xs">Status</span><p><StatusBadge status={String(selectedW.status ?? "pending")} /></p></div>
                   <div><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{selectedW.created_at ? new Date(String(selectedW.created_at)).toLocaleString() : ""}</p></div>
+                  {(selectedW.reference_id != null && String(selectedW.reference_id).trim() !== "") && (
+                    <div className="col-span-2"><span className="text-muted-foreground text-xs">Transaction / Reference ID</span><p className="font-medium">{String(selectedW.reference_id)}</p></div>
+                  )}
+                  {(selectedW.remarks != null && String(selectedW.remarks).trim() !== "") && (
+                    <div className="col-span-2"><span className="text-muted-foreground text-xs">Remarks</span><p className="font-medium whitespace-pre-wrap">{String(selectedW.remarks)}</p></div>
+                  )}
                 </div>
               </div>
               <div className="space-y-3">
@@ -237,37 +307,31 @@ const AdminWithdrawals = () => {
                   </div>
                 )}
                 {selectedW.payment_mode_detail && (
-                  <div className="border-t pt-3 mt-3 space-y-2 md:border-t-0 md:pt-0 md:mt-0">
-                    <p className="text-xs font-semibold text-muted-foreground">Payment mode details</p>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="col-span-2 flex items-center gap-2">
-                        <span className="text-muted-foreground text-xs shrink-0">Name</span>
-                        {(() => {
-                          const pmId = selectedW.payment_mode_detail?.payment_method != null ? Number(selectedW.payment_mode_detail.payment_method) : null;
-                          const pmImageUrl = pmId != null ? paymentMethodImageMap[pmId] : null;
-                          return (
-                            <span className="flex items-center gap-2">
-                              {pmImageUrl && (
-                                <img src={getMediaUrl(pmImageUrl)} alt="" className="h-6 w-auto max-w-12 object-contain rounded border border-border" />
-                              )}
-                              <p className="font-medium">{String(selectedW.payment_mode_detail.payment_method_name ?? "")}</p>
-                            </span>
-                          );
-                        })()}
-                      </div>
-                      <div><span className="text-muted-foreground text-xs">Status</span><p className="font-medium">{String(selectedW.payment_mode_detail.status_display ?? selectedW.payment_mode_detail.status ?? "")}</p></div>
-                      {selectedW.payment_mode_detail.details != null && typeof selectedW.payment_mode_detail.details === "object" && Object.keys(selectedW.payment_mode_detail.details).length > 0 && (
-                        Object.entries(selectedW.payment_mode_detail.details as Record<string, unknown>).map(([k, v]) => (
-                          <div key={k} className={k.length > 12 ? "col-span-2" : ""}><span className="text-muted-foreground text-xs capitalize">{k.replace(/_/g, " ")}</span><p className="font-medium">{String(v ?? "")}</p></div>
-                        ))
-                      )}
-                    </div>
-                    {selectedW.payment_mode_detail.qr_image_url && (
-                      <div>
-                        <span className="text-muted-foreground text-xs">QR</span>
-                        <img src={getMediaUrl(String(selectedW.payment_mode_detail.qr_image_url))} alt="Payment QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
-                      </div>
-                    )}
+                  <div className="border-t pt-3 mt-3 md:border-t-0 md:pt-0 md:mt-0 space-y-2">
+                    {(() => {
+                      const pmId = selectedW.payment_mode_detail?.payment_method != null ? Number(selectedW.payment_mode_detail.payment_method) : null;
+                      const pmImageUrl = pmId != null ? paymentMethodImageMap[pmId] : null;
+                      return pmImageUrl ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground text-xs">Method</span>
+                          <img src={getMediaUrl(pmImageUrl)} alt="" className="h-6 w-auto max-w-12 object-contain rounded border border-border" />
+                        </div>
+                      ) : null;
+                    })()}
+                    <PaymentDetailsPanel
+                      methodName={String(selectedW.payment_mode_detail.payment_method_name ?? "")}
+                      details={
+                        selectedW.payment_mode_detail.details != null && typeof selectedW.payment_mode_detail.details === "object"
+                          ? (selectedW.payment_mode_detail.details as Record<string, unknown>)
+                          : null
+                      }
+                      statusLabel={String(selectedW.payment_mode_detail.status_display ?? selectedW.payment_mode_detail.status ?? "")}
+                      qrUrl={
+                        selectedW.payment_mode_detail.qr_image_url
+                          ? getMediaUrl(String(selectedW.payment_mode_detail.qr_image_url))
+                          : null
+                      }
+                    />
                   </div>
                 )}
               </div>
@@ -282,6 +346,7 @@ const AdminWithdrawals = () => {
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Reject Withdrawal</DialogTitle></DialogHeader>
           <Textarea placeholder="Rejection reason..." rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <RejectReasonSuggestionsRow onPick={(text) => setRejectReason(text)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancel</Button>
             <Button

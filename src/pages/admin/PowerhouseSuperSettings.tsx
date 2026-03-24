@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getSuperSettings, saveSuperSettings } from "@/api/admin";
@@ -18,6 +19,7 @@ const PowerhouseSuperSettings = () => {
   const [gameApiUrl, setGameApiUrl] = useState("");
   const [gameApiLaunchUrl, setGameApiLaunchUrl] = useState("");
   const [gameApiSecret, setGameApiSecret] = useState("");
+  const [rejectSuggestionsJson, setRejectSuggestionsJson] = useState('{"data":[]}');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -30,9 +32,30 @@ const PowerhouseSuperSettings = () => {
     setGameApiUrl(String(s.game_api_url ?? ""));
     setGameApiLaunchUrl(String(s.game_api_launch_url ?? ""));
     setGameApiSecret(String(s.game_api_secret ?? ""));
+    const rr = s.reject_reason_suggestions;
+    if (rr != null && typeof rr === "object") {
+      try {
+        setRejectSuggestionsJson(JSON.stringify(rr, null, 2));
+      } catch {
+        setRejectSuggestionsJson('{"data":[]}');
+      }
+    } else {
+      setRejectSuggestionsJson('{"data":[]}');
+    }
   }, [superSettings]);
 
   const handleSave = async () => {
+    let parsedSuggestions: unknown;
+    try {
+      parsedSuggestions = JSON.parse(rejectSuggestionsJson.trim() || "{}");
+    } catch {
+      toast({ title: "Invalid JSON for auto suggestions.", variant: "destructive" });
+      return;
+    }
+    if (typeof parsedSuggestions !== "object" || parsedSuggestions === null || !Array.isArray((parsedSuggestions as { data?: unknown }).data)) {
+      toast({ title: 'Auto suggestions JSON must be an object with a "data" array.', variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       await saveSuperSettings({
@@ -44,6 +67,7 @@ const PowerhouseSuperSettings = () => {
         game_api_url: gameApiUrl.trim(),
         game_api_launch_url: gameApiLaunchUrl.trim(),
         game_api_secret: gameApiSecret.trim(),
+        reject_reason_suggestions: parsedSuggestions as { data: string[] },
       });
       queryClient.invalidateQueries({ queryKey: ["admin-super-settings"] });
       toast({ title: "Super settings saved." });
@@ -58,6 +82,19 @@ const PowerhouseSuperSettings = () => {
   return (
     <div className="space-y-4 max-w-lg">
       <h2 className="font-display font-bold text-xl">Super Settings</h2>
+      <Card>
+        <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-display">Reject reason auto-suggestions (JSON)</CardTitle></CardHeader>
+        <CardContent className="p-4 pt-2 space-y-2">
+          <p className="text-xs text-muted-foreground">Shape: {"{"} &quot;data&quot;: [&quot;hello&quot;, &quot;Play game&quot;] {"}"}</p>
+          <Textarea
+            value={rejectSuggestionsJson}
+            onChange={(e) => setRejectSuggestionsJson(e.target.value)}
+            rows={6}
+            className="font-mono text-xs"
+            spellCheck={false}
+          />
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-display">Financial Settings</CardTitle></CardHeader>
         <CardContent className="p-4 pt-2 space-y-3">

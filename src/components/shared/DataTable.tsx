@@ -26,13 +26,15 @@ interface DataTableProps<T> {
   variant?: "default" | "adminListing";
   /** Optional row class (e.g. red background for inactive) */
   getRowClassName?: (row: T) => string;
+  /** When true, hide the built-in search input (use server-side search in the parent). */
+  hideSearch?: boolean;
 }
 
 type SortDir = "asc" | "desc";
 
 export function DataTable<T extends { id: string | number }>({
   data, columns, searchPlaceholder = "Search...", searchKey, onAdd, addLabel = "Add New", secondaryAction, pageSize = 10,
-  variant = "default", getRowClassName,
+  variant = "default", getRowClassName, hideSearch = false,
 }: DataTableProps<T>) {
   const isThemed = variant === "adminListing";
   const [search, setSearch] = useState("");
@@ -89,6 +91,7 @@ export function DataTable<T extends { id: string | number }>({
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        {!hideSearch && (
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
@@ -98,6 +101,7 @@ export function DataTable<T extends { id: string | number }>({
             className="pl-9 h-9 sm:h-9 text-sm min-h-[44px] sm:min-h-0"
           />
         </div>
+        )}
         <div className="flex gap-2 shrink-0">
           {onAdd && (
             <Button onClick={onAdd} size="sm" className="gold-gradient text-primary-foreground gap-1 min-h-[44px] sm:min-h-9 px-4">

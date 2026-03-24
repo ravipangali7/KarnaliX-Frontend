@@ -17,6 +17,7 @@ import {
 } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { Check, X, Eye, RefreshCw } from "lucide-react";
+import { RejectReasonSuggestionsRow } from "@/components/admin/RejectReasonSuggestionsRow";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { TableBadge } from "@/components/admin/TableBadge";
 
@@ -208,6 +209,7 @@ const AdminBonusRequests = () => {
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Reject Bonus Request</DialogTitle></DialogHeader>
           <Textarea placeholder="Rejection reason..." rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <RejectReasonSuggestionsRow onPick={(text) => setRejectReason(text)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancel</Button>
             <Button

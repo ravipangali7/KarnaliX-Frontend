@@ -10,7 +10,7 @@ export const WhatsAppButton = () => {
   const { data: siteSetting = {} } = useQuery({ queryKey: ["siteSetting"], queryFn: getSiteSetting });
   const s = siteSetting as { whatsapp_number?: string };
   const siteWhatsapp = (s?.whatsapp_number as string)?.trim() || defaultFooterContact.whatsapp;
-  const waUrl = getDisplayWhatsAppUrl(siteWhatsapp, user, "Hi, I need support from KarnaliX.");
+  const waUrl = getDisplayWhatsAppUrl(siteWhatsapp, user, "Hi, I need support from LuckyUser365.");
 
   const showButton = !user || user.role === "player";
   if (!showButton || !waUrl) return null;

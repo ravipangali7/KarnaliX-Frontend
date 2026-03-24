@@ -150,7 +150,14 @@ export async function createDeposit(body: unknown, role: "powerhouse" | "super" 
 }
 /** Verify PIN first, then create and approve in one call. No pending deposit if PIN fails. */
 export async function directDeposit(
-  body: { user_id: number; amount: number; remarks?: string; pin: string; payment_mode?: number },
+  body: {
+    user_id: number;
+    amount: number;
+    remarks?: string;
+    reference_id?: string;
+    pin: string;
+    payment_mode?: number;
+  },
   role: "powerhouse" | "super" | "master"
 ) {
   return apiPost(`${prefix(role)}/deposits/direct/`, body);
@@ -188,7 +195,7 @@ export async function getWithdraw(id: number, role: "powerhouse" | "super" | "ma
 }
 /** Verify PIN first, then create and approve in one call. No pending withdrawal if PIN fails. */
 export async function directWithdraw(
-  body: { user_id: number; amount: number; remarks?: string; pin: string },
+  body: { user_id: number; amount: number; remarks?: string; reference_id: string; pin: string },
   role: "powerhouse" | "super" | "master"
 ) {
   return apiPost(`${prefix(role)}/withdrawals/direct/`, body);
@@ -284,7 +291,13 @@ export async function getActivity(role: "powerhouse" | "super" | "master") {
 }
 
 // --- Account / Bonus statement (master, super, powerhouse) ---
-export type StatementParams = { date_from?: string; date_to?: string; page?: number; page_size?: number };
+export type StatementParams = {
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  page_size?: number;
+  search?: string;
+};
 export type StatementResponse = { results: Record<string, unknown>[]; count: number };
 export async function getAccountStatement(
   role: "master" | "super" | "powerhouse",
@@ -295,6 +308,7 @@ export async function getAccountStatement(
   if (params?.date_to) q.set("date_to", params.date_to);
   if (params?.page != null) q.set("page", String(params.page));
   if (params?.page_size != null) q.set("page_size", String(params.page_size));
+  if (params?.search?.trim()) q.set("search", params.search.trim());
   const qs = q.toString();
   const res = await apiGet<StatementResponse>(`${prefix(role)}/account-statement/${qs ? `?${qs}` : ""}`);
   return res as StatementResponse;
@@ -308,6 +322,7 @@ export async function getBonusStatement(
   if (params?.date_to) q.set("date_to", params.date_to);
   if (params?.page != null) q.set("page", String(params.page));
   if (params?.page_size != null) q.set("page_size", String(params.page_size));
+  if (params?.search?.trim()) q.set("search", params.search.trim());
   const qs = q.toString();
   const res = await apiGet<StatementResponse>(`${prefix(role)}/bonus-statement/${qs ? `?${qs}` : ""}`);
   return res as StatementResponse;
@@ -617,6 +632,10 @@ export async function getSuperSettings() {
 }
 export async function saveSuperSettings(body: unknown) {
   return apiPost(`${prefix("powerhouse")}/super-settings/save/`, body);
+}
+
+export async function getRejectReasonSuggestions(role: "powerhouse" | "super" | "master") {
+  return apiGet<{ data: string[] }>(`${prefix(role)}/reject-reason-suggestions/`);
 }
 
 export async function getSiteSettingsAdmin() {

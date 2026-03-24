@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getKycList, approveKyc, rejectKyc } from "@/api/admin";
 import { toast } from "@/hooks/use-toast";
 import { Check, X, Eye } from "lucide-react";
+import { RejectReasonSuggestionsRow } from "@/components/admin/RejectReasonSuggestionsRow";
 
 type KycRow = Record<string, unknown> & { id?: number; user_username?: string; document_url?: string | null; status?: string; created_at?: string };
 
@@ -111,6 +112,7 @@ const AdminKYC = () => {
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Reject KYC — {String(selectedKyc?.user_username ?? selectedKyc?.username ?? "")}</DialogTitle></DialogHeader>
           <Textarea placeholder="Rejection reason..." rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <RejectReasonSuggestionsRow onPick={(text) => setRejectReason(text)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancel</Button>
             <Button

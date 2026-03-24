@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode, type MouseEvent } from "react";
+import { useState, useEffect, useMemo, type ReactNode, type MouseEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { DataTable } from "@/components/shared/DataTable";
@@ -15,6 +15,8 @@ import { toast } from "@/hooks/use-toast";
 import { ListDateRangeToolbar } from "@/components/shared/ListDateRangeToolbar";
 import { TableBadge } from "@/components/admin/TableBadge";
 import { Check, X, Eye, RefreshCw } from "lucide-react";
+import { RejectReasonSuggestionsRow } from "@/components/admin/RejectReasonSuggestionsRow";
+import { PaymentDetailsPanel } from "@/components/shared/PaymentDetailsPanel";
 
 type PaymentModeDetail = Record<string, unknown> & { payment_method?: number; payment_method_name?: string; details?: Record<string, unknown>; status_display?: string; qr_image_url?: string };
 type DepositRow = Record<string, unknown> & { id?: number; user_username?: string; user_name?: string; user_phone?: string; user_email?: string; user_whatsapp_number?: string; amount?: string; payment_mode?: string; payment_mode_name?: string; payment_mode_qr_image?: string; payment_mode_detail?: PaymentModeDetail | null; status?: string; created_at?: string; screenshot?: string; remarks?: string; reference_id?: string };
@@ -27,10 +29,20 @@ const AdminDeposits = () => {
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const listParams: ListParams = {};
-  if (dateFrom) listParams.date_from = dateFrom;
-  if (dateTo) listParams.date_to = dateTo;
-  if (statusFilter) listParams.status = statusFilter;
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+  const listParams: ListParams = useMemo(() => {
+    const p: ListParams = {};
+    if (dateFrom) p.date_from = dateFrom;
+    if (dateTo) p.date_to = dateTo;
+    if (statusFilter) p.status = statusFilter;
+    if (debouncedSearch) p.search = debouncedSearch;
+    return p;
+  }, [dateFrom, dateTo, statusFilter, debouncedSearch]);
   const { data: deposits = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-deposits", role, listParams],
     queryFn: () => getDeposits(role, listParams),
@@ -88,6 +100,20 @@ const AdminDeposits = () => {
     },
     { header: "request date", sortKey: "created_at", accessor: (row: DepositRow) => <span className="cursor-pointer hover:underline text-primary" onClick={openCell("Request date", row.created_at ? new Date(String(row.created_at)).toLocaleString() : "—")}>{row.created_at ? new Date(String(row.created_at)).toLocaleDateString() : ""}</span> },
     { header: "snap", accessor: (row: DepositRow) => row.screenshot ? <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSnapDeposit(row); setSnapOpen(true); }} title="View screenshot"><Eye className="h-3 w-3" /></Button> : "—" },
+    {
+      header: "Transaction / Ref ID",
+      sortKey: "reference_id",
+      accessor: (row: DepositRow) => {
+        const ref = String(row.reference_id ?? "").trim();
+        return ref ? (
+          <span className="cursor-pointer hover:underline text-primary max-w-[100px] truncate block" onClick={openCell("Transaction / Reference ID", ref)} title={ref}>
+            {ref}
+          </span>
+        ) : (
+          "—"
+        );
+      },
+    },
     { header: "remarks", sortKey: "remarks", accessor: (row: DepositRow) => {
       const remarks = String(row.remarks ?? "").trim();
       return remarks ? <span className="cursor-pointer hover:underline text-primary max-w-[120px] truncate block" onClick={openCell("Remarks", remarks)} title={remarks}>{remarks}</span> : "—";
@@ -138,8 +164,14 @@ const AdminDeposits = () => {
           <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
           <RefreshCw className="h-4 w-4" /> Auto refresh (10s)
         </label>
+        <Input
+          className="h-9 max-w-xs text-sm"
+          placeholder="Search username or reference ID…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
       </div>
-      <DataTable data={rows} columns={columns} searchKey="user_username" searchPlaceholder="Search deposits..." variant="adminListing" />
+      <DataTable data={rows} columns={columns} hideSearch variant="adminListing" />
 
       {/* Edit deposit (status / amount) */}
       <Dialog open={!!depositEdit} onOpenChange={(open) => { if (!open) setDepositEdit(null); }}>
@@ -261,37 +293,31 @@ const AdminDeposits = () => {
                   </div>
                 )}
                 {selectedDeposit.payment_mode_detail && (
-                  <div className="border-t pt-3 mt-3 space-y-2 md:border-t-0 md:pt-0 md:mt-0">
-                    <p className="text-xs font-semibold text-muted-foreground">Payment mode details</p>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="col-span-2 flex items-center gap-2">
-                        <span className="text-muted-foreground text-xs shrink-0">Name</span>
-                        {(() => {
-                          const pmId = selectedDeposit.payment_mode_detail?.payment_method != null ? Number(selectedDeposit.payment_mode_detail.payment_method) : null;
-                          const pmImageUrl = pmId != null ? paymentMethodImageMap[pmId] : null;
-                          return (
-                            <span className="flex items-center gap-2">
-                              {pmImageUrl && (
-                                <img src={getMediaUrl(pmImageUrl)} alt="" className="h-6 w-auto max-w-12 object-contain rounded border border-border" />
-                              )}
-                              <p className="font-medium">{String(selectedDeposit.payment_mode_detail.payment_method_name ?? "")}</p>
-                            </span>
-                          );
-                        })()}
-                      </div>
-                      <div><span className="text-muted-foreground text-xs">Status</span><p className="font-medium">{String(selectedDeposit.payment_mode_detail.status_display ?? selectedDeposit.payment_mode_detail.status ?? "")}</p></div>
-                      {selectedDeposit.payment_mode_detail.details != null && typeof selectedDeposit.payment_mode_detail.details === "object" && Object.keys(selectedDeposit.payment_mode_detail.details).length > 0 && (
-                        Object.entries(selectedDeposit.payment_mode_detail.details as Record<string, unknown>).map(([k, v]) => (
-                          <div key={k} className={k.length > 12 ? "col-span-2" : ""}><span className="text-muted-foreground text-xs capitalize">{k.replace(/_/g, " ")}</span><p className="font-medium">{String(v ?? "")}</p></div>
-                        ))
-                      )}
-                    </div>
-                    {selectedDeposit.payment_mode_detail.qr_image_url && (
-                      <div>
-                        <span className="text-muted-foreground text-xs">QR</span>
-                        <img src={getMediaUrl(String(selectedDeposit.payment_mode_detail.qr_image_url))} alt="Payment QR" className="w-32 h-32 object-contain rounded-lg mt-1 border border-border" />
-                      </div>
-                    )}
+                  <div className="border-t pt-3 mt-3 md:border-t-0 md:pt-0 md:mt-0 space-y-2">
+                    {(() => {
+                      const pmId = selectedDeposit.payment_mode_detail?.payment_method != null ? Number(selectedDeposit.payment_mode_detail.payment_method) : null;
+                      const pmImageUrl = pmId != null ? paymentMethodImageMap[pmId] : null;
+                      return pmImageUrl ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground text-xs">Method</span>
+                          <img src={getMediaUrl(pmImageUrl)} alt="" className="h-6 w-auto max-w-12 object-contain rounded border border-border" />
+                        </div>
+                      ) : null;
+                    })()}
+                    <PaymentDetailsPanel
+                      methodName={String(selectedDeposit.payment_mode_detail.payment_method_name ?? "")}
+                      details={
+                        selectedDeposit.payment_mode_detail.details != null && typeof selectedDeposit.payment_mode_detail.details === "object"
+                          ? (selectedDeposit.payment_mode_detail.details as Record<string, unknown>)
+                          : null
+                      }
+                      statusLabel={String(selectedDeposit.payment_mode_detail.status_display ?? selectedDeposit.payment_mode_detail.status ?? "")}
+                      qrUrl={
+                        selectedDeposit.payment_mode_detail.qr_image_url
+                          ? getMediaUrl(String(selectedDeposit.payment_mode_detail.qr_image_url))
+                          : null
+                      }
+                    />
                   </div>
                 )}
               </div>
@@ -306,6 +332,7 @@ const AdminDeposits = () => {
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Reject Deposit</DialogTitle></DialogHeader>
           <Textarea placeholder="Rejection reason..." rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <RejectReasonSuggestionsRow onPick={(text) => setRejectReason(text)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancel</Button>
             <Button

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
+import { PaymentDetailsPanel } from "@/components/shared/PaymentDetailsPanel";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 25000];
 
@@ -30,7 +31,7 @@ const PlayerWallet = () => {
   const [withdrawPassword, setWithdrawPassword] = useState("");
   const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
   const [withdrawWallet, setWithdrawWallet] = useState<"main" | "bonus">("main");
-  const [depositRemarks, setDepositRemarks] = useState("");
+  const [depositReferenceId, setDepositReferenceId] = useState("");
   const [depositScreenshot, setDepositScreenshot] = useState<File | null>(null);
   const screenshotInputRef = useRef<HTMLInputElement>(null);
 
@@ -284,23 +285,12 @@ const PlayerWallet = () => {
                 return (
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground mb-2">2. Pay to this account</p>
-                    <div className="rounded-xl border border-primary/40 bg-primary/5 p-4 space-y-2">
-                      <p className="text-sm font-semibold">{displayName}</p>
-                      {hasDetails ? (
-                        <div className="text-sm space-y-1">
-                          {Object.entries(details).map(([k, v]) => (
-                            <p key={k}>{k.replace(/_/g, " ")}: <span className="font-mono font-medium">{String(v ?? "")}</span></p>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No details</p>
-                      )}
-                      {selectedMode?.qr_image_url && (
-                        <div className="mt-2">
-                          <img src={getMediaUrl(String(selectedMode.qr_image_url))} alt="Payment QR" className="w-28 h-28 object-contain rounded-lg border border-border" />
-                        </div>
-                      )}
-                    </div>
+                    <PaymentDetailsPanel
+                      methodName={displayName}
+                      details={hasDetails ? (details as Record<string, unknown>) : null}
+                      qrUrl={selectedMode?.qr_image_url ? getMediaUrl(String(selectedMode.qr_image_url)) : null}
+                      qrAlt="Payment QR"
+                    />
                     <p className="text-xs text-muted-foreground mt-2">Transfer the amount to the account above. Then enter the amount and upload your payment screenshot in the right column.</p>
                   </div>
                 );
@@ -346,8 +336,8 @@ const PlayerWallet = () => {
                   <p className="text-xs font-semibold text-muted-foreground mb-2">4. Transaction ID / Reference ID <span className="text-destructive">*</span></p>
                   <Input
                     placeholder="Enter transaction ID or reference ID from your payment"
-                    value={depositRemarks}
-                    onChange={(e) => setDepositRemarks(e.target.value)}
+                    value={depositReferenceId}
+                    onChange={(e) => setDepositReferenceId(e.target.value)}
                     className="text-sm"
                     required
                   />
@@ -393,7 +383,7 @@ const PlayerWallet = () => {
                   toast({ title: "Select a payment method first.", variant: "destructive" });
                   return;
                 }
-                if (!depositRemarks.trim()) {
+                if (!depositReferenceId.trim()) {
                   toast({ title: "Please enter your transaction ID or reference ID.", variant: "destructive" });
                   return;
                 }
@@ -402,14 +392,16 @@ const PlayerWallet = () => {
                     const formData = new FormData();
                     formData.append("amount", String(amt));
                     formData.append("payment_mode", String(selectedPM));
-                    formData.append("remarks", depositRemarks.trim() || "");
+                    formData.append("reference_id", depositReferenceId.trim());
+                    formData.append("remarks", "");
                     formData.append("screenshot", depositScreenshot);
                     await depositRequestWithScreenshot(formData);
                   } else {
                     await depositRequest({
                       amount: amt,
                       payment_mode: Number(selectedPM),
-                      remarks: depositRemarks.trim() || "",
+                      reference_id: depositReferenceId.trim(),
+                      remarks: "",
                     });
                   }
                   queryClient.invalidateQueries({ queryKey: ["player-wallet"] });
@@ -417,7 +409,7 @@ const PlayerWallet = () => {
                   setDepositOpen(false);
                   setAmount("");
                   setSelectedPM(null);
-                  setDepositRemarks("");
+                  setDepositReferenceId("");
                   setDepositScreenshot(null);
                 } catch (e: unknown) {
                   const msg = (e as { detail?: string })?.detail ?? "Failed to submit deposit.";
