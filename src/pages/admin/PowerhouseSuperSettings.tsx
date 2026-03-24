@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getSuperSettings, saveSuperSettings } from "@/api/admin";
@@ -26,6 +27,12 @@ const PowerhouseSuperSettings = () => {
   const [gameApiUrl, setGameApiUrl] = useState("");
   const [gameApiLaunchUrl, setGameApiLaunchUrl] = useState("");
   const [gameApiSecret, setGameApiSecret] = useState("");
+  const [whatsappSecretKey, setWhatsappSecretKey] = useState("");
+  const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState("");
+  const [whatsappApiVersion, setWhatsappApiVersion] = useState("v22.0");
+  const [whatsappOtpTemplateName, setWhatsappOtpTemplateName] = useState("");
+  const [whatsappOtpTemplateLanguage, setWhatsappOtpTemplateLanguage] = useState("en_US");
+  const [whatsappOtpTemplateBodyParam, setWhatsappOtpTemplateBodyParam] = useState(true);
   const [rejectSuggestionRows, setRejectSuggestionRows] = useState<SuggestionRow[]>(() => [newRow()]);
   const [saving, setSaving] = useState(false);
 
@@ -39,6 +46,12 @@ const PowerhouseSuperSettings = () => {
     setGameApiUrl(String(s.game_api_url ?? ""));
     setGameApiLaunchUrl(String(s.game_api_launch_url ?? ""));
     setGameApiSecret(String(s.game_api_secret ?? ""));
+    setWhatsappSecretKey(String(s.whatsapp_secret_key ?? ""));
+    setWhatsappPhoneNumberId(String(s.whatsapp_phone_number_id ?? ""));
+    setWhatsappApiVersion(String(s.whatsapp_api_version ?? "v22.0") || "v22.0");
+    setWhatsappOtpTemplateName(String(s.whatsapp_otp_template_name ?? ""));
+    setWhatsappOtpTemplateLanguage(String(s.whatsapp_otp_template_language ?? "en_US") || "en_US");
+    setWhatsappOtpTemplateBodyParam(s.whatsapp_otp_template_body_param !== false);
     const rr = s.reject_reason_suggestions;
     if (rr != null && typeof rr === "object") {
       const raw = (rr as { data?: unknown }).data;
@@ -81,6 +94,12 @@ const PowerhouseSuperSettings = () => {
         game_api_url: gameApiUrl.trim(),
         game_api_launch_url: gameApiLaunchUrl.trim(),
         game_api_secret: gameApiSecret.trim(),
+        whatsapp_secret_key: whatsappSecretKey.trim(),
+        whatsapp_phone_number_id: whatsappPhoneNumberId.trim(),
+        whatsapp_api_version: whatsappApiVersion.trim() || "v22.0",
+        whatsapp_otp_template_name: whatsappOtpTemplateName.trim(),
+        whatsapp_otp_template_language: whatsappOtpTemplateLanguage.trim() || "en_US",
+        whatsapp_otp_template_body_param: whatsappOtpTemplateBodyParam,
         reject_reason_suggestions: { data: suggestionData },
       });
       queryClient.invalidateQueries({ queryKey: ["admin-super-settings"] });
@@ -154,6 +173,55 @@ const PowerhouseSuperSettings = () => {
           <div><label className="text-xs text-muted-foreground">API Endpoint (getProvider/providerGame)</label><Input value={gameApiUrl} onChange={(e) => setGameApiUrl(e.target.value)} placeholder="https://allapi.online/launch_game_js" /></div>
           <div><label className="text-xs text-muted-foreground">Launch URL (e.g. launch_game1_js)</label><Input value={gameApiLaunchUrl} onChange={(e) => setGameApiLaunchUrl(e.target.value)} placeholder="https://allapi.online/launch_game1_js" /></div>
           <div><label className="text-xs text-muted-foreground">API Secret</label><Input value={gameApiSecret} onChange={(e) => setGameApiSecret(e.target.value)} type="password" /></div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-display">WhatsApp OTP (Meta Cloud API)</CardTitle>
+          <p className="text-xs text-muted-foreground font-normal pt-1">
+            Used for signup and forgot-password when the user chooses WhatsApp. If access token and phone number ID are set here, Meta Graph API is used; otherwise Flexgrew (env) is used when configured.
+            Use an approved template with one body variable for the 6-digit code, or turn off &quot;OTP in template body&quot; for fixed templates like hello_world (not for real OTP).
+          </p>
+        </CardHeader>
+        <CardContent className="p-4 pt-2 space-y-3">
+          <div>
+            <label className="text-xs text-muted-foreground">Access token (Bearer)</label>
+            <Input
+              value={whatsappSecretKey}
+              onChange={(e) => setWhatsappSecretKey(e.target.value)}
+              type="password"
+              autoComplete="off"
+              placeholder="Long-lived token from Meta"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Phone number ID</label>
+            <Input
+              value={whatsappPhoneNumberId}
+              onChange={(e) => setWhatsappPhoneNumberId(e.target.value)}
+              placeholder="e.g. 1080066288522498"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Graph API version</label>
+            <Input value={whatsappApiVersion} onChange={(e) => setWhatsappApiVersion(e.target.value)} placeholder="v22.0" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">OTP template name</label>
+            <Input value={whatsappOtpTemplateName} onChange={(e) => setWhatsappOtpTemplateName(e.target.value)} placeholder="your_template_name" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Template language code</label>
+            <Input value={whatsappOtpTemplateLanguage} onChange={(e) => setWhatsappOtpTemplateLanguage(e.target.value)} placeholder="en_US" />
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <Checkbox
+              checked={whatsappOtpTemplateBodyParam}
+              onCheckedChange={(v) => setWhatsappOtpTemplateBodyParam(v === true)}
+            />
+            <span>Send 6-digit OTP as template body parameter</span>
+          </label>
         </CardContent>
       </Card>
 
