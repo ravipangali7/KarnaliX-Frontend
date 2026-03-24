@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getSuperSettings, saveSuperSettings } from "@/api/admin";
@@ -27,16 +26,12 @@ const PowerhouseSuperSettings = () => {
   const [gameApiUrl, setGameApiUrl] = useState("");
   const [gameApiLaunchUrl, setGameApiLaunchUrl] = useState("");
   const [gameApiSecret, setGameApiSecret] = useState("");
-  const [whatsappSecretKey, setWhatsappSecretKey] = useState("");
-  const [whatsappVerifyToken, setWhatsappVerifyToken] = useState("");
-  const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState("");
-  const [whatsappApiVersion, setWhatsappApiVersion] = useState("v22.0");
-  const [whatsappOtpTemplateName, setWhatsappOtpTemplateName] = useState("");
-  const [whatsappOtpTemplateLanguage, setWhatsappOtpTemplateLanguage] = useState("en_US");
-  const [whatsappOtpTemplateBodyParam, setWhatsappOtpTemplateBodyParam] = useState(false);
-  const [flexgrewApiKey, setFlexgrewApiKey] = useState("");
-  const [flexgrewBaseUrl, setFlexgrewBaseUrl] = useState("");
-  const [flexgrewOtpTemplateId, setFlexgrewOtpTemplateId] = useState("");
+  const [waAccessToken, setWaAccessToken] = useState("");
+  const [waWebhookVerifyToken, setWaWebhookVerifyToken] = useState("");
+  const [waPhoneNumberId, setWaPhoneNumberId] = useState("");
+  const [waApiVersion, setWaApiVersion] = useState("v22.0");
+  const [waTemplateName, setWaTemplateName] = useState("");
+  const [waTemplateLanguage, setWaTemplateLanguage] = useState("en_US");
   const [rejectSuggestionRows, setRejectSuggestionRows] = useState<SuggestionRow[]>(() => [newRow()]);
   const [saving, setSaving] = useState(false);
 
@@ -50,18 +45,12 @@ const PowerhouseSuperSettings = () => {
     setGameApiUrl(String(s.game_api_url ?? ""));
     setGameApiLaunchUrl(String(s.game_api_launch_url ?? ""));
     setGameApiSecret(String(s.game_api_secret ?? ""));
-    setWhatsappSecretKey(String(s.whatsapp_secret_key ?? ""));
-    setWhatsappVerifyToken(String(s.whatsapp_verify_token ?? ""));
-    setWhatsappPhoneNumberId(String(s.whatsapp_phone_number_id ?? ""));
-    setWhatsappApiVersion(String(s.whatsapp_api_version ?? "v22.0") || "v22.0");
-    setWhatsappOtpTemplateName(String(s.whatsapp_otp_template_name ?? ""));
-    setWhatsappOtpTemplateLanguage(String(s.whatsapp_otp_template_language ?? "en_US") || "en_US");
-    setWhatsappOtpTemplateBodyParam(s.whatsapp_otp_template_body_param === true);
-    setFlexgrewApiKey(String(s.flexgrew_api_key ?? ""));
-    setFlexgrewBaseUrl(String(s.flexgrew_base_url ?? ""));
-    setFlexgrewOtpTemplateId(
-      s.flexgrew_otp_template_id != null && s.flexgrew_otp_template_id !== "" ? String(s.flexgrew_otp_template_id) : ""
-    );
+    setWaAccessToken(String(s.wa_access_token ?? ""));
+    setWaWebhookVerifyToken(String(s.wa_webhook_verify_token ?? ""));
+    setWaPhoneNumberId(String(s.wa_phone_number_id ?? ""));
+    setWaApiVersion(String(s.wa_api_version ?? "v22.0") || "v22.0");
+    setWaTemplateName(String(s.wa_template_name ?? ""));
+    setWaTemplateLanguage(String(s.wa_template_language ?? "en_US") || "en_US");
     const rr = s.reject_reason_suggestions;
     if (rr != null && typeof rr === "object") {
       const raw = (rr as { data?: unknown }).data;
@@ -93,7 +82,6 @@ const PowerhouseSuperSettings = () => {
 
   const handleSave = async () => {
     const suggestionData = rejectSuggestionRows.map((r) => r.value.trim()).filter((s) => s !== "");
-    const tidRaw = flexgrewOtpTemplateId.trim();
     setSaving(true);
     try {
       await saveSuperSettings({
@@ -105,16 +93,12 @@ const PowerhouseSuperSettings = () => {
         game_api_url: gameApiUrl.trim(),
         game_api_launch_url: gameApiLaunchUrl.trim(),
         game_api_secret: gameApiSecret.trim(),
-        whatsapp_secret_key: whatsappSecretKey.trim(),
-        whatsapp_verify_token: whatsappVerifyToken.trim(),
-        whatsapp_phone_number_id: whatsappPhoneNumberId.trim(),
-        whatsapp_api_version: whatsappApiVersion.trim() || "v22.0",
-        whatsapp_otp_template_name: whatsappOtpTemplateName.trim(),
-        whatsapp_otp_template_language: whatsappOtpTemplateLanguage.trim() || "en_US",
-        whatsapp_otp_template_body_param: whatsappOtpTemplateBodyParam,
-        flexgrew_api_key: flexgrewApiKey.trim(),
-        flexgrew_base_url: flexgrewBaseUrl.trim(),
-        flexgrew_otp_template_id: tidRaw === "" ? null : tidRaw,
+        wa_access_token: waAccessToken.trim(),
+        wa_webhook_verify_token: waWebhookVerifyToken.trim(),
+        wa_phone_number_id: waPhoneNumberId.trim(),
+        wa_api_version: waApiVersion.trim() || "v22.0",
+        wa_template_name: waTemplateName.trim(),
+        wa_template_language: waTemplateLanguage.trim() || "en_US",
         reject_reason_suggestions: { data: suggestionData },
       });
       queryClient.invalidateQueries({ queryKey: ["admin-super-settings"] });
@@ -196,8 +180,7 @@ const PowerhouseSuperSettings = () => {
           <CardTitle className="text-sm font-display">WhatsApp OTP (Meta Cloud API)</CardTitle>
           <div className="text-xs text-muted-foreground font-normal pt-1 space-y-2">
             <p>
-              Used when players choose WhatsApp on register or forgot password. Paste your Meta token and Phone number ID
-              from{" "}
+              Used when players choose WhatsApp on register or forgot password. Credentials from{" "}
               <a
                 href="https://developers.facebook.com/apps/"
                 target="_blank"
@@ -205,19 +188,19 @@ const PowerhouseSuperSettings = () => {
                 className="text-primary underline underline-offset-2"
               >
                 developers.facebook.com
-              </a>
-              .
+              </a>{" "}
+              (WhatsApp → API Setup). Optional env fallbacks: <code className="text-[11px] bg-muted px-1 rounded">WA_ACCESS_TOKEN</code>,{" "}
+              <code className="text-[11px] bg-muted px-1 rounded">WA_PHONE_NUMBER_ID</code>.
             </p>
             <p>
-              <strong className="text-foreground font-medium">Easy start:</strong> template name <code className="text-[11px] bg-muted px-1 rounded">hello_world</code>, language{" "}
-              <code className="text-[11px] bg-muted px-1 rounded">en_US</code>, leave the checkbox below <strong>off</strong> — this sends a test message and avoids Meta errors. Players on the main site then get the real code by SMS automatically until you set up a custom template.
+              <strong className="text-foreground font-medium">OTP in WhatsApp:</strong> use an approved template with one body variable for the code (e.g. &quot;Your code is {"{{1}}"}&quot;). Enter that template name and language exactly as in Meta.
             </p>
             <p>
-              <strong className="text-foreground font-medium">Real code inside WhatsApp:</strong> in Meta Business Suite create a template whose body includes one variable (e.g. &quot;Your code is {"{{1}}"}&quot;), wait for approval, enter that template name here, and turn the checkbox <strong>on</strong>.
+              <strong className="text-foreground font-medium">hello_world:</strong> sends a fixed sample message only — the 6-digit code is not included. For WhatsApp-only sites, use an authentication-style template with {"{{1}}"} instead.
             </p>
             <p>
-              <strong className="text-foreground font-medium">Webhook URL (Meta Dashboard):</strong>{" "}
-              <code className="text-[11px] bg-muted px-1 rounded break-all">https://&lt;your-domain&gt;/webhook/whatsapp/</code> — same verify token as below.
+              <strong className="text-foreground font-medium">Webhook URL:</strong>{" "}
+              <code className="text-[11px] bg-muted px-1 rounded break-all">https://&lt;your-domain&gt;/webhook/whatsapp/</code> — verify token below must match Meta.
             </p>
           </div>
         </CardHeader>
@@ -225,8 +208,8 @@ const PowerhouseSuperSettings = () => {
           <div>
             <label className="text-xs text-muted-foreground">Access token (Bearer)</label>
             <Input
-              value={whatsappSecretKey}
-              onChange={(e) => setWhatsappSecretKey(e.target.value)}
+              value={waAccessToken}
+              onChange={(e) => setWaAccessToken(e.target.value)}
               type="password"
               autoComplete="off"
               placeholder="Long-lived token from Meta"
@@ -235,87 +218,32 @@ const PowerhouseSuperSettings = () => {
           <div>
             <label className="text-xs text-muted-foreground">Webhook verify token</label>
             <Input
-              value={whatsappVerifyToken}
-              onChange={(e) => setWhatsappVerifyToken(e.target.value)}
+              value={waWebhookVerifyToken}
+              onChange={(e) => setWaWebhookVerifyToken(e.target.value)}
               type="password"
               autoComplete="off"
-              placeholder="Any secret you choose — must match Meta → WhatsApp → Webhook"
+              placeholder="Must match Meta → WhatsApp → Webhook"
             />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Phone number ID</label>
             <Input
-              value={whatsappPhoneNumberId}
-              onChange={(e) => setWhatsappPhoneNumberId(e.target.value)}
-              placeholder="e.g. 1080066288522498"
+              value={waPhoneNumberId}
+              onChange={(e) => setWaPhoneNumberId(e.target.value)}
+              placeholder="e.g. 1477712550666238"
             />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Graph API version</label>
-            <Input value={whatsappApiVersion} onChange={(e) => setWhatsappApiVersion(e.target.value)} placeholder="v22.0" />
+            <Input value={waApiVersion} onChange={(e) => setWaApiVersion(e.target.value)} placeholder="v22.0" />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">OTP template name</label>
-            <Input value={whatsappOtpTemplateName} onChange={(e) => setWhatsappOtpTemplateName(e.target.value)} placeholder="hello_world or your_approved_template" />
+            <label className="text-xs text-muted-foreground">Template name</label>
+            <Input value={waTemplateName} onChange={(e) => setWaTemplateName(e.target.value)} placeholder="authentication or your approved template" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Template language code</label>
-            <Input value={whatsappOtpTemplateLanguage} onChange={(e) => setWhatsappOtpTemplateLanguage(e.target.value)} placeholder="en_US" />
-          </div>
-          <label className="flex items-start gap-2 cursor-pointer text-sm leading-snug">
-            <Checkbox
-              className="mt-0.5"
-              checked={whatsappOtpTemplateBodyParam}
-              onCheckedChange={(v) => setWhatsappOtpTemplateBodyParam(v === true)}
-            />
-            <span>
-              Put the 6-digit code in the message (required for custom templates with one body variable). Leave off for{" "}
-              <code className="text-[11px] bg-muted px-1 rounded">hello_world</code>.
-            </span>
-          </label>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-display">Flexgrew (WhatsApp fallback)</CardTitle>
-          <p className="text-xs text-muted-foreground font-normal pt-1">
-            Used when Meta is not configured, or when Meta token fails (then OTP is sent via Flexgrew). Base URL defaults
-            to <code className="text-[11px] bg-muted px-1 rounded">https://flexgrew.cloud/api</code>; you may use{" "}
-            <code className="text-[11px] bg-muted px-1 rounded">https://flexgrew.cloud</code> (the <code className="text-[11px] bg-muted px-1 rounded">/api</code> path is added automatically). For cold OTP outside the 24h window, set an OTP template ID from Flexgrew (GET /api/templates); variable{" "}
-            <code className="text-[11px] bg-muted px-1 rounded">1</code> receives the 6-digit code.
-          </p>
-        </CardHeader>
-        <CardContent className="p-4 pt-2 space-y-3">
-          <div>
-            <label className="text-xs text-muted-foreground">Flexgrew API key</label>
-            <Input
-              value={flexgrewApiKey}
-              onChange={(e) => setFlexgrewApiKey(e.target.value)}
-              type="password"
-              autoComplete="off"
-              placeholder="Bearer token from Flexgrew"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Base URL (optional)</label>
-            <p className="text-[11px] text-muted-foreground mb-1">
-              Must point at the JSON API root (usually ends with <code className="bg-muted px-1 rounded">/api</code>). Leave empty for the default.
-            </p>
-            <Input
-              value={flexgrewBaseUrl}
-              onChange={(e) => setFlexgrewBaseUrl(e.target.value)}
-              placeholder="https://flexgrew.cloud/api"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">OTP template ID (optional)</label>
-            <Input
-              value={flexgrewOtpTemplateId}
-              onChange={(e) => setFlexgrewOtpTemplateId(e.target.value)}
-              placeholder="e.g. 15 — uses POST .../chats/:uuid/template"
-              inputMode="numeric"
-            />
+            <Input value={waTemplateLanguage} onChange={(e) => setWaTemplateLanguage(e.target.value)} placeholder="en_US" />
           </div>
         </CardContent>
       </Card>
