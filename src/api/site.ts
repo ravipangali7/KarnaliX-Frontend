@@ -112,6 +112,12 @@ export async function getCmsFooterPages() {
   return (res as unknown as Array<Record<string, unknown>>) ?? [];
 }
 
+export async function getCmsPageBySlug(slug: string) {
+  const safeSlug = String(slug ?? "").trim();
+  const res = await apiGet(`/public/cms/${encodeURIComponent(safeSlug)}/`);
+  return (res as unknown as Record<string, unknown>) ?? {};
+}
+
 export async function getTestimonials() {
   const res = await apiGet("/public/testimonials/");
   return (res as unknown as Array<Record<string, unknown>>) ?? [];

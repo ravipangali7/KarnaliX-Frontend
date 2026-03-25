@@ -34,6 +34,7 @@ import WalletPage from "@/pages/public/WalletPage";
 import LoginPage from "@/pages/public/LoginPage";
 import RegisterPage from "@/pages/public/RegisterPage";
 import ForgotPasswordPage from "@/pages/public/ForgotPasswordPage";
+import CmsPage from "@/pages/public/CmsPage";
 
 // Player Pages
 import PlayerDashboard from "@/pages/player/PlayerDashboard";
@@ -209,6 +210,7 @@ function AppShell() {
       <Route path="/bonus" element={<BonusPage />} />
       <Route path="/promotions" element={<PromotionPage />} />
       <Route path="/wallet" element={<WalletPage />} />
+      <Route path="/page/:slug" element={<CmsPage />} />
       </Route>
 
       {/* In-app game play (full-screen iframe + back button only), player only */}

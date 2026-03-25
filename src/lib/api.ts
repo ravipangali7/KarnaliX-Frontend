@@ -9,9 +9,9 @@
 // export const BASE_URL = "https://audadmin.luckyuser365.com/api";
 // export const BASE_URL = "https://bhtadmin.luckyuser365.com/api";
 
-// export const BASE_URL = "https://admin.luckyuser365.com/api";
+export const BASE_URL = "https://admin.luckyuser365.com/api";
 // export const BASE_URL = "https://admin.lucky365ind.com/api";
-export const BASE_URL = "https://admin.lucky365bhd.com/api";
+// export const BASE_URL = "https://admin.lucky365bhd.com/api";
 // export const BASE_URL = "https://admin.lucky365bht.com/api";
 
 function getToken(): string | null {
