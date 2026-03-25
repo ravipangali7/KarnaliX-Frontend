@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   getSupers,
@@ -379,7 +380,7 @@ const AdminSupers = () => {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Password</label>
-                <Input type="password" placeholder="Password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} />
+                <PasswordInput placeholder="Password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} autoComplete="new-password" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Commission %</label>
@@ -561,8 +562,8 @@ const AdminSupers = () => {
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle className="font-display">Reset Password — {selectedUser?.username}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <Input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            <Input type="password" placeholder="Confirm" value={newPasswordConfirm} onChange={(e) => setNewPasswordConfirm(e.target.value)} />
+            <PasswordInput placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
+            <PasswordInput placeholder="Confirm" value={newPasswordConfirm} onChange={(e) => setNewPasswordConfirm(e.target.value)} autoComplete="new-password" />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setResetPwOpen(false)}>Cancel</Button>

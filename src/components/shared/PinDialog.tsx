@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 
 interface PinDialogProps {
@@ -20,14 +20,14 @@ export const PinDialog = ({ open, onClose, onConfirm, title = "Enter PIN to conf
         <DialogHeader>
           <DialogTitle className="font-display text-lg">{title}</DialogTitle>
         </DialogHeader>
-        <Input
-          type="password"
+        <PasswordInput
           maxLength={6}
           placeholder="Enter PIN"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
           className="text-center text-lg tracking-widest"
           disabled={loading}
+          autoComplete="one-time-code"
         />
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} size="sm" disabled={loading}>Cancel</Button>

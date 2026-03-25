@@ -3,6 +3,7 @@ import { isCurrencySiteNoSms } from "@/lib/hostOtpPolicy";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Lock, Gamepad2, Phone, Mail, MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -235,21 +236,21 @@ export default function ForgotPasswordPage() {
                 maxLength={6}
                 required
               />
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="New password (min 6 characters)"
                 className="h-11"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
+                autoComplete="new-password"
               />
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="Confirm new password"
                 className="h-11"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                autoComplete="new-password"
               />
               {error && <p className="text-xs text-destructive">{error}</p>}
               <Button type="submit" className="w-full h-11" disabled={loading}>

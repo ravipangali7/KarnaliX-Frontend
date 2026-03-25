@@ -24,6 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, Upload, CheckCircle, Sparkles, TrendingUp, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { PaymentDetailsPanel, buildPaymentDetailsCopyText } from "@/components/shared/PaymentDetailsPanel";
@@ -575,7 +576,7 @@ const PlayerWallet = () => {
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium mb-2 block">Password (to confirm)</label>
-              <Input type="password" placeholder="Enter password" value={withdrawPassword} onChange={(e) => setWithdrawPassword(e.target.value)} className="h-11" />
+              <PasswordInput placeholder="Enter password" value={withdrawPassword} onChange={(e) => setWithdrawPassword(e.target.value)} className="h-11" autoComplete="current-password" />
             </div>
             {withdrawWaUrl ? (
               <Button asChild variant="outline" size="sm" className="w-full text-xs font-gaming border-[#25D366]/50 text-[#25D366] hover:bg-[#25D366]/10">

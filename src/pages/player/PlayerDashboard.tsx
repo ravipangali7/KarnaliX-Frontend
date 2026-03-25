@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { GameCard } from "@/components/shared/GameCard";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
@@ -205,12 +206,12 @@ const PlayerDashboard = () => {
             </div>
             <div>
               <label className="text-xs text-muted-foreground">Your Password (to confirm)</label>
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="Enter password"
                 value={transferPassword}
                 onChange={(e) => setTransferPassword(e.target.value)}
                 disabled={transferSubmitting}
+                autoComplete="current-password"
               />
             </div>
           </div>
