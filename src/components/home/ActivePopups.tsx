@@ -75,7 +75,7 @@ export function ActivePopups() {
               <img
                 src={current.image}
                 alt=""
-                className="max-h-[min(45vh,420px)] w-full object-contain object-center"
+                className="max-h-[min(45vh,420px)] w-full object-fill"
               />
             </div>
           )}

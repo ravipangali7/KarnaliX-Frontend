@@ -265,7 +265,7 @@ const PowerhouseGames = () => {
           ? <img
               src={row.image ? getMediaUrl(String(row.image)) : String(row.image_url)}
               alt=""
-              className="w-8 h-8 rounded object-cover border border-border"
+              className="w-8 h-8 rounded object-fill border border-border"
             />
           : <div className="w-8 h-8 rounded bg-muted border border-border" />
       ),
@@ -574,7 +574,7 @@ const PowerhouseGames = () => {
               <img
                 src={imagePreviewUrl ?? getMediaUrl((editingGame?.image as string).trim())}
                 alt="Preview"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-fill"
               />
             </div>
           )}
@@ -617,7 +617,7 @@ const PowerhouseGames = () => {
               <img
                 src={comingSoonImagePreviewUrl ?? getMediaUrl((editingGame?.coming_soon_image as string).trim())}
                 alt="Coming soon preview"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-fill"
               />
             </div>
           )}
