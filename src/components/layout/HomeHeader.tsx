@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Menu, X, Bell, Wallet } from "lucide-react";
+import { Menu, X, Bell, Wallet, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlayerNotification } from "@/contexts/PlayerNotificationContext";
@@ -121,15 +121,25 @@ export const HomeHeader = () => {
             >
               Bonus
             </Link>
-            <Link
-              to={messagesPath}
-              className={cn(
-                "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                location.pathname === messagesPath || location.pathname.startsWith(`${dashboardPath}/messages`) ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-              )}
-            >
-              Message
-            </Link>
+            {isPlayer ? (
+              <button
+                type="button"
+                onClick={() => notification?.openChat()}
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-white/5"
+              >
+                Message
+              </button>
+            ) : (
+              <Link
+                to={messagesPath}
+                className={cn(
+                  "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  location.pathname === messagesPath || location.pathname.startsWith(`${dashboardPath}/messages`) ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                )}
+              >
+                Message
+              </Link>
+            )}
             {isLoggedIn && (
               <>
                 <Link
@@ -166,19 +176,29 @@ export const HomeHeader = () => {
               </Link>
             )}
             {isPlayer ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative min-h-[44px] min-w-[44px] touch-manipulation"
-                onClick={() => notification?.openModal()}
-              >
-                <Bell className="h-5 w-5" />
-                {messageBadge > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold">
-                    {messageBadge > 99 ? "99+" : messageBadge}
-                  </span>
-                )}
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative min-h-[44px] min-w-[44px] touch-manipulation"
+                  onClick={() => notification?.openChat()}
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  {messageBadge > 0 && (
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold">
+                      {messageBadge > 99 ? "99+" : messageBadge}
+                    </span>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative min-h-[44px] min-w-[44px] touch-manipulation"
+                  onClick={() => notification?.openModal()}
+                >
+                  <Bell className="h-5 w-5" />
+                </Button>
+              </>
             ) : (
               <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
                 <Bell className="h-5 w-5" />
@@ -277,7 +297,7 @@ export const HomeHeader = () => {
                   currentPath={location.pathname}
                   onNavigate={() => setMenuOpen(false)}
                   onMessagesClick={() => {
-                    notification?.openModal();
+                    notification?.openChat();
                     setMenuOpen(false);
                   }}
                   compact

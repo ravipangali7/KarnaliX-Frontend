@@ -38,7 +38,6 @@ import CmsPage from "@/pages/public/CmsPage";
 
 // Player Pages
 import PlayerDashboard from "@/pages/player/PlayerDashboard";
-import PlayerMessages from "@/pages/player/PlayerMessages";
 import PlayerWallet from "@/pages/player/PlayerWallet";
 import PlayerTransactions from "@/pages/player/PlayerTransactions";
 import PlayerGameResults from "@/pages/player/PlayerGameResults";
@@ -226,7 +225,7 @@ function AppShell() {
       <Route element={<ProtectedRoute allowedRole="player"><PlayerSiteLayout /></ProtectedRoute>}>
         <Route path="/player" element={<PlayerLayout />}>
           <Route index element={<PlayerDashboard />} />
-          <Route path="messages" element={<PlayerMessages />} />
+          <Route path="messages" element={<Navigate to="/player" replace />} />
           <Route path="wallet" element={<PlayerWallet />} />
           <Route path="transactions" element={<PlayerTransactions />} />
           <Route path="game-results" element={<PlayerGameResults />} />

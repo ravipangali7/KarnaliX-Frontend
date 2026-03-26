@@ -110,7 +110,7 @@ export const GlobalMessageFab = () => {
 
   const handleFabClick = () => {
     if (isPlayer && playerNotification) {
-      playerNotification.openModal();
+      playerNotification.openChat();
     } else {
       setOpen(true);
     }
@@ -127,7 +127,7 @@ export const GlobalMessageFab = () => {
           adminRole != null ? "bottom-28 md:bottom-28" : "bottom-20 md:bottom-6"
         )}
         style={{ backgroundColor: fabColor }}
-        aria-label={isPlayer ? "Open notifications" : "Open messages"}
+        aria-label={isPlayer ? "Open player chat" : "Open messages"}
       >
         <MessageCircle className="h-7 w-7" />
         {unread > 0 && (

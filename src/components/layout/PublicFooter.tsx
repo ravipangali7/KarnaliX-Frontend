@@ -45,7 +45,7 @@ export const PublicFooter = () => {
                 { label: "Bonus", path: "/bonus" },
                 { label: "Wallet", path: "/wallet" },
                 { label: "Dashboard", path: "/player" },
-                { label: "Messages", path: "/player/messages" },
+                { label: "Messages", path: "/player" },
                 { label: "Transactions", path: "/player/transactions" },
                 { label: "Profile", path: "/player/profile" },
               ].map((l) => (

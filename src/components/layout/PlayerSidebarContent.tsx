@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 export const sidebarLinks = [
   { label: "Dashboard", path: "/player", icon: Home },
   { label: "Wallet", path: "/player/wallet", icon: Wallet },
-  { label: "Messages", path: "/player/messages", icon: MessageCircle },
+  { label: "Messages", path: "/player/chat", icon: MessageCircle },
   { label: "Transactions", path: "/player/transactions", icon: Clock },
   { label: "Bet History", path: "/player/game-results", icon: BarChart3 },
   { label: "Payment Modes", path: "/player/payment-modes", icon: CreditCard },
@@ -23,7 +23,7 @@ export interface PlayerSidebarContentProps {
   messageBadge: number;
   currentPath: string;
   onNavigate?: () => void;
-  /** When provided and messageBadge > 0, clicking Messages opens this instead of navigating. */
+  /** When provided, clicking Messages opens floating chat instead of navigating. */
   onMessagesClick?: () => void;
   compact?: boolean;
 }
@@ -71,8 +71,8 @@ export const PlayerSidebarContent = ({
       {/* Nav items */}
       <nav className={compact ? "flex-1 px-2 py-1 space-y-0.5" : "flex-1 px-3 py-2 space-y-1"}>
         {sidebarLinks.map((link) => {
-          const isMessages = link.path === "/player/messages";
-          const openModalInstead = isMessages && messageBadge > 0 && onMessagesClick;
+          const isMessages = link.label === "Messages";
+          const openModalInstead = isMessages && onMessagesClick;
           if (openModalInstead) {
             return (
               <button

@@ -7,7 +7,7 @@ import { getSiteSetting } from "@/api/site";
 import { getPlayerUnreadMessageCount } from "@/api/player";
 import { getMediaUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Bell, User, Search, Menu, X } from "lucide-react";
+import { Bell, User, Search, Menu, X, MessageCircle } from "lucide-react";
 
 const navItems = [
   { label: "Home", path: "/" },
@@ -124,19 +124,29 @@ export const SecondPublicHeader = () => {
             </>
           )}
           {messagesPath && isPlayer && notification ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-muted-foreground hover:text-foreground h-9 w-9"
-              onClick={() => notification.openModal()}
-            >
-              <Bell className="h-5 w-5" />
-              {messageBadge > 0 && (
-                <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold">
-                  {messageBadge > 99 ? "99+" : messageBadge}
-                </span>
-              )}
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative text-muted-foreground hover:text-foreground h-9 w-9"
+                onClick={() => notification.openChat()}
+              >
+                <MessageCircle className="h-5 w-5" />
+                {messageBadge > 0 && (
+                  <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold">
+                    {messageBadge > 99 ? "99+" : messageBadge}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground h-9 w-9"
+                onClick={() => notification.openModal()}
+              >
+                <Bell className="h-5 w-5" />
+              </Button>
+            </>
           ) : messagesPath ? (
             <Link to={messagesPath}>
               <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground h-9 w-9">

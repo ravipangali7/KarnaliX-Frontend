@@ -19,7 +19,7 @@ const baseNavItems = [
 const playerMobileNavItems = [
   { label: "Dashboard", path: "/player", icon: Home },
   { label: "Wallet", path: "/player/wallet", icon: Wallet },
-  { label: "Messages", path: "/player/messages", icon: MessageCircle },
+  { label: "Messages", path: "/player", icon: MessageCircle },
   { label: "Transactions", path: "/player/transactions", icon: Clock },
   { label: "Bet History", path: "/player/game-results", icon: BarChart3 },
   { label: "Payment Modes", path: "/player/payment-modes", icon: CreditCard },

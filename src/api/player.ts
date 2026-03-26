@@ -38,6 +38,11 @@ export async function launchGameByMode(
   gameId: number,
   navigate: (path: string) => void
 ): Promise<void> {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("/login");
+    return;
+  }
   if (PLAY_MODE === "iframe") {
     navigate(`/games/${gameId}/play`);
     return;
