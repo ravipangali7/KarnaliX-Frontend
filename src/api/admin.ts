@@ -664,10 +664,31 @@ export async function getSliderSlidesAdmin() {
   const res = await apiGet(`${prefix("powerhouse")}/slider/`);
   return (res as unknown as Record<string, unknown>[]) ?? [];
 }
-export async function createSliderSlide(body: { title: string; subtitle?: string; image?: string; cta_label?: string; cta_link?: string; order?: number }) {
+export async function createSliderSlide(body: {
+  title: string;
+  subtitle?: string;
+  image?: string;
+  mobile_image?: string;
+  desktop_image?: string;
+  cta_label?: string;
+  cta_link?: string;
+  order?: number;
+}) {
   return apiPost(`${prefix("powerhouse")}/slider/`, body);
 }
-export async function updateSliderSlide(id: number, body: Partial<{ title: string; subtitle: string; image: string; cta_label: string; cta_link: string; order: number }>) {
+export async function updateSliderSlide(
+  id: number,
+  body: Partial<{
+    title: string;
+    subtitle: string;
+    image: string;
+    mobile_image: string;
+    desktop_image: string;
+    cta_label: string;
+    cta_link: string;
+    order: number;
+  }>
+) {
   return apiPatch(`${prefix("powerhouse")}/slider/${id}/`, body);
 }
 export async function deleteSliderSlide(id: number) {

@@ -128,6 +128,10 @@ export interface SliderSlideApi {
   title: string;
   subtitle?: string;
   image?: string;
+  mobile_image?: string;
+  desktop_image?: string;
+  mobile_image_url?: string;
+  desktop_image_url?: string;
   cta_label: string;
   cta_link: string;
   order: number;

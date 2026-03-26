@@ -11,6 +11,8 @@ export interface SliderSlide {
   title: string;
   subtitle?: string;
   image?: string;
+  mobileImage?: string;
+  desktopImage?: string;
   ctaText: string;
   ctaHref: string;
 }
@@ -138,14 +140,32 @@ const PROVIDER_COLORS = [
   "from-teal-500 to-cyan-500",
 ];
 
-function mapSliderApiToSlide(s: { id: number; title: string; subtitle?: string; image?: string; cta_label?: string | null; cta_link?: string | null }): SliderSlide {
+function mapSliderApiToSlide(s: {
+  id: number;
+  title: string;
+  subtitle?: string;
+  image?: string;
+  mobile_image?: string;
+  desktop_image?: string;
+  mobile_image_url?: string;
+  desktop_image_url?: string;
+  cta_label?: string | null;
+  cta_link?: string | null;
+}): SliderSlide {
   const ctaLabel = (s.cta_label != null && s.cta_label !== undefined) ? String(s.cta_label).trim() : "";
   const ctaLink = (s.cta_link != null && s.cta_link !== undefined) ? String(s.cta_link).trim() : "";
+  const legacyImage = (s.image as string)?.trim() ? getMediaUrl((s.image as string).trim()) : undefined;
+  const mobileRaw = (s.mobile_image_url ?? s.mobile_image ?? "").trim();
+  const desktopRaw = (s.desktop_image_url ?? s.desktop_image ?? "").trim();
+  const mobileImage = mobileRaw ? getMediaUrl(mobileRaw) : legacyImage;
+  const desktopImage = desktopRaw ? getMediaUrl(desktopRaw) : legacyImage;
   return {
     id: String(s.id),
     title: s.title ?? "",
     subtitle: s.subtitle,
-    image: (s.image as string)?.trim() ? getMediaUrl((s.image as string).trim()) : undefined,
+    image: desktopImage ?? mobileImage ?? legacyImage,
+    mobileImage,
+    desktopImage,
     ctaText: ctaLabel,
     ctaHref: ctaLink,
   };
@@ -163,6 +183,8 @@ function defaultSliderSlides(site: Record<string, unknown>): SliderSlide[] {
         title: (p.title as string) ?? heroTitle,
         subtitle: (p.subtitle as string) ?? "Join now and enjoy live sports betting and casino games.",
         image: (p.image as string)?.trim() ? getMediaUrl((p.image as string).trim()) : undefined,
+        mobileImage: (p.image as string)?.trim() ? getMediaUrl((p.image as string).trim()) : undefined,
+        desktopImage: (p.image as string)?.trim() ? getMediaUrl((p.image as string).trim()) : undefined,
         ctaText: ctaLabel,
         ctaHref: ctaLink,
       };

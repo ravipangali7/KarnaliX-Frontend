@@ -31,6 +31,8 @@ export interface SliderSlideRow {
   title: string;
   subtitle?: string;
   image?: string | null;
+  mobile_image_url?: string | null;
+  desktop_image_url?: string | null;
   cta_label: string;
   cta_link: string;
   order: number;
@@ -50,8 +52,10 @@ const PowerhouseSlider = () => {
   const [ctaLabel, setCtaLabel] = useState("");
   const [ctaLink, setCtaLink] = useState("");
   const [order, setOrder] = useState(0);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [mobileImageFile, setMobileImageFile] = useState<File | null>(null);
+  const [desktopImageFile, setDesktopImageFile] = useState<File | null>(null);
+  const [mobileImagePreviewUrl, setMobileImagePreviewUrl] = useState<string | null>(null);
+  const [desktopImagePreviewUrl, setDesktopImagePreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -62,14 +66,24 @@ const PowerhouseSlider = () => {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (!imageFile) {
-      setImagePreviewUrl(null);
+    if (!mobileImageFile) {
+      setMobileImagePreviewUrl(null);
       return;
     }
-    const url = URL.createObjectURL(imageFile);
-    setImagePreviewUrl(url);
+    const url = URL.createObjectURL(mobileImageFile);
+    setMobileImagePreviewUrl(url);
     return () => URL.revokeObjectURL(url);
-  }, [imageFile]);
+  }, [mobileImageFile]);
+
+  useEffect(() => {
+    if (!desktopImageFile) {
+      setDesktopImagePreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(desktopImageFile);
+    setDesktopImagePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [desktopImageFile]);
 
   const resetForm = () => {
     setTitle("");
@@ -77,7 +91,8 @@ const PowerhouseSlider = () => {
     setCtaLabel("");
     setCtaLink("");
     setOrder(sliderSlides.length);
-    setImageFile(null);
+    setMobileImageFile(null);
+    setDesktopImageFile(null);
     setEditingSlide(null);
   };
 
@@ -88,7 +103,8 @@ const PowerhouseSlider = () => {
     setCtaLabel(row.cta_label ?? "");
     setCtaLink(row.cta_link ?? "");
     setOrder(row.order ?? 0);
-    setImageFile(null);
+    setMobileImageFile(null);
+    setDesktopImageFile(null);
     setEditOpen(true);
   };
 
@@ -100,14 +116,15 @@ const PowerhouseSlider = () => {
     }
     setSaving(true);
     try {
-      if (imageFile) {
+      if (mobileImageFile || desktopImageFile) {
         const formData = new FormData();
         formData.append("title", t);
         formData.append("subtitle", subtitle.trim());
         formData.append("cta_label", ctaLabel.trim());
         formData.append("cta_link", ctaLink.trim());
         formData.append("order", String(sliderSlides.length));
-        formData.append("image_file", imageFile);
+        if (mobileImageFile) formData.append("mobile_image", mobileImageFile);
+        if (desktopImageFile) formData.append("desktop_image", desktopImageFile);
         await createSliderSlideForm(formData);
       } else {
         await createSliderSlide({
@@ -141,14 +158,15 @@ const PowerhouseSlider = () => {
     const id = editingSlide.id;
     setSaving(true);
     try {
-      if (imageFile) {
+      if (mobileImageFile || desktopImageFile) {
         const formData = new FormData();
         formData.append("title", t);
         formData.append("subtitle", subtitle.trim());
         formData.append("cta_label", ctaLabel.trim());
         formData.append("cta_link", ctaLink.trim());
         formData.append("order", String(order));
-        formData.append("image_file", imageFile);
+        if (mobileImageFile) formData.append("mobile_image", mobileImageFile);
+        if (desktopImageFile) formData.append("desktop_image", desktopImageFile);
         await updateSliderSlideForm(id, formData);
       } else {
         await updateSliderSlide(id, {
@@ -219,11 +237,19 @@ const PowerhouseSlider = () => {
     {
       header: "Image",
       accessor: (row: SliderSlideRow & { id: string }) =>
-        row.image ? (
-          <img src={row.image} alt="" className="h-10 w-16 object-fill rounded border border-border" />
+        (row.desktop_image_url || row.mobile_image_url || row.image) ? (
+          <img src={row.desktop_image_url ?? row.mobile_image_url ?? row.image ?? ""} alt="" className="h-10 w-16 object-fill rounded border border-border" />
         ) : (
           <span className="text-xs text-muted-foreground">—</span>
         ),
+    },
+    {
+      header: "Variants",
+      accessor: (row: SliderSlideRow & { id: string }) => (
+        <span className="text-xs text-muted-foreground">
+          D:{row.desktop_image_url || row.image ? "Y" : "N"} / M:{row.mobile_image_url || row.image ? "Y" : "N"}
+        </span>
+      ),
     },
     { header: "Title", accessor: (row: SliderSlideRow & { id: string }) => String(row.title ?? "").slice(0, 40) },
     { header: "Subtitle", accessor: (row: SliderSlideRow & { id: string }) => String(row.subtitle ?? "").slice(0, 30) },
@@ -275,12 +301,21 @@ const PowerhouseSlider = () => {
       <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
       <Input placeholder="Subtitle" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} />
       <div>
-        <label className="text-xs text-muted-foreground block mb-1">Image (optional)</label>
+        <label className="text-xs text-muted-foreground block mb-1">Desktop Image (16:4)</label>
         <input
           type="file"
           accept="image/*"
           className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
-          onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => setDesktopImageFile(e.target.files?.[0] ?? null)}
+        />
+      </div>
+      <div>
+        <label className="text-xs text-muted-foreground block mb-1">Mobile Image (16:9)</label>
+        <input
+          type="file"
+          accept="image/*"
+          className="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-muted file:text-sm"
+          onChange={(e) => setMobileImageFile(e.target.files?.[0] ?? null)}
         />
       </div>
       <Input placeholder="CTA Label" value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} />
@@ -320,9 +355,22 @@ const PowerhouseSlider = () => {
           </DialogHeader>
           <div className="space-y-3">
             {formFields}
-            {imagePreviewUrl && (
-              <div className="rounded-lg border border-border overflow-hidden bg-muted/30 w-32 h-20">
-                <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-fill" />
+            {(desktopImagePreviewUrl || mobileImagePreviewUrl) && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg border border-border overflow-hidden bg-muted/30 w-32 h-20">
+                  {desktopImagePreviewUrl ? (
+                    <img src={desktopImagePreviewUrl} alt="Desktop Preview" className="w-full h-full object-fill" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-[10px] text-muted-foreground">No desktop</div>
+                  )}
+                </div>
+                <div className="rounded-lg border border-border overflow-hidden bg-muted/30 w-32 h-20">
+                  {mobileImagePreviewUrl ? (
+                    <img src={mobileImagePreviewUrl} alt="Mobile Preview" className="w-full h-full object-fill" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-[10px] text-muted-foreground">No mobile</div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -350,13 +398,22 @@ const PowerhouseSlider = () => {
           </DialogHeader>
           <div className="space-y-3">
             {formFields}
-            {(imagePreviewUrl || (editingSlide?.image && editingSlide.image.trim())) && (
-              <div className="rounded-lg border border-border overflow-hidden bg-muted/30 w-32 h-20">
-                <img
-                  src={imagePreviewUrl ?? editingSlide?.image ?? ""}
-                  alt="Preview"
-                  className="w-full h-full object-fill"
-                />
+            {(desktopImagePreviewUrl || mobileImagePreviewUrl || editingSlide?.desktop_image_url || editingSlide?.mobile_image_url || editingSlide?.image) && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg border border-border overflow-hidden bg-muted/30 w-32 h-20">
+                  <img
+                    src={desktopImagePreviewUrl ?? editingSlide?.desktop_image_url ?? editingSlide?.image ?? ""}
+                    alt="Desktop Preview"
+                    className="w-full h-full object-fill"
+                  />
+                </div>
+                <div className="rounded-lg border border-border overflow-hidden bg-muted/30 w-32 h-20">
+                  <img
+                    src={mobileImagePreviewUrl ?? editingSlide?.mobile_image_url ?? editingSlide?.image ?? ""}
+                    alt="Mobile Preview"
+                    className="w-full h-full object-fill"
+                  />
+                </div>
               </div>
             )}
           </div>

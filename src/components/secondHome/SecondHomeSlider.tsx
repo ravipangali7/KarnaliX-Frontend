@@ -55,11 +55,16 @@ export function SecondHomeSlider({ slides, hideTitle }: SecondHomeSliderProps) {
             const clickable = hasCtaLink(slide);
             const href = (slide.ctaHref ?? "").trim();
             const ctaLabel = (slide.ctaText ?? "").trim();
+            const desktopImage = (slide.desktopImage ?? slide.image ?? "").trim();
+            const mobileImage = (slide.mobileImage ?? slide.image ?? "").trim();
+            const desktopSrc = desktopImage || mobileImage;
+            const mobileSrc = mobileImage || desktopImage;
             const content = (
               <div className="relative flex md:aspect-[16/4] aspect-[16/9] w-full items-center justify-between gap-6 px-4 py-6 md:px-8 md:py-8 rounded-none">
-                {slide.image && (
+                {(desktopSrc || mobileSrc) && (
                   <div className="absolute inset-0 overflow-hidden rounded-none">
-                    <img src={slide.image} alt="" className="h-full w-full object-scale object-center" />
+                    {desktopSrc && <img src={desktopSrc} alt="" className="hidden md:block h-full w-full object-scale object-center" />}
+                    {mobileSrc && <img src={mobileSrc} alt="" className="block md:hidden h-full w-full object-scale object-center" />}
                   </div>
                 )}
                 <div className="relative z-10 flex flex-1 flex-col md:flex-row md:items-center md:justify-between gap-6 container">
