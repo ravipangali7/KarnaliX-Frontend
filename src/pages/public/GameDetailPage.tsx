@@ -182,7 +182,7 @@ const GameDetailPage = () => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs text-muted-foreground font-medium">Bet Amount</label>
-                  <a href="https://luckyuser365.com/player/wallet" target="_blank" rel="noopener noreferrer">
+                  <a href="/player/wallet" target="_blank" rel="noopener noreferrer">
                     <Button variant="ghost" size="sm" className="text-xs text-primary h-6 px-2">+ Add Fund</Button>
                   </a>
                 </div>
@@ -252,7 +252,7 @@ const GameDetailPage = () => {
                   </Button>
                 </Link>
               )}
-              <a href="https://luckyuser365.com/player/wallet" target="_blank" rel="noopener noreferrer">
+              <a href="/player/wallet" target="_blank" rel="noopener noreferrer">
                 <Button className="w-full gold-gradient text-primary-foreground font-semibold mt-2" size="sm">
                   Add Fund
                 </Button>
