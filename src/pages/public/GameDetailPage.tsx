@@ -102,10 +102,16 @@ const GameDetailPage = () => {
   const g = game as Game;
   const minBet = Number(g.min_bet) || 10;
   const maxBet = Number(g.max_bet) || 5000;
-  const totalBalance = isPlayer && wallet != null
-    ? Number((wallet as { main_balance?: string }).main_balance || 0) + Number((wallet as { bonus_balance?: string }).bonus_balance || 0)
+  const mainBalance = isPlayer && wallet != null
+    ? Number((wallet as { main_balance?: string }).main_balance || 0)
     : 0;
-  const canPlay = totalBalance >= betAmount;
+  const bonusBalance = isPlayer && wallet != null
+    ? Number((wallet as { bonus_balance?: string }).bonus_balance || 0)
+    : 0;
+  // Mirror server-side logic: use main if it covers min_bet, else fall back to bonus
+  const usingBonusWallet = mainBalance < minBet && bonusBalance >= minBet;
+  const effectiveBalance = usingBonusWallet ? bonusBalance : mainBalance;
+  const canPlay = isPlayer ? effectiveBalance >= betAmount : false;
   const related = (games as Game[]).filter((x) => x.category === g.category && x.id !== g.id).slice(0, 12);
   const mostPlayed = (games as Game[]).filter((x) => x.id !== g.id).slice(0, 12);
   const gameHistory: { id: string; username: string; result: string; betAmount: number; winAmount: number }[] = [];
@@ -160,23 +166,26 @@ const GameDetailPage = () => {
             <CardContent className="p-4 space-y-4">
               {/* Balance */}
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="p-2 rounded-xl bg-muted/50 cyber-border">
+                <div className={`p-2 rounded-xl cyber-border ${!usingBonusWallet && isPlayer ? "bg-primary/10 border-primary/30" : "bg-muted/50"}`}>
                   <p className="text-[10px] text-muted-foreground">Main</p>
-                  <p className="font-bold text-sm">{isPlayer && wallet != null ? `₹${Number((wallet as { main_balance?: string }).main_balance || 0).toLocaleString()}` : "—"}</p>
+                  <p className="font-bold text-sm">{isPlayer && wallet != null ? `₹${mainBalance.toLocaleString()}` : "—"}</p>
                 </div>
-                <div className="p-2 rounded-xl bg-muted/50 cyber-border">
+                <div className={`p-2 rounded-xl cyber-border ${usingBonusWallet ? "bg-primary/10 border-primary/30" : "bg-muted/50"}`}>
                   <p className="text-[10px] text-muted-foreground">Bonus</p>
-                  <p className="font-bold text-sm text-primary">{isPlayer && wallet != null ? `₹${Number((wallet as { bonus_balance?: string }).bonus_balance || 0).toLocaleString()}` : "—"}</p>
+                  <p className="font-bold text-sm text-primary">{isPlayer && wallet != null ? `₹${bonusBalance.toLocaleString()}` : "—"}</p>
                 </div>
-                <div className="p-2 rounded-xl bg-primary/5 border border-primary/20 neon-glow-sm">
+                <div className="p-2 rounded-xl bg-muted/50 border border-border">
                   <p className="text-[10px] text-muted-foreground">Total</p>
                   <p className="font-bold text-sm neon-text">
-                    {isPlayer && wallet != null
-                      ? `₹${(Number((wallet as { main_balance?: string }).main_balance || 0) + Number((wallet as { bonus_balance?: string }).bonus_balance || 0)).toLocaleString()}`
-                      : "—"}
+                    {isPlayer && wallet != null ? `₹${(mainBalance + bonusBalance).toLocaleString()}` : "—"}
                   </p>
                 </div>
               </div>
+              {usingBonusWallet && isPlayer && (
+                <p className="text-[10px] text-primary text-center font-medium">
+                  Playing with bonus balance (main balance below min bet ₹{minBet})
+                </p>
+              )}
 
               {/* Bet Amount */}
               <div>
@@ -241,7 +250,11 @@ const GameDetailPage = () => {
                     {isLaunching ? "Launching..." : "🎮 START PLAYING"}
                   </Button>
                   {!canPlay && (
-                    <p className="text-xs text-muted-foreground text-center mt-1">Insufficient balance</p>
+                    <p className="text-xs text-destructive text-center mt-1">
+                      {mainBalance < minBet && bonusBalance < minBet
+                        ? `Insufficient balance — min bet ₹${minBet} (add funds or get a bonus)`
+                        : "Insufficient balance for selected bet amount"}
+                    </p>
                   )}
                 </>
               )}
