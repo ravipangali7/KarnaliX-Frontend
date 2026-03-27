@@ -2,15 +2,9 @@
  * API client: base URL + auth header. Uses fetch.
  * Set VITE_API_BASE_URL in .env for local dev (e.g. http://localhost:8000/api).
  */
-// export const BASE_URL = "https://inradmin.luckyuser365.com/api";
-// export const BASE_URL = "https://bdtadmin.luckyuser365.com/api";
-// export const BASE_URL = "https://myradmin.luckyuser365.com/api";
-// export const BASE_URL = "https://aedadmin.luckyuser365.com/api";
-// export const BASE_URL = "https://audadmin.luckyuser365.com/api";
-// export const BASE_URL = "https://bhtadmin.luckyuser365.com/api";
 
-// export const BASE_URL = "https://admin.luckyuser365.com/api";
-export const BASE_URL = "https://admin.lucky365ind.com/api";
+export const BASE_URL = "https://admin.luckyuser365.com/api";
+// export const BASE_URL = "https://admin.lucky365ind.com/api";
 // export const BASE_URL = "https://admin.lucky365bhd.com/api";
 // export const BASE_URL = "https://admin.lucky365bht.com/api";
 
