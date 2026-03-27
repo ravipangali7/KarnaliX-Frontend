@@ -158,7 +158,7 @@ export function PlayerNotificationProvider({ children }: { children: React.React
       {children}
       {isPlayer && (
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
-          <DialogContent className="max-w-4xl w-[95vw] max-h-[88vh] flex flex-col p-0 gap-0 overflow-hidden">
+          <DialogContent className="left-0 top-auto bottom-0 translate-x-0 translate-y-0 w-screen max-w-none max-h-[96vh] rounded-t-2xl sm:rounded-t-2xl sm:rounded-b-none flex flex-col p-0 gap-0 overflow-hidden">
             <DialogHeader className="p-4 border-b border-border flex-shrink-0">
               <DialogTitle className="flex items-center gap-3 justify-between">
                 <div className="flex items-center gap-3">
