@@ -6,6 +6,9 @@ const NO_SMS_HOSTNAMES = new Set([
   "myr.luckyuser365.com",
   "aed.luckyuser365.com",
   "aud.luckyuser365.com",
+  "lucky365bht.com",
+  "lucky365ind.com",
+  "lucky365bhd.com",
 ]);
 
 export function isCurrencySiteNoSms(): boolean {
