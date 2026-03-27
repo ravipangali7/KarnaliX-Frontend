@@ -905,6 +905,141 @@ export async function deleteCountry(id: number) {
   return apiDelete(`${prefix("powerhouse")}/countries/${id}/`);
 }
 
+// --- Analytics (powerhouse only) ---
+
+export type AnalyticsDateRange = { date_from?: string; date_to?: string };
+
+export type AnalyticsOverviewSummary = {
+  total_players: number;
+  new_players: number;
+  active_users: number;
+  total_bets: number;
+  total_bet_amount: string;
+  total_win_amount: string;
+  platform_pl: string;
+  total_deposits: string;
+  deposits_count: number;
+  total_withdrawals: string;
+  withdrawals_count: number;
+  revenue: string;
+};
+export type AnalyticsDailyPoint = {
+  date: string;
+  deposits: string;
+  withdrawals: string;
+  bets?: string;
+  platform_pl: string;
+  new_players?: number;
+  running_pl?: string;
+  net?: string;
+  active_users?: number;
+  logins?: number;
+  new_registrations?: number;
+  bet_amount?: string;
+  win_amount?: string;
+};
+export type AnalyticsOverviewResponse = {
+  summary: AnalyticsOverviewSummary;
+  daily: AnalyticsDailyPoint[];
+};
+export async function getAnalyticsOverview(params?: AnalyticsDateRange): Promise<AnalyticsOverviewResponse> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  return apiGet<AnalyticsOverviewResponse>(`${prefix("powerhouse")}/analytics/overview/${qs ? `?${qs}` : ""}`);
+}
+
+export type GameAnalyticsEntry = {
+  game_id: number;
+  game_name: string;
+  provider: string;
+  game_image?: string;
+  bet_count: number;
+  bet_amount: string;
+  win_amount: string;
+  platform_pl: string;
+  unique_players?: number;
+};
+export type ProviderAnalyticsEntry = { provider_id: number; provider_name: string; bet_count: number; bet_amount: string; platform_pl: string };
+export type CategoryAnalyticsEntry = { category_id: number; category_name: string; bet_count: number; bet_amount: string; platform_pl: string };
+export type GameAnalyticsResponse = {
+  top_games: GameAnalyticsEntry[];
+  providers: ProviderAnalyticsEntry[];
+  categories: CategoryAnalyticsEntry[];
+  daily: { date: string; bets: number; bet_amount: string; platform_pl: string }[];
+};
+export async function getAnalyticsGames(params?: AnalyticsDateRange): Promise<GameAnalyticsResponse> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  return apiGet<GameAnalyticsResponse>(`${prefix("powerhouse")}/analytics/games/${qs ? `?${qs}` : ""}`);
+}
+
+export type FinanceUserEntry = { user_id: number; username: string; name: string; total: string; count: number };
+export type FinanceAnalyticsSummary = {
+  total_deposits: string;
+  deposits_count: number;
+  total_withdrawals: string;
+  withdrawals_count: number;
+  net_cash: string;
+  platform_pl: string;
+  bonus_given: string;
+  bonus_count: number;
+};
+export type FinanceAnalyticsResponse = {
+  summary: FinanceAnalyticsSummary;
+  top_depositors: FinanceUserEntry[];
+  top_withdrawers: FinanceUserEntry[];
+  daily: AnalyticsDailyPoint[];
+};
+export async function getAnalyticsFinance(params?: AnalyticsDateRange): Promise<FinanceAnalyticsResponse> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  return apiGet<FinanceAnalyticsResponse>(`${prefix("powerhouse")}/analytics/finance/${qs ? `?${qs}` : ""}`);
+}
+
+export type CustomerBettor = { user_id: number; username: string; name: string; bet_count: number; bet_amount: string; win_amount: string; platform_pl: string };
+export type CustomerAnalyticsResponse = {
+  summary: { unique_active_users: number; total_logins: number };
+  daily: AnalyticsDailyPoint[];
+  top_bettors: CustomerBettor[];
+  devices: { device: string; count: number }[];
+  action_distribution: { action: string; count: number }[];
+};
+export async function getAnalyticsCustomers(params?: AnalyticsDateRange): Promise<CustomerAnalyticsResponse> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  return apiGet<CustomerAnalyticsResponse>(`${prefix("powerhouse")}/analytics/customers/${qs ? `?${qs}` : ""}`);
+}
+
+export type UserAnalyticsPlayer = {
+  id: number; username: string; name: string; phone: string;
+  main_balance: string; bonus_balance: string; pl_balance: string;
+  joined: string | null; all_time_deposits: string; all_time_withdrawals: string;
+};
+export type UserAnalyticsResponse = {
+  user: UserAnalyticsPlayer;
+  summary: { total_bets: number; total_bet_amount: string; total_win_amount: string; total_lose_amount: string; platform_pl: string };
+  top_games: { game_id: number; game_name: string; provider: string; bet_count: number; bet_amount: string; win_amount: string }[];
+  deposits: { id: number; amount: string; status: string; created_at: string | null }[];
+  withdrawals: { id: number; amount: string; status: string; created_at: string | null }[];
+  activities: { action: string; device: string; ip: string | null; remarks: string; created_at: string | null }[];
+  daily: { date: string; bets: number; bet_amount: string; win_amount: string; pl: string }[];
+};
+export async function getAnalyticsUser(userId: number, params?: AnalyticsDateRange): Promise<UserAnalyticsResponse> {
+  const q = new URLSearchParams();
+  if (params?.date_from) q.set("date_from", params.date_from);
+  if (params?.date_to) q.set("date_to", params.date_to);
+  const qs = q.toString();
+  return apiGet<UserAnalyticsResponse>(`${prefix("powerhouse")}/analytics/user/${userId}/${qs ? `?${qs}` : ""}`);
+}
+
 // --- Clean data (powerhouse only) ---
 export type CleanDataModelMeta = { id: string; label: string; protected: boolean };
 export type CleanDataProtectedMeta = { id: string; label: string; helper: string };
