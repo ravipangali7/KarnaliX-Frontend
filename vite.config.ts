@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
-          if (id.includes("recharts") || id.includes("d3-") || id.includes("victory-vendor")) {
+          if (id.includes("recharts") || id.includes("/d3-") || id.includes("victory-vendor")) {
             return "vendor-charts";
           }
           if (id.includes("framer-motion")) {
@@ -35,7 +35,16 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("@tanstack")) {
             return "vendor-query";
           }
-          if (id.includes("react-dom") || id.includes("react-router") || id.includes("scheduler")) {
+          // react, react-dom, react-router and their deps MUST share a chunk —
+          // splitting them causes the __SECRET_INTERNALS error because react-dom
+          // looks up React internals from a different chunk before it's loaded.
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/react-router") ||
+            id.includes("node_modules/scheduler/") ||
+            id.includes("node_modules/use-sync-external-store/")
+          ) {
             return "vendor-react";
           }
         },
