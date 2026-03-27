@@ -23,9 +23,8 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
-          if (id.includes("recharts") || id.includes("/d3-") || id.includes("victory-vendor")) {
-            return "vendor-charts";
-          }
+          // recharts + d3-* have circular dependencies — let Vite auto-split them
+          // to avoid "Cannot access before initialization" TDZ errors.
           if (id.includes("framer-motion")) {
             return "vendor-motion";
           }
